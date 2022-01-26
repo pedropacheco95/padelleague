@@ -1,0 +1,21 @@
+{% extends 'layout.html' %}
+
+{% block main %}
+<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.5.1/moment.min.js"></script>
+<script>
+    var matches_data = []
+    $.ajax({
+        url: "{{url_for('api.calendar')}}",
+        async: false,
+        dataType: 'json',
+        success: function(data) {
+            matches_data = data;
+        }
+    });
+</script>
+<script src="{{ url_for('static', filename='js/calendar.js')}}" defer></script>
+<link href="{{ url_for('static', filename='style/calendar.css')}}" rel="stylesheet">
+<br>
+<div id="calendar"></div>
+<br>
+{% endblock %}

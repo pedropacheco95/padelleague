@@ -1,0 +1,328 @@
+id,player_full_name,match_id,team
+1,José Veiga,1,Home
+2,Francisco Pereira,1,Home
+3,Miguel Sousa Guedes,1,Away
+4,José Veiga,2,Home
+5,Francisco Pereira,2,Home
+6,Francisco Freitas,2,Away
+7,Dinis Brito e Faro,2,Away
+8,Francisco Fontes,3,Home
+9,Gonçalo Semelhe,3,Home
+10,José Veiga,3,Away
+11,Francisco Pereira,3,Away
+12,Francisco Freitas,4,Home
+13,Dinis Brito e Faro,4,Home
+14,Francisco Fontes,4,Away
+15,Gonçalo Semelhe,4,Away
+16,Francisco Fontes,5,Home
+17,Gonçalo Semelhe,5,Home
+18,Miguel Sousa Guedes,5,Away
+19,Francisco Freitas,6,Home
+20,Dinis Brito e Faro,6,Home
+21,Miguel Sousa Guedes,6,Away
+22,José Veiga,7,Home
+23,Gonçalo Semelhe,7,Home
+24,Gonçalo Garrett,7,Away
+25,Francisco Pereira,7,Away
+26,José Veiga,8,Home
+27,Gonçalo Semelhe,8,Home
+28,Miguel Sousa Guedes,8,Away
+29,Dinis Brito e Faro,8,Away
+30,Francisco Fontes,9,Home
+31,Francisco Freitas,9,Home
+32,José Veiga,9,Away
+33,Gonçalo Semelhe,9,Away
+34,Miguel Sousa Guedes,10,Home
+35,Dinis Brito e Faro,10,Home
+36,Francisco Freitas,10,Away
+37,Francisco Fontes,10,Away
+38,Francisco Fontes,11,Home
+39,Francisco Freitas,11,Home
+40,Gonçalo Garrett,11,Away
+41,Francisco Pereira,11,Away
+42,Miguel Sousa Guedes,12,Home
+43,Dinis Brito e Faro,12,Home
+44,Gonçalo Garrett,12,Away
+45,Francisco Pereira,12,Away
+46,José Veiga,13,Home
+47,Gonçalo Garrett,13,Home
+48,Francisco Pereira,13,Away
+49,Miguel Sousa Guedes,13,Away
+50,José Veiga,14,Home
+51,Gonçalo Garrett,14,Home
+52,Gonçalo Semelhe,14,Away
+53,Francisco Freitas,14,Away
+54,Francisco Fontes,15,Home
+55,Dinis Brito e Faro,15,Home
+56,José Veiga,15,Away
+57,Gonçalo Garrett,15,Away
+58,Gonçalo Semelhe,16,Home
+59,Francisco Freitas,16,Home
+60,Francisco Fontes,16,Away
+61,Dinis Brito e Faro,16,Away
+62,Francisco Fontes,17,Home
+63,Dinis Brito e Faro,17,Home
+64,Francisco Pereira,17,Away
+65,Miguel Sousa Guedes,17,Away
+66,Gonçalo Semelhe,18,Home
+67,Francisco Freitas,18,Home
+68,Francisco Pereira,18,Away
+69,Miguel Sousa Guedes,18,Away
+70,José Veiga,19,Home
+71,Francisco Fontes,19,Home
+72,Francisco Pereira,19,Away
+73,Dinis Brito e Faro,19,Away
+74,José Veiga,20,Home
+75,Francisco Fontes,20,Home
+76,Gonçalo Garrett,20,Away
+77,Francisco Freitas,20,Away
+78,Miguel Sousa Guedes,21,Home
+79,Francisco Fontes,21,Away
+80,Gonçalo Semelhe,21,Home
+81,José Veiga,21,Away
+82,Gonçalo Garrett,22,Home
+83,Francisco Freitas,22,Home
+84,Miguel Sousa Guedes,22,Away
+85,Gonçalo Semelhe,22,Away
+86,Miguel Sousa Guedes,23,Home
+87,Gonçalo Semelhe,23,Home
+88,Francisco Pereira,23,Away
+89,Dinis Brito e Faro,23,Away
+90,Gonçalo Garrett,24,Home
+91,Francisco Freitas,24,Home
+92,Francisco Pereira,24,Away
+93,Dinis Brito e Faro,24,Away
+94,José Veiga,25,Home
+95,Miguel Sousa Guedes,25,Home
+96,Gonçalo Garrett,25,Away
+97,Francisco Fontes,25,Away
+98,José Veiga,26,Home
+99,Miguel Sousa Guedes,26,Home
+100,Dinis Brito e Faro,26,Away
+101,Gonçalo Semelhe,26,Away
+102,Francisco Pereira,27,Home
+103,Francisco Freitas,27,Home
+104,José Veiga,27,Away
+105,Miguel Sousa Guedes,27,Away
+106,Gonçalo Semelhe,28,Home
+107,Dinis Brito e Faro,28,Home
+108,Francisco Pereira,28,Away
+109,Francisco Freitas,28,Away
+110,Francisco Pereira,29,Home
+111,Francisco Freitas,29,Home
+112,Gonçalo Garrett,29,Away
+113,Francisco Fontes,29,Away
+114,Gonçalo Semelhe,30,Home
+115,Dinis Brito e Faro,30,Home
+116,Gonçalo Garrett,30,Away
+117,Francisco Fontes,30,Away
+118,Gonçalo Garrett,31,Away
+119,Gonçalo Semelhe,31,Away
+120,Dinis Brito e Faro,31,Home
+121,José Veiga,31,Home
+122,Dinis Brito e Faro,32,Home
+123,José Veiga,32,Home
+124,Miguel Sousa Guedes,32,Away
+125,Francisco Freitas,32,Away
+126,Francisco Pereira,33,Home
+127,José Veiga,33,Away
+128,Dinis Brito e Faro,33,Away
+129,Francisco Fontes,33,Home
+130,Miguel Sousa Guedes,34,Home
+131,Francisco Freitas,34,Home
+132,Francisco Pereira,34,Away
+133,Francisco Fontes,34,Away
+134,Francisco Pereira,35,Home
+135,Francisco Fontes,35,Home
+136,Gonçalo Garrett,35,Away
+137,Gonçalo Semelhe,35,Away
+138,Miguel Sousa Guedes,36,Home
+139,Francisco Freitas,36,Home
+140,Gonçalo Garrett,36,Away
+141,Gonçalo Semelhe,36,Away
+142,José Veiga,37,Home
+143,Francisco Freitas,37,Home
+144,Gonçalo Garrett,37,Away
+145,Dinis Brito e Faro,37,Away
+146,Francisco Fontes,38,Away
+147,José Veiga,38,Home
+148,Francisco Freitas,38,Home
+149,Miguel Sousa Guedes,38,Away
+150,Francisco Pereira,39,Home
+151,Gonçalo Semelhe,39,Home
+152,José Veiga,39,Away
+153,Francisco Freitas,39,Away
+154,Miguel Sousa Guedes,40,Home
+155,Francisco Fontes,40,Home
+156,Francisco Pereira,40,Away
+157,Gonçalo Semelhe,40,Away
+158,Francisco Pereira,41,Home
+159,Gonçalo Semelhe,41,Home
+160,Gonçalo Garrett,41,Away
+161,Dinis Brito e Faro,41,Away
+162,Miguel Sousa Guedes,42,Home
+163,Francisco Fontes,42,Home
+164,Gonçalo Garrett,42,Away
+165,Dinis Brito e Faro,42,Away
+166,Luís Ferreira,43,Home
+167,Miguel Caeiro,43,Home
+168,Diogo Leão,43,Away
+169,Afonso Martinho,43,Away
+170,Luís Ferreira,44,Home
+171,Miguel Caeiro,44,Home
+172,Tiago Allen Valente,44,Away
+173,Pedro Pacheco,45,Home
+174,Luís Ferreira,45,Away
+175,Miguel Caeiro,45,Away
+176,Tiago Allen Valente,46,Home
+177,Pedro Pacheco,46,Away
+178,Pedro Pacheco,47,Home
+179,Diogo Leão,47,Away
+180,Afonso Martinho,47,Away
+181,Tiago Allen Valente,48,Home
+182,Diogo Leão,48,Away
+183,Afonso Martinho,48,Away
+184,Luís Ferreira,49,Home
+185,João Magalhães,49,Home
+186,Diogo Leão,49,Away
+187,Miguel Caeiro,49,Away
+188,Luís Ferreira,50,Home
+189,João Magalhães,50,Home
+190,Afonso Martinho,50,Away
+191,José Pedro Bento,50,Away
+192,Pedro Pacheco,51,Home
+193,Tiago Allen Valente,51,Home
+194,Luís Ferreira,51,Away
+195,João Magalhães,51,Away
+196,Afonso Martinho,52,Home
+197,José Pedro Bento,52,Home
+198,Tiago Allen Valente,52,Away
+199,Pedro Pacheco,52,Away
+200,Pedro Pacheco,53,Home
+201,Tiago Allen Valente,53,Home
+202,Diogo Leão,53,Away
+203,Miguel Caeiro,53,Away
+204,Afonso Martinho,54,Home
+205,José Pedro Bento,54,Home
+206,Diogo Leão,54,Away
+207,Miguel Caeiro,54,Away
+208,Luís Ferreira,55,Home
+209,Diogo Leão,55,Home
+210,Miguel Caeiro,55,Away
+211,Afonso Martinho,55,Away
+212,Luís Ferreira,56,Home
+213,Diogo Leão,56,Home
+214,João Magalhães,56,Away
+215,Tiago Allen Valente,56,Away
+216,Pedro Pacheco,57,Home
+217,José Pedro Bento,57,Home
+218,Luís Ferreira,57,Away
+219,Diogo Leão,57,Away
+220,João Magalhães,58,Home
+221,Tiago Allen Valente,58,Home
+222,Pedro Pacheco,58,Away
+223,José Pedro Bento,58,Away
+224,Pedro Pacheco,59,Home
+225,José Pedro Bento,59,Home
+226,Miguel Caeiro,59,Away
+227,Afonso Martinho,59,Away
+228,João Magalhães,60,Home
+229,Tiago Allen Valente,60,Home
+230,Miguel Caeiro,60,Away
+231,Afonso Martinho,60,Away
+232,Luís Ferreira,61,Home
+233,Pedro Pacheco,61,Home
+234,Miguel Caeiro,61,Away
+235,José Pedro Bento,61,Away
+236,Luís Ferreira,62,Home
+237,Pedro Pacheco,62,Home
+238,Diogo Leão,62,Away
+239,Tiago Allen Valente,62,Away
+240,Afonso Martinho,63,Home
+241,Pedro Pacheco,63,Away
+242,João Magalhães,63,Home
+243,Luís Ferreira,63,Away
+244,Diogo Leão,64,Home
+245,Tiago Allen Valente,64,Home
+246,Afonso Martinho,64,Away
+247,João Magalhães,64,Away
+248,Afonso Martinho,65,Home
+249,João Magalhães,65,Home
+250,Miguel Caeiro,65,Away
+251,José Pedro Bento,65,Away
+252,Diogo Leão,66,Home
+253,Tiago Allen Valente,66,Home
+254,Miguel Caeiro,66,Away
+255,José Pedro Bento,66,Away
+256,Luís Ferreira,67,Home
+257,Afonso Martinho,67,Home
+258,Diogo Leão,67,Away
+259,Pedro Pacheco,67,Away
+260,Luís Ferreira,68,Home
+261,Afonso Martinho,68,Home
+262,José Pedro Bento,68,Away
+263,João Magalhães,68,Away
+264,Miguel Caeiro,69,Home
+265,Tiago Allen Valente,69,Home
+266,Luís Ferreira,69,Away
+267,Afonso Martinho,69,Away
+268,João Magalhães,70,Home
+269,José Pedro Bento,70,Home
+270,Miguel Caeiro,70,Away
+271,Tiago Allen Valente,70,Away
+272,Miguel Caeiro,71,Home
+273,Tiago Allen Valente,71,Home
+274,Diogo Leão,71,Away
+275,Pedro Pacheco,71,Away
+276,João Magalhães,72,Home
+277,José Pedro Bento,72,Home
+278,Diogo Leão,72,Away
+279,Pedro Pacheco,72,Away
+280,Diogo Leão,73,Away
+281,João Magalhães,73,Away
+282,José Pedro Bento,73,Home
+283,Luís Ferreira,73,Home
+284,José Pedro Bento,74,Home
+285,Luís Ferreira,74,Home
+286,Afonso Martinho,74,Away
+287,Tiago Allen Valente,74,Away
+288,Miguel Caeiro,75,Home
+289,Luís Ferreira,75,Away
+290,José Pedro Bento,75,Away
+291,Pedro Pacheco,75,Home
+292,Afonso Martinho,76,Home
+293,Tiago Allen Valente,76,Home
+294,Miguel Caeiro,76,Away
+295,Pedro Pacheco,76,Away
+296,Miguel Caeiro,77,Home
+297,Pedro Pacheco,77,Home
+298,Diogo Leão,77,Away
+299,João Magalhães,77,Away
+300,Afonso Martinho,78,Home
+301,Tiago Allen Valente,78,Home
+302,Diogo Leão,78,Away
+303,João Magalhães,78,Away
+304,Luís Ferreira,79,Home
+305,Tiago Allen Valente,79,Home
+306,Diogo Leão,79,Away
+307,José Pedro Bento,79,Away
+308,Pedro Pacheco,80,Away
+309,Luís Ferreira,80,Home
+310,Tiago Allen Valente,80,Home
+311,Afonso Martinho,80,Away
+312,Miguel Caeiro,81,Home
+313,João Magalhães,81,Home
+314,Luís Ferreira,81,Away
+315,Tiago Allen Valente,81,Away
+316,Afonso Martinho,82,Home
+317,Pedro Pacheco,82,Home
+318,Miguel Caeiro,82,Away
+319,João Magalhães,82,Away
+320,Miguel Caeiro,83,Home
+321,João Magalhães,83,Home
+322,Diogo Leão,83,Away
+323,José Pedro Bento,83,Away
+324,Afonso Martinho,84,Home
+325,Pedro Pacheco,84,Home
+326,Diogo Leão,84,Away
+327,José Pedro Bento,84,Away

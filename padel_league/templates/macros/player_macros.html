@@ -1,0 +1,12 @@
+{% macro player_card_cropped(player) %}
+{% set filename = 'images/' + player.picture_path %}
+{% set player_image = url_for('static',filename=filename)%}
+<div class="c-player-card__img u-img-cropped u-img-cropped--blue" style="background-image: url({{player_image}})">
+</div>
+{% endmacro %}
+
+{% macro tiny_next_and_previous(player) %}
+{% set filename = 'images/' + player.picture_path %}
+{% set player_image = url_for('static',filename=filename)%}
+<div class="u-img-cropped u-img-cropped--team" style="background-image: url({{player_image}})"></div>
+{% endmacro %}

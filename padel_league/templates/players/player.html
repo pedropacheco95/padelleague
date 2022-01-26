@@ -1,0 +1,270 @@
+{% extends 'layout.html' %}
+{% import 'macros/player_macros.html' as player_macros %}
+
+{% block main %}
+{% set country_flag = url_for('static',filename='images/pt.png')%}
+<script src="{{ url_for('static', filename='js/players_player.js')}}" defer></script>
+<div class="l-grid">
+    <div class="c-player">
+        <div class="c-player__content">
+            {% set filename = 'images/' + player.large_picture_path %}
+            {% set player_large_image = url_for('static',filename=filename)%}
+            <img class="c-player__img" src="{{player_large_image}}">
+            <div class="c-player__prev">
+                {% set other_players = player.previous_and_next_player() %}
+                {% set previous_player = other_players['previous'] %}
+                {% set next_player = other_players['next'] %}
+                <a href="{{ url_for('players.player',id=previous_player.id) }}">
+                    <img src="{{ url_for('static', filename='images/chevron-left.svg')}}">
+                    {{ player_macros.tiny_next_and_previous(previous_player) }}
+                </a>
+            </div>
+            <div class="l-container_player">
+                <div class="c-ranking-header c-ranking-header--no-image">
+                    <h1 class="c-ranking-header__title">{{ player.full_name }}</h1>
+                    <div class="l-container_player l-container--data">
+                        <div class="c-ranking-header__data-box">
+                            <p class="c-ranking-header__data-title">Ranking</p>
+                            <p class="c-ranking-header__data">{{ player.ranking_position }}</p> 
+                        </div>
+                        <div class="c-ranking-header__data-box">
+                            <p class="c-ranking-header__data-title">Pontos</p>
+                            <p class="c-ranking-header__data">{{ player.ranking_points }}</p>
+                        </div>
+                    </div>
+                    <img src="{{country_flag}}">
+                </div>
+            </div>
+            <ul class="c-player__nav u-list-clean" role="tablist">
+                <li class="c-player__item c-player__item--active" role="presentation">
+                    <a id="personal_data_button">Dados pessoais</a>
+                </li>
+                <li class="c-player__item" role="presentation">
+                    <a id="sports_data_button">Dados desportivos</a>
+                </li>
+            </ul>
+            <div class="c-player__next">
+                <a href="{{ url_for('players.player',id=next_player.id) }}">
+                    <img src="{{ url_for('static', filename='images/chevron-right.svg')}}">
+                    {{ player_macros.tiny_next_and_previous(next_player) }}
+                </a>
+            </div>
+            <div class="u-gradient u-gradient--horizontal"></div>
+        </div>
+        <div class="c-player__footer">
+            <div class="c-player__img-container">
+                {% set filename = 'images/' + player.picture_path %}
+                {% set player_image = url_for('static',filename=filename)%}
+                <div class="u-img-cropped" style="background-image: url({{player_image}});"></div>
+            </div>
+            <div class="l-container">
+                <ul class="c-player__data-list u-list-clean c-player__data-list--is-visible" id="personal_data_tab">
+                    <li class="c-player__data-item">
+                        <h3>Data de nascimento</h3>
+                        <p>{% if player.birthday %}{{player.birthday.strftime('%d/%m/%Y')}}{% else %}Não definido{% endif %}</p>
+                    </li>
+                    <li class="c-player__data-item">
+                        <h3>Altura</h3>
+                        <p>{{player.height}}</p>
+                    </li>
+                    <li class="c-player__data-item">
+                        <h3>Mão preferida</h3>
+                        <p>{% if player.prefered_hand %}{{player.prefered_hand}}{% endif %}</p>
+                    </li>
+                </ul>
+                <ul class="c-player__data-list u-list-clean" id="sports_data_tab">
+                    <li class="c-player__data-item">
+                        <h3>Posiçao de jogo</h3>
+                        <p></p>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="l-grid">
+    <div class="c-ranking-header c-ranking-header--no-image c-ranking-header--table">
+        <div class="l-container_player l-container--data player_games_table">
+            {% set n_matches_played = player.matches_played()|length %}
+            {% set n_matches_won = player.matches_won()|length %}
+            {% set n_matches_lost = player.matches_lost()|length %}
+            {% set n_matches_drawn = player.matches_drawn()|length %}
+            <div class="c-ranking-header__data-box">
+                <p class="c-ranking-header__data-title">Encontros jogados</p>
+                <p class="c-ranking-header__data"><a href="{{url_for('matches.player',player_id=player.id,type='played')}}">{{n_matches_played}}</a></p>
+            </div>
+            <div class="c-ranking-header__data-box">
+                <p class="c-ranking-header__data-title">Encontros ganhos</p>
+                <p class="c-ranking-header__data"><a href="{{url_for('matches.player',player_id=player.id,type='won')}}">{{n_matches_won}}</a></p>
+            </div>
+            <div class="c-ranking-header__data-box">
+                <p class="c-ranking-header__data-title">Encontros perdidos</p>
+                <p class="c-ranking-header__data"><a href="{{url_for('matches.player',player_id=player.id,type='lost')}}">{{n_matches_lost}}</a></p>
+            </div> 
+            <div class="c-ranking-header__data-box">
+                <p class="c-ranking-header__data-title">Encontros empatados</p>
+                <p class="c-ranking-header__data"><a href="{{url_for('matches.player',player_id=player.id,type='drawn')}}">{{n_matches_drawn}}</a></p>
+            </div> 
+            <div class="c-ranking-header__data-box">
+                <p class="c-ranking-header__data-title">Eficácia</p>
+                <p class="c-ranking-header__data">{{(n_matches_won / n_matches_played * 100)|round(2) }}%</p>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="l-grid" id="l-grid_as_title" style="display: none;">
+    <h2 class="c-ranking__heading">Estadísticas anuales</h2>
+    <div class="c-form c-form--top c-form--ranking">
+        <div class="c-form__header">
+            <div class="c-form__container">
+                <div class="c-form__column">
+                    <div class="c-form__select">
+                        <select class="c-form__control select-is-hidden" id="ranking-year" name="ranking-year">
+                            <option>Año</option>
+                            <option value="2021">2021</option>
+                            <option value="2020">2020</option>
+                        </select>
+                        <div class="c-form__select-block" data-id="2020">
+                            2020
+                        </div>
+                        <ul class="c-form__select-options" style="display: none;">
+                            <li rel="Año">Año</li>
+                            <li rel="2021">2021</li>
+                            <li rel="2020">2020</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="l-grid" style="display: none;">
+    <div class="c-flex-table c-flex-table--ranking is-visible">
+        <div class="c-flex-table__column">
+            <div class="c-flex-table__heading">
+                <h3>Estadísticas <span>2021</span></h3>
+            </div>
+            <ul class="c-flex-table__list u-list-clean">
+                <li class="c-flex-table__item">
+                    <span class="c-flex-table__item-title">Partidos jugados</span><span class="c-flex-table__item-data">64</span>
+                </li>
+                <li class="c-flex-table__item">
+                    <span class="c-flex-table__item-title">Partidos ganados</span> <span class="c-flex-table__item-data">52</span>
+                </li>
+                <li class="c-flex-table__item">
+                    <span class="c-flex-table__item-title">Efectividad</span>
+                    <span class="c-flex-table__item-data">81,25</span>
+                </li>
+            </ul>
+        </div>
+        <div class="c-flex-table__column">
+            <div class="c-flex-table__heading">
+                <h3>Estadísticas <span>2021</span></h3>
+            </div>
+            <ul class="c-flex-table__list u-list-clean">
+                <li class="c-flex-table__item">
+                    <span class="c-flex-table__item-title">Partidos jugados</span><span class="c-flex-table__item-data">64</span>
+                </li>
+                <li class="c-flex-table__item">
+                    <span class="c-flex-table__item-title">Partidos ganados</span> <span class="c-flex-table__item-data">52</span>
+                </li>
+                <li class="c-flex-table__item">
+                    <span class="c-flex-table__item-title">Efectividad</span>
+                    <span class="c-flex-table__item-data">81,25</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="c-flex-table c-flex-table--ranking">
+        <div class="c-flex-table__column">
+            <div class="c-flex-table__heading">
+                <h3>Estadísticas <span>2021</span></h3>
+            </div>
+            <ul class="c-flex-table__list u-list-clean">
+                <li class="c-flex-table__item">
+                    <span class="c-flex-table__item-title">Partidos jugados</span><span class="c-flex-table__item-data">64</span>
+                </li>
+                <li class="c-flex-table__item">
+                    <span class="c-flex-table__item-title">Partidos ganados</span> <span class="c-flex-table__item-data">52</span>
+                </li>
+                <li class="c-flex-table__item">
+                    <span class="c-flex-table__item-title">Efectividad</span>
+                    <span class="c-flex-table__item-data">81,25</span>
+                </li>
+            </ul>
+        </div>
+        <div class="c-flex-table__column">
+            <div class="c-flex-table__heading">
+                <h3>Estadísticas <span>2021</span></h3>
+            </div>
+            <ul class="c-flex-table__list u-list-clean">
+                <li class="c-flex-table__item">
+                    <span class="c-flex-table__item-title">Partidos jugados</span><span class="c-flex-table__item-data">64</span>
+                </li>
+                <li class="c-flex-table__item">
+                    <span class="c-flex-table__item-title">Partidos ganados</span> <span class="c-flex-table__item-data">52</span>
+                </li>
+                <li class="c-flex-table__item">
+                    <span class="c-flex-table__item-title">Efectividad</span>
+                    <span class="c-flex-table__item-data">81,25</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+<div class="l-grid">
+    <h2 class="c-ranking__heading" id="close_title">Torneios participados</h2>
+    <div class="c-flex-table c-flex-table--ranking c-flex-table--blue is-visible">
+        <div class="c-flex-table__column">
+            <div class="c-flex-table__heading">
+                <h3>Torneio</h3>
+            </div>
+            <ul class="c-flex-table__list u-list-clean">
+                {% for relation in player.divisions_relations %}
+                <li class="c-flex-table__item">
+                    <a href="{{ url_for('tournaments.tournament',id=relation.division.id) }}">
+                        <span class="c-flex-table__item-title">{{relation.division.tournament_name()}}</span>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="c-flex-table__column">
+            <div class="c-flex-table__heading">
+                <h3>Último jogo</h3>
+            </div>
+            <ul class="c-flex-table__list u-list-clean">
+                {% for relation in player.divisions_relations %}
+                <li class="c-flex-table__item">
+                    <span class="c-flex-table__item-title">{% if relation.division.end_date %}{{relation.division.end_date.strftime('%d/%m/%Y')}}{% else %}Não definido{% endif %}</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="c-flex-table__column">
+            <div class="c-flex-table__heading">
+                <h3>Encontros ganhos</h3>
+            </div>
+            <ul class="c-flex-table__list u-list-clean">
+                {% for relation in player.divisions_relations %}
+                <li class="c-flex-table__item">
+                    <span class="c-flex-table__item-title">{{player.matches_won(relation.division)|length}}</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="c-flex-table__column">
+            <div class="c-flex-table__heading">
+                <h3>Posição</h3>
+            </div>
+            <ul class="c-flex-table__list u-list-clean">
+                {% for relation in player.divisions_relations %}
+                <li class="c-flex-table__item">
+                    <span class="c-flex-table__item-title">{% if relation.place %}{{relation.place}}{% else %}Por jogar{% endif %}</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

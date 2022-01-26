@@ -1,0 +1,43 @@
+{% extends 'layout.html' %}
+{% import 'macros/player_macros.html' as player_macros %}
+
+{% block main %}
+{% set country_flag = url_for('static',filename='images/pt.png')%}
+<br>
+<div class="l-grid">
+    <div class="c-ranking c-ranking--half">
+        <div class="c-ranking__block">
+            <div class="c-ranking__title">
+                <h3>Ranking</h3> 
+            </div>
+            <ul class="c-player-card u-list-clean">
+                {% for player in players %}
+                <li class="c-player-card__item">
+                    <a class="c-trigger" href="{{ url_for('players.player',id=player.id) }}">
+                        <div class="c-player-card__header">
+                            <div class="c-player-card__details">
+                                <div class="c-player-card__position">{{player.ranking_position}}</div>
+                                <div class="c-player-card__name">
+                                    {% for word in player.full_name.split(' ') %}
+                                    {{word}}<br>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="l-wrapper">
+                                {{ player_macros.player_card_cropped(player) }}
+                            </div>
+                        </div>
+                        <div class="c-player-card__footer">
+                            <div class="l-wrapper">
+                                <img class="c-player-card__flag" src="{{country_flag}}" alt="" role="presentation">
+                            </div>
+                            <div class="c-player-card__score">{{player.ranking_points}}</div>
+                        </div>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

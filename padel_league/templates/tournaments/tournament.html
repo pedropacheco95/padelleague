@@ -1,0 +1,132 @@
+{% extends 'layout.html' %}
+{% import 'macros/match_macros.html' as match_macros %}
+
+{% block main %}
+{% set country_flag = url_for('static',filename='images/pt.png')%}
+<script>
+    var matches_data = []
+    $.ajax({
+        url: "{{url_for('api.calendar',division_id = tournament.id)}}",
+        async: false,
+        dataType: 'json',
+        success: function(data) {
+            matches_data = data;
+        }
+    });
+
+    var points_by_matchweeks = []
+    $.ajax({
+        url: "{{url_for('api.points_by_matchweek',division_id = tournament.id)}}",
+        async: false,
+        dataType: 'json',
+        success: function(data) {
+            points_by_matchweeks = data;
+        }
+    });
+    var matchweek_url = "{{url_for('matches.by_matchweek',matchweek=1)}}";
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.5.1/moment.min.js"></script>
+<script src="{{ url_for('static', filename='js/tournaments_tournament.js')}}" defer></script>
+<script src="{{ url_for('static', filename='js/calendar.js')}}" defer></script>
+<link href="{{ url_for('static', filename='style/calendar.css')}}" rel="stylesheet">
+
+
+<div class="c-tor-header c-tor-header--master">
+    <div class="c-tor-header__img-container">
+        <div class="c-trigger">
+            <img class="c-tor-header__poster" src="{{url_for('static',filename='images/' + tournament.logo_image_path)}}" alt="Tournament">
+        </div>
+    </div>
+    <div class="c-tor-header__content">
+        <div class="c-tor-header__title">{{tournament.tournament_name()}}</div>
+        <div class="c-tor-header__iandt">
+            <span>Porto. De {% if tournament.end_date %}{{tournament.end_date.strftime('%d/%m/%Y')}}{% else %}Não definido{% endif %} a {% if tournament.end_date %}{{tournament.end_date.strftime('%d/%m/%Y')}}{% else %}Não definido{% endif %}</span>
+        </div>
+        <ul class="c-tor-header__nav u-list-clean" role="tablist">
+            <li class="c-tor-header__item c-tor-header__item--active" role="presentation">
+                <a id="general_information_button">Informação geral</a>
+            </li>
+            <li class="c-tor-header__item" role="presentation">
+                <a id="matches_information_button">Resultados</a>
+            </li>
+            <li class="c-tor-header__item" role="presentation">
+                <a id="calendar_button">Calendário</a>
+            </li>
+        </ul>
+    </div>
+</div>
+<div class="l-grid">
+    <div class="c-flex-table c-flex-table--ranking is-visible" id="general_information_tab">
+        <table id="classification_table" class="classification_table" ondblclick="removeGraph()">
+            <thead>
+                <tr>
+                    <th name="h_position"></th>
+                    <th name="h_image"></th>
+                    <th name="h_player"></th>
+                    <th name="h_appearances" class="optional_table_columns">Presenças</th>
+                    <th name="h_percentage_of_appearances" class="optional_table_columns">% Presenças</th>
+                    <th name="h_wins" class="optional_table_columns">V</th>
+                    <th name="h_draws" class="optional_table_columns">E</th>
+                    <th name="h_losts" class="optional_table_columns">D</th>
+                    <th name="h_games_won" class="optional_table_columns">Jogos ganhos</th>
+                    <th name="h_games_lost" class="optional_table_columns">Jogos perdidos</th>
+                    <th name="h_points" >Pontos</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rel in tournament.players_relations_classification() %}
+                {% set player = rel.player %}
+                <tr class="player_classification_row" id="{{player.id}}" onclick="addGraph('{{player.id}}');">
+                    <td name="position">{{tournament.player_position(player)}}</td>
+                    <td name="image">
+                        <a class="c-trigger" href="{{ url_for('players.player',id=player.id) }}">
+                            {% set filename = 'images/' + player.picture_path %}
+                            {% set player_image = url_for('static',filename=filename)%}
+                            <div class="c-teams__img u-img-cropped u-img-cropped--classification" style="background-image: url({{player_image}})"></div>
+                        </a>
+                    </td>
+                    <td name="player">
+                        {{player.name}}
+                    </td>
+                    <td name="appearances" class="optional_table_columns">{{rel.appearances}}</td>
+                    <td name="percentage_of_appearances" class="optional_table_columns">{{rel.percentage_of_appearances}}</td>
+                    <td name="wins" class="optional_table_columns">{{rel.wins}}</td>
+                    <td name="draws" class="optional_table_columns">{{rel.draws}}</td>
+                    <td name="losts" class="optional_table_columns">{{rel.losts}}</td>
+                    <td name="games_won" class="optional_table_columns">{{rel.games_won}}</td>
+                    <td name="games_lost" class="optional_table_columns">{{rel.games_lost}}</td>
+                    <td name="points">{{rel.points}}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="c-flex-table c-flex-table--ranking" id="matches_information_tab">
+        <div class="l-grid l-grid--tor" >
+            <div class="select_container">
+                <select class="form-select matchweek_select" onchange="chooseMatchweek(this);">
+                    <option selected>Jornada</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                </select>
+            </div>
+            <br>
+            {% for match in tournament.get_ordered_matches_played() %}
+            {{ match_macros.match_card(match) }}
+            <br>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="c-flex-table c-flex-table--ranking" id="calendar_tab">
+        <br>
+            <div id="calendar" class="calendar_in_tournament"></div>
+        <br>
+    </div>
+</div>
+{% endblock %}

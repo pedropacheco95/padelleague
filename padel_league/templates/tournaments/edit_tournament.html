@@ -1,0 +1,86 @@
+{% extends 'layout.html' %}
+
+{% block main %}
+{% set country_flag = url_for('static',filename='images/pt.png')%}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
+<script src="{{ url_for('static', filename='js/tournaments_tournament.js')}}" defer></script>
+<div class="c-tor-header c-tor-header--master">
+    <div class="c-tor-header__img-container">
+        <div class="c-trigger">
+            <img class="c-tor-header__poster" src="{{url_for('static',filename='images/tournament_poster.png')}}" alt="Tournament">
+        </div>
+    </div>
+    <div class="c-tor-header__content">
+        <div class="c-tor-header__title">Estrella Damm Master Final 2021 </div>
+        <div class="c-tor-header__iandt">
+            <span>Madrid. Del 16/12/2021 al 19/12/2021</span>
+        </div>
+        <ul class="c-tor-header__nav u-list-clean" role="tablist">
+            <li class="c-tor-header__item c-tor-header__item--active" role="presentation">
+                <a href="javascript:void(0);" aria-controls="info" role="tab" data-toggle="tab">Información general</a>
+            </li>
+            <li class="c-tor-header__item" role="presentation">
+                <a href="javascript:void(0);" aria-controls="registrations" role="tab" data-toggle="tab">Inscritos</a>
+            </li>
+        </ul>
+    </div>
+</div>
+<div class="l-grid">
+    <div class="c-flex-table c-flex-table--ranking is-visible">
+        <table id="classification_table" class="classification_table">
+            <thead>
+                <tr>
+                    <th name="h_position"></th>
+                    <th name="h_image"></th>
+                    <th name="h_player"></th>
+                    <th name="h_appearances" class="optional_table_columns">Presenças</th>
+                    <th name="h_percentage_of_appearances" class="optional_table_columns">% Presenças</th>
+                    <th name="h_wins" class="optional_table_columns">V</th>
+                    <th name="h_draws" class="optional_table_columns">E</th>
+                    <th name="h_losts" class="optional_table_columns">D</th>
+                    <th name="h_games_won" class="optional_table_columns">Jogos ganhos</th>
+                    <th name="h_games_lost" class="optional_table_columns">Jogos perdidos</th>
+                    <th name="h_points" >Pontos</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="player_classification_row" onclick="addGraph();">
+                    <td name="position">1</td>
+                    <td name="image">
+                        <div class="u-img-cropped u-img-cropped--classification" style="background-image: url(https://www.worldpadeltour.com/media-content/2021/04/juan-lebrn-chincoa-9af70cd440-220x260.JPG);"></div>
+                    </td>
+                    <td name="player">
+                        João
+                    </td>
+                    <td name="appearances" class="optional_table_columns">1</td>
+                    <td name="percentage_of_appearances" class="optional_table_columns">1</td>
+                    <td name="wins" class="optional_table_columns">1</td>
+                    <td name="draws" class="optional_table_columns">1</td>
+                    <td name="losts" class="optional_table_columns">1</td>
+                    <td name="games_won" class="optional_table_columns">1</td>
+                    <td name="games_lost" class="optional_table_columns">1</td>
+                    <td name="points">1</td>
+                </tr>
+                <tr class="player_classification_row" onclick="addGraph();">
+                    <td name="position">1</td>
+                    <td name="image">
+                        {% set image = url_for('static',filename='images/Diogo.png') %}
+                        <div class="u-img-cropped u-img-cropped--classification" style="background-image: url({{image}});"></div>
+                    </td>
+                    <td name="player">
+                        João
+                    </td>
+                    <td name="appearances" class="optional_table_columns">1</td>
+                    <td name="percentage_of_appearances" class="optional_table_columns">1</td>
+                    <td name="wins" class="optional_table_columns">1</td>
+                    <td name="draws" class="optional_table_columns">1</td>
+                    <td name="losts" class="optional_table_columns">1</td>
+                    <td name="games_won" class="optional_table_columns">1</td>
+                    <td name="games_lost" class="optional_table_columns">1</td>
+                    <td name="points">1</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
