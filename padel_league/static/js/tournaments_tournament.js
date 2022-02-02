@@ -88,8 +88,3 @@ function removeGraph(){
 function insertAfter(newNode, existingNode) {
     existingNode.parentNode.insertBefore(newNode, existingNode.nextSibling);
 }
-
-function chooseMatchweek(selectObject){
-    var matchweek = selectObject.value;
-    location.replace(matchweek_url.replace(/.$/,matchweek)) 
-}

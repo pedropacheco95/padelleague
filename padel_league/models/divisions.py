@@ -72,7 +72,7 @@ class Division(db.Model ,model.Model , model.Base):
 
                 points = wins * 3 + draws * 1
                 appearances = len(player.matches_played(self))
-                percentage_of_appearances = round((appearances / matchweek*3)*100,2)
+                percentage_of_appearances = round((appearances / (matchweek+1)*3)*100,2)
 
                 relation.points = points
                 relation.appearances = appearances

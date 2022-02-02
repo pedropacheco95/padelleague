@@ -29,7 +29,7 @@
     <body>
         <header class="c-global-header" id="global-header">
             <div class="l-container">
-                <div class="c-btn-container">
+                <div class="c-btn-container for_login_button_bigger">
                     {% if not session['user'] %}
                     <div class="c-btn-topright">
                         <a href="{{url_for('auth.login')}}">
@@ -67,7 +67,7 @@
             </div>
 
             <nav class="c-main-nav" id="main-nav"> 
-                <ul class="c-main-nav__block u-list-clean"> 
+                <ul class="c-main-nav__block u-list-clean">
                     <li class="c-main-nav__item ">
                         <a class="c-main-nav__link" href="{{url_for('tournaments.tournaments')}}" title="tournaments">Torneios</a>
                     </li>
@@ -76,6 +76,13 @@
                     </li>
                     <li class="c-main-nav__item ">
                         <a class="c-main-nav__link" href="{{url_for('main.calendar')}}" title="calendar">Calendário</a>
+                    </li>
+                    <li class="c-main-nav__item for_login_logout">
+                        {% if not session['user'] %}
+                        <a class="c-main-nav__link" href="{{url_for('auth.login')}}">Log in</a><a class="c-main-nav__link" href="{{url_for('auth.register')}}">Registar</a>
+                        {% else %}
+                        <a class="c-main-nav__link" href="#">{{ session['user'].username }}</a><a class="c-main-nav__link" href="{{url_for('auth.logout')}}">Log out</a>
+                        {% endif %}
                     </li>
                 </ul>
             </nav>

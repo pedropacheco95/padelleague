@@ -55,7 +55,7 @@
             <div class="c-player__img-container">
                 {% set filename = 'images/' + player.picture_path %}
                 {% set player_image = url_for('static',filename=filename)%}
-                <div class="u-img-cropped" style="background-image: url({{player_image}});"></div>
+                <div class="u-img-cropped" id="player_image_top" style="background-image: url({{player_image}});"></div>
             </div>
             <div class="l-container">
                 <ul class="c-player__data-list u-list-clean c-player__data-list--is-visible" id="personal_data_tab">

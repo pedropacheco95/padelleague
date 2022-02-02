@@ -12,9 +12,22 @@ def matches():
     return render_template('matches/matches.html',matches=matches)
 
 @bp.route('/matchweek/<matchweek>', methods=('GET', 'POST'))
-def by_matchweek(matchweek):
-    matches = Match.query.filter_by(matchweek=matchweek).all()
+@bp.route('/matchweek/<division>/<matchweek>', methods=('GET', 'POST'))
+def by_matchweek(matchweek,division=None):
+    division = Division.query.filter_by(name=division).first() if division else None
+    if not division:
+        matches = Match.query.filter_by(matchweek=matchweek).all()
+    else:
+        matches = [match for match in division.matches if match.matchweek == int(matchweek)]
     return render_template('matches/matches.html',matches=matches)
+
+@bp.route('/for_edit/<division_id>', methods=('GET', 'POST'))
+def for_edit(division_id):
+    division = Division.query.filter_by(id=division_id).first() if division_id else None
+    matchweek = division.get_ordered_matches_played()[-1].matchweek + 1
+    matches = [match for match in division.matches if match.matchweek == int(matchweek) and ( not match.played)]
+    return render_template('matches/matches.html',matches=matches)
+
 
 @bp.route('/<id>', methods=('GET', 'POST'))
 def match(id):

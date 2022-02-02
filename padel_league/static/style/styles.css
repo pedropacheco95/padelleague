@@ -250,6 +250,18 @@ html{
         width: 60%!important;
     }
 
+    .for_login_logout{
+        display: flex!important;
+    }
+
+    .for_login_button_bigger{
+        display: none!important;
+    }
+
+    .c-tournaments__content {
+        margin-left: 0!important;
+    }
+
 }
 
 @media (max-width: 75em){
@@ -1979,10 +1991,6 @@ blockquote, body, dd, dl, fieldset, figure, h1, h3, h4, h5, h6, hr, legend, ol, 
     margin-top: 0!important;
 }
 
-.l-grid--flex:not(.l-grid--tickets) .c-tournaments--fixed:nth-of-type(even) {
-    margin-left: auto;
-}
-
 .c-teams__img:hover {
     border-color: #f44a5a;
 }
@@ -2086,4 +2094,17 @@ blockquote, body, dd, dl, fieldset, figure, h1, h3, h4, h5, h6, hr, legend, ol, 
     padding: 5%;
     width: 30%;
     margin: 0 auto;
+}
+
+.for_login_logout{
+    align-content: stretch;
+    justify-content: space-evenly;
+    align-items: flex-end;
+    color: #fff!important;
+    background-color: #22356d!important;
+    display:none;
+}
+
+.for_login_button_bigger{
+    display: flex;
 }

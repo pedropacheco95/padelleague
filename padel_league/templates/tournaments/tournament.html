@@ -23,7 +23,6 @@
             points_by_matchweeks = data;
         }
     });
-    var matchweek_url = "{{url_for('matches.by_matchweek',matchweek=1)}}";
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.5.1/moment.min.js"></script>
@@ -53,6 +52,11 @@
             <li class="c-tor-header__item" role="presentation">
                 <a id="calendar_button">Calendário</a>
             </li>
+            {% if admin %}
+            <li class="c-tor-header__item">
+                <a href="{{url_for('matches.for_edit',division_id=tournament.id)}}">Editar Jogos</a>
+            </li>
+            {% endif %}
         </ul>
     </div>
 </div>
@@ -65,13 +69,10 @@
                     <th name="h_image"></th>
                     <th name="h_player"></th>
                     <th name="h_appearances" class="optional_table_columns">Presenças</th>
-                    <th name="h_percentage_of_appearances" class="optional_table_columns">% Presenças</th>
                     <th name="h_wins" class="optional_table_columns">V</th>
                     <th name="h_draws" class="optional_table_columns">E</th>
                     <th name="h_losts" class="optional_table_columns">D</th>
-                    <th name="h_games_won" class="optional_table_columns">Jogos ganhos</th>
-                    <th name="h_games_lost" class="optional_table_columns">Jogos perdidos</th>
-                    <th name="h_points" >Pontos</th>
+                    <th name="h_points">Pontos</th>
                 </tr>
             </thead>
             <tbody>
@@ -90,13 +91,10 @@
                         {{player.name}}
                     </td>
                     <td name="appearances" class="optional_table_columns">{{rel.appearances}}</td>
-                    <td name="percentage_of_appearances" class="optional_table_columns">{{rel.percentage_of_appearances}}</td>
                     <td name="wins" class="optional_table_columns">{{rel.wins}}</td>
                     <td name="draws" class="optional_table_columns">{{rel.draws}}</td>
                     <td name="losts" class="optional_table_columns">{{rel.losts}}</td>
-                    <td name="games_won" class="optional_table_columns">{{rel.games_won}}</td>
-                    <td name="games_lost" class="optional_table_columns">{{rel.games_lost}}</td>
-                    <td name="points">{{rel.points}}</td>
+                    <td name="points">{{rel.points|round|int}}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -104,23 +102,7 @@
     </div>
     <div class="c-flex-table c-flex-table--ranking" id="matches_information_tab">
         <div class="l-grid l-grid--tor" >
-            <div class="select_container">
-                <select class="form-select matchweek_select" onchange="chooseMatchweek(this);">
-                    <option selected>Jornada</option>
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                    <option value="6">6</option>
-                    <option value="7">7</option>
-                </select>
-            </div>
-            <br>
-            {% for match in tournament.get_ordered_matches_played() %}
-            {{ match_macros.match_card(match) }}
-            <br>
-            {% endfor %}
+            {{ match_macros.matches_cards(tournament.get_ordered_matches_played(),tournament )}}
         </div>
     </div>
     <div class="c-flex-table c-flex-table--ranking" id="calendar_tab">

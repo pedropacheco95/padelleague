@@ -166,6 +166,36 @@
 </section>
 {% endmacro %}
 
+{% macro matches_cards(matches,division=None) %}
+{% if division %}
+<script>
+    var matchweek_url = "{{url_for('matches.by_matchweek',division = division.name, matchweek=1)}}";
+</script>
+{% else %}
+<script>
+    var matchweek_url = "{{url_for('matches.by_matchweek', matchweek=1)}}";
+</script>
+{% endif %}
+<script src="{{ url_for('static', filename='js/matches_macros.js')}}" defer></script>
+<div class="select_container">
+    <select class="form-select matchweek_select" onchange="chooseMatchweek(this);">
+        <option selected>Jornada</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+        <option value="7">7</option>
+    </select>
+</div>
+<br>
+{% for match in matches %}
+{{ match_card(match) }}
+<br>
+{% endfor %}
+{% endmacro %}
+
 {% macro edit_match_card(match) %}
 {% set home_players = match.home_players() %}
 {% set away_players = match.away_players() %}
@@ -242,13 +272,9 @@
                 </span>
             </div>
             <div class="c-teams__iandt_edit">
-                <span contenteditable="true" class="game_results" value="hometeam_games"> 
-                    {{ match.games_home_team if match.games_home_team else 0}}
-                </span>
+                <span contenteditable="true" class="game_results" value="hometeam_games" pattern="\d*" inputmode="decimal">{{match.games_home_team if match.games_home_team else 0}}</span>
                 <span>-</span>
-                <span contenteditable="true" class="game_results" value="awayteam_games">
-                    {{match.games_away_team  if match.games_away_team else 0}} 
-                </span>
+                <span contenteditable="true" class="game_results" value="awayteam_games" pattern="\d*" inputmode="decimal">{{match.games_away_team if match.games_away_team else 0}} </span>
                 <input name="hometeam_games_input" type="number" id="hometeam_games_input" class="game_inputs" style="display: none;">
                 <input name="awayteam_games_input" type="number" id="awayteam_games_input" class="game_inputs" style="display: none;">
             </div>
