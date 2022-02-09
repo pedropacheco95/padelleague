@@ -12,9 +12,12 @@ def tournaments():
     return render_template('tournaments/tournaments.html',divisions_to_play=divisions_to_play, divisions_ended=divisions_ended)
 
 @bp.route('/<id>', methods=('GET', 'POST'))
-def tournament(id):
+@bp.route('/<id>/<recalculate>', methods=('GET', 'POST'))
+def tournament(id,recalculate=False):
+    if recalculate=='recalculate':
+        recalculate = True
     division = Division.query.filter_by(id=id).first()
-    division.update_table()
+    division.update_table(recalculate)
     return render_template('tournaments/tournament.html',tournament=division)
 
 @bp.route('/edit/<id>', methods=('GET', 'POST'))

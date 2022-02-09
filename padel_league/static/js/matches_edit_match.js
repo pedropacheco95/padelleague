@@ -11,6 +11,10 @@ for (let element of players_buttons){
     element.addEventListener('click',highlight);
 }
 
+for (let element of match_results){
+    element.addEventListener('click',deleteContent);
+}
+
 let clicked = '';
 
 function highlight(button_element){
@@ -66,4 +70,8 @@ function copyToInput(){
 
         input.value = parseInt(element.innerHTML.replace('&nbsp;','').trim())
     }
+}
+
+function deleteContent(element){
+    element.currentTarget.innerHTML = '';
 }

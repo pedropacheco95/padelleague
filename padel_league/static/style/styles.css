@@ -305,6 +305,10 @@ html{
     .c-global-header{
         padding-top: 1rem;
     }
+
+    .l-grid--flex:not(.l-grid--tickets) .c-tournaments--fixed:nth-of-type(even) {
+        margin-left: 0!important;
+    }
 }
 
 @media (min-width: 34em){
@@ -2107,4 +2111,8 @@ blockquote, body, dd, dl, fieldset, figure, h1, h3, h4, h5, h6, hr, legend, ol, 
 
 .for_login_button_bigger{
     display: flex;
+}
+
+.l-grid--flex:not(.l-grid--tickets) .c-tournaments--fixed:nth-of-type(even) {
+    margin-left: auto;
 }

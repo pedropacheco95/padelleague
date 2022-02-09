@@ -58,10 +58,10 @@ class Division(db.Model ,model.Model , model.Base):
     def last_updated_matchweek(self):
         return self.players_relations[0].matchweek
 
-    def update_table(self):
+    def update_table(self,force_update=False):
         last_upadted_matchweek = self.last_updated_matchweek()
         matchweek = self.get_ordered_matches_played()[-1].matchweek
-        if last_upadted_matchweek != matchweek:
+        if last_upadted_matchweek != matchweek or force_update:
             for relation in self.players_relations:
                 player = relation.player
                 wins = len(player.matches_won(self))

@@ -90,7 +90,7 @@
                     <td name="player">
                         {{player.name}}
                     </td>
-                    <td name="appearances" class="optional_table_columns">{{rel.appearances}}</td>
+                    <td name="appearances" class="optional_table_columns">{{ (rel.appearances/3)|int}}</td>
                     <td name="wins" class="optional_table_columns">{{rel.wins}}</td>
                     <td name="draws" class="optional_table_columns">{{rel.draws}}</td>
                     <td name="losts" class="optional_table_columns">{{rel.losts}}</td>

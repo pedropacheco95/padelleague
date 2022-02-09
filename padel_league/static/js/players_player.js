@@ -1,8 +1,13 @@
-window.addEventListener('load',(event)=>{
-    $('html, body').animate({
-        scrollTop: $('#site-container').offset().top - $("#player_image_top").outerHeight(true)
-    }, 'slow');
-});
+var isMobile = ('ontouchstart' in document.documentElement);
+
+if (isMobile){
+    window.addEventListener('load',(event)=>{
+        $('html, body').animate({
+            scrollTop: $('#site-container').offset().top - $("#player_image_top").outerHeight(true)
+        }, 'slow');
+    });
+}
+
 
 document.getElementById('personal_data_button').addEventListener('click',activateDataTabs);
 document.getElementById('sports_data_button').addEventListener('click',activateDataTabs);
