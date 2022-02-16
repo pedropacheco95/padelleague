@@ -43,7 +43,7 @@
                     </div>
                     {% else %}
                     <div class="c-btn-topright">
-                        <a href="#">
+                        <a href="{{url_for('auth.logout')}}">
                             {{ session['user'].username }}
                         </a>
                     </div>
@@ -52,7 +52,14 @@
                             Log out
                         </a>
                     </div>
-                    {% endif%}
+                    {% if admin%}
+                        <div class="c-btn-topright">
+                            <a href="{{url_for('matches.for_edit')}}">
+                                Editar jogos
+                            </a>
+                        </div>
+                    {% endif %}
+                    {% endif %}
                 </div>
             </div>
             
@@ -81,7 +88,11 @@
                         {% if not session['user'] %}
                         <a class="c-main-nav__link" href="{{url_for('auth.login')}}">Log in</a><a class="c-main-nav__link" href="{{url_for('auth.register')}}">Registar</a>
                         {% else %}
+                        {% if admin%}
+                        <a class="c-main-nav__link" href="{{url_for('matches.for_edit')}}">Editar jogos</a><a class="c-main-nav__link" href="{{url_for('auth.logout')}}">Log out</a>
+                        {% else %}
                         <a class="c-main-nav__link" href="#">{{ session['user'].username }}</a><a class="c-main-nav__link" href="{{url_for('auth.logout')}}">Log out</a>
+                        {% endif %}
                         {% endif %}
                     </li>
                 </ul>

@@ -1,0 +1,8 @@
+{% extends 'layout.html' %}
+{% import 'macros/match_macros.html' as match_macros %}
+
+{% block main %}
+<div class="l-grid l-grid--tor">
+    {{ match_macros.matches_for_edit_cards(matches,divisions,division)}}
+</div>
+{% endblock %}

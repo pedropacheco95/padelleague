@@ -196,6 +196,32 @@
 {% endfor %}
 {% endmacro %}
 
+{% macro matches_for_edit_cards(matches,divisions,division=None) %}
+{% if division %}
+<script>
+    var division_url = "{{url_for('matches.for_edit',division_id = division.id)}}";
+</script>
+{% else %}
+<script>
+    var division_url = "{{url_for('matches.for_edit',division_id = 1)}}";
+</script>
+{% endif %}
+<script src="{{ url_for('static', filename='js/matches_macros.js')}}" defer></script>
+<div class="select_container">
+    <select class="form-select matchweek_select" onchange="chooseDivision(this);">
+        <option selected>Divisão</option>
+        {% for division in divisions %}
+        <option value="{{division.id}}">{{division.name}}</option>
+        {% endfor %}
+    </select>
+</div>
+<br>
+{% for match in matches %}
+{{ match_card(match) }}
+<br>
+{% endfor %}
+{% endmacro %}
+
 {% macro edit_match_card(match) %}
 {% set home_players = match.home_players() %}
 {% set away_players = match.away_players() %}

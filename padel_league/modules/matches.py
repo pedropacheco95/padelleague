@@ -21,12 +21,19 @@ def by_matchweek(matchweek,division=None):
         matches = [match for match in division.matches if match.matchweek == int(matchweek)]
     return render_template('matches/matches.html',matches=matches)
 
+@bp.route('/for_edit', methods=('GET', 'POST'))
 @bp.route('/for_edit/<division_id>', methods=('GET', 'POST'))
-def for_edit(division_id):
-    division = Division.query.filter_by(id=division_id).first() if division_id else None
-    matchweek = division.get_ordered_matches_played()[-1].matchweek + 1
-    matches = [match for match in division.matches if match.matchweek == int(matchweek) and ( not match.played)]
-    return render_template('matches/matches.html',matches=matches)
+def for_edit(division_id=None):
+    division = None
+    if division_id:
+        division = Division.query.filter_by(id=division_id).first()
+        matches = division.matches
+    else:
+        matches = Match.query.all()
+    divisions = Division.query.all()
+    tomorrow = datetime.datetime.combine(datetime.date.today() + datetime.timedelta(days=1), datetime.datetime.min.time())
+    matches = [match for match in matches if match.date_hour <= tomorrow and (not match.played)]
+    return render_template('matches/matches_for_edit.html',matches=matches ,divisions=divisions ,division=division)
 
 
 @bp.route('/<id>', methods=('GET', 'POST'))

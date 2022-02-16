@@ -6,3 +6,4 @@ from . import auth
 from . import api
 from . import startup
 from . import uploads
+from . import users

@@ -5,305 +5,63 @@
 <div class="l-grid">
     <div class="c-player">
         <div class="c-player__content">
-            <img class="c-player__img" src="https://www.worldpadeltour.com/media-content/2021/04/destacada-alejandro-galn-romo-c0fd4e09e1-1200x500.JPG">
-            <div class="c-player__prev">
-                <a href="https://www.worldpadeltour.com/jugadores/alejandro-galan-romo/">
-                    <img src="https://www.worldpadeltour.com/media/images/chevron-left.svg">
-                    <div class="u-img-cropped u-img-cropped--team" style="background-image: url(https://www.worldpadeltour.com/media-content/2021/04/alejandro-galn-romo-2dc0e77368-220x260.JPG);"></div>
-                </a>
-            </div>
+            {% set filename = 'images/' + player.large_picture_path %}
+            {% set player_large_image = url_for('static',filename=filename)%}
+            <img class="c-player__img" src="{{player_large_image}}">
             <div class="l-container_player">
                 <div class="c-ranking-header c-ranking-header--no-image">
-                    <h1 contentEditable="true" class="c-ranking-header__title">Alejandro Galán Romo</h1>
+                    <h1 class="c-ranking-header__title">{{ player.full_name }}</h1>
                     <div class="l-container_player l-container--data">
                         <div class="c-ranking-header__data-box">
                             <p class="c-ranking-header__data-title">Ranking</p>
-                            <p class="c-ranking-header__data">1</p> 
+                            <p class="c-ranking-header__data">{{ player.ranking_position }}</p> 
                         </div>
                         <div class="c-ranking-header__data-box">
-                            <p class="c-ranking-header__data-title">Puntos</p>
-                            <p class="c-ranking-header__data">13055</p>
+                            <p class="c-ranking-header__data-title">Pontos</p>
+                            <p class="c-ranking-header__data">{{ player.ranking_points }}</p>
                         </div>
                     </div>
-                    <img src="https://www.worldpadeltour.com/media/images/flags/es.png">
+                    <img src="{{country_flag}}">
                 </div>
             </div>
             <ul class="c-player__nav u-list-clean" role="tablist">
                 <li class="c-player__item c-player__item--active" role="presentation">
-                    <a href="#player_data" aria-controls="player_data" role="tab" data-toggle="tab">Datos deportivos</a>
+                    <a id="personal_data_button">Dados pessoais</a>
                 </li>
                 <li class="c-player__item" role="presentation">
-                    <a href="#personal_data" aria-controls="personal_data" role="tab" data-toggle="tab">Datos personales</a>
+                    <a id="sports_data_button">Dados desportivos</a>
                 </li>
             </ul>
-            <div class="c-player__next">
-                <a href="https://www.worldpadeltour.com/jugadores/juan-lebron/">
-                    <img src="https://www.worldpadeltour.com/media/images/chevron-right.svg">
-                    <div class="u-img-cropped u-img-cropped--team" style="background-image: url(https://www.worldpadeltour.com/media-content/2021/04/juan-lebrn-chincoa-9af70cd440-220x260.JPG);">
-                    </div>
-                </a>
-            </div>
             <div class="u-gradient u-gradient--horizontal"></div>
         </div>
         <div class="c-player__footer">
             <div class="c-player__img-container">
-                <div class="u-img-cropped" style="background-image: url(https://www.worldpadeltour.com/media-content/2021/04/juan-lebrn-chincoa-9af70cd440-220x260.JPG);"></div>
+                {% set filename = 'images/' + player.picture_path %}
+                {% set player_image = url_for('static',filename=filename)%}
+                <div class="u-img-cropped" id="player_image_top" style="background-image: url({{player_image}});"></div>
             </div>
             <div class="l-container">
-                <ul class="c-player__data-list u-list-clean c-player__data-list--is-visible">
+                <ul class="c-player__data-list u-list-clean c-player__data-list--is-visible" id="personal_data_tab">
                     <li class="c-player__data-item">
-                        <h3>Posición de juego</h3>
-                        <p contentEditable="true">Revés</p>
-                    </li>
-                </ul>
-                <ul class="c-player__data-list u-list-clean">
-                    <li class="c-player__data-item">
-                        <h3>Lugar de nacimiento</h3>
-                        <p contentEditable="true">Puerto de Sta. María</p>
-                    </li>
-                    <li class="c-player__data-item">
-                        <h3>Fecha de nacimiento</h3>
-                        <p contentEditable="true">30/01/1995</p>
+                        <h3>Data de nascimento</h3>
+                        <p>{% if player.birthday %}{{player.birthday.strftime('%d/%m/%Y')}}{% else %}Não definido{% endif %}</p>
                     </li>
                     <li class="c-player__data-item">
                         <h3>Altura</h3>
-                        <p contentEditable="true">1,84</p>
+                        <p>{{player.height}}</p>
                     </li>
                     <li class="c-player__data-item">
-                        <h3>Residencia</h3>
-                        <p contentEditable="true">Madrid</p>
+                        <h3>Mão preferida</h3>
+                        <p>{% if player.prefered_hand %}{{player.prefered_hand}}{% endif %}</p>
+                    </li>
+                </ul>
+                <ul class="c-player__data-list u-list-clean" id="sports_data_tab">
+                    <li class="c-player__data-item">
+                        <h3>Posiçao de jogo</h3>
+                        <p></p>
                     </li>
                 </ul>
             </div>
-        </div>
-    </div>
-</div>
-<div class="l-grid">
-    <div class="c-ranking-header c-ranking-header--no-image c-ranking-header--table">
-        <div class="l-container_player l-container--data">
-            <div class="c-ranking-header__data-box">
-                <p class="c-ranking-header__data-title">Partidos jugados</p>
-                <p class="c-ranking-header__data">376</p>
-            </div>
-            <div class="c-ranking-header__data-box">
-                <p class="c-ranking-header__data-title">Partidos ganados</p>
-                <p class="c-ranking-header__data">251</p>
-            </div>
-            <div class="c-ranking-header__data-box">
-                <p class="c-ranking-header__data-title">Partidos perdidos</p>
-                <p class="c-ranking-header__data">125</p>
-            </div> <div class="c-ranking-header__data-box">
-                <p class="c-ranking-header__data-title">Efectividad</p>
-                <p class="c-ranking-header__data">66,76</p>
-            </div> <div class="c-ranking-header__data-box">
-                <p class="c-ranking-header__data-title">Victorias consecutivas</p>
-                <p class="c-ranking-header__data">18</p>
-            </div>
-        </div>
-    </div>
-    <div class="c-ranking-header c-ranking-header--no-image c-ranking-header--table">
-        <div class="l-container_player l-container--data">
-            <div class="c-ranking-header__data-box">
-                <p class="c-ranking-header__data-title">Partidos jugados</p>
-                <p class="c-ranking-header__data">376</p>
-            </div>
-            <div class="c-ranking-header__data-box">
-                <p class="c-ranking-header__data-title">Partidos ganados</p>
-                <p class="c-ranking-header__data">251</p>
-            </div>
-            <div class="c-ranking-header__data-box">
-                <p class="c-ranking-header__data-title">Partidos perdidos</p>
-                <p class="c-ranking-header__data">125</p>
-            </div> <div class="c-ranking-header__data-box">
-                <p class="c-ranking-header__data-title">Efectividad</p>
-                <p class="c-ranking-header__data">66,76</p>
-            </div> <div class="c-ranking-header__data-box">
-                <p class="c-ranking-header__data-title">Victorias consecutivas</p>
-                <p class="c-ranking-header__data">18</p>
-            </div>
-        </div>
-    </div>
-</div>
-<div class="l-grid" id="l-grid_as_title">
-    <h2 class="c-ranking__heading">Estadísticas anuales</h2>
-    <div class="c-form c-form--top c-form--ranking">
-        <div class="c-form__header">
-            <div class="c-form__container">
-                <div class="c-form__column">
-                    <div class="c-form__select">
-                        <select class="c-form__control select-is-hidden" id="ranking-year" name="ranking-year">
-                            <option>Año</option>
-                            <option value="2021">2021</option>
-                            <option value="2020">2020</option>
-                        </select>
-                        <div class="c-form__select-block" data-id="2020">
-                            2020
-                        </div>
-                        <ul class="c-form__select-options" style="display: none;">
-                            <li rel="Año">Año</li>
-                            <li rel="2021">2021</li>
-                            <li rel="2020">2020</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-<div class="l-grid">
-    <div class="c-flex-table c-flex-table--ranking is-visible">
-        <div class="c-flex-table__column">
-            <div class="c-flex-table__heading">
-                <h3>Estadísticas <span>2021</span></h3>
-            </div>
-            <ul class="c-flex-table__list u-list-clean">
-                <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">Partidos jugados</span><span class="c-flex-table__item-data">64</span>
-                </li>
-                <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">Partidos ganados</span> <span class="c-flex-table__item-data">52</span>
-                </li>
-                <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">Efectividad</span>
-                    <span class="c-flex-table__item-data">81,25</span>
-                </li>
-            </ul>
-        </div>
-        <div class="c-flex-table__column">
-            <div class="c-flex-table__heading">
-                <h3>Estadísticas <span>2021</span></h3>
-            </div>
-            <ul class="c-flex-table__list u-list-clean">
-                <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">Partidos jugados</span><span class="c-flex-table__item-data">64</span>
-                </li>
-                <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">Partidos ganados</span> <span class="c-flex-table__item-data">52</span>
-                </li>
-                <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">Efectividad</span>
-                    <span class="c-flex-table__item-data">81,25</span>
-                </li>
-            </ul>
-        </div>
-    </div>
-    <div class="c-flex-table c-flex-table--ranking">
-        <div class="c-flex-table__column">
-            <div class="c-flex-table__heading">
-                <h3>Estadísticas <span>2021</span></h3>
-            </div>
-            <ul class="c-flex-table__list u-list-clean">
-                <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">Partidos jugados</span><span class="c-flex-table__item-data">64</span>
-                </li>
-                <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">Partidos ganados</span> <span class="c-flex-table__item-data">52</span>
-                </li>
-                <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">Efectividad</span>
-                    <span class="c-flex-table__item-data">81,25</span>
-                </li>
-            </ul>
-        </div>
-        <div class="c-flex-table__column">
-            <div class="c-flex-table__heading">
-                <h3>Estadísticas <span>2021</span></h3>
-            </div>
-            <ul class="c-flex-table__list u-list-clean">
-                <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">Partidos jugados</span><span class="c-flex-table__item-data">64</span>
-                </li>
-                <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">Partidos ganados</span> <span class="c-flex-table__item-data">52</span>
-                </li>
-                <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">Efectividad</span>
-                    <span class="c-flex-table__item-data">81,25</span>
-                </li>
-            </ul>
-        </div>
-    </div>
-</div>
-<div class="l-grid">
-    <h2 class="c-ranking__heading" id="close_title">Desglose de puntos del ránking</h2>
-    <div class="c-flex-table c-flex-table--ranking c-flex-table--blue is-visible">
-        <div class="c-flex-table__column">
-            <div class="c-flex-table__heading">
-                <h3>Torneo</h3>
-            </div>
-            <ul class="c-flex-table__list u-list-clean">
-                <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">Estrella Damm Master Final 2021</span>
-                </li>
-                <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">Estrella Damm Master Final 2021</span>
-                </li>
-            </ul>
-        </div>
-        <div class="c-flex-table__column">
-            <div class="c-flex-table__heading">
-                <h3>Tipo de torneo</h3>
-            </div>
-            <ul class="c-flex-table__list u-list-clean">
-                <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">MASTERF</span>
-                </li>
-                <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">MASTERF</span>
-                </li>
-            </ul>
-        </div>
-        <div class="c-flex-table__column">
-            <div class="c-flex-table__heading">
-                <h3>Fecha</h3>
-            </div>
-            <ul class="c-flex-table__list u-list-clean">
-                <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">19/12/2021</span>
-                </li>
-                <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">19/12/2021</span>
-                </li>
-            </ul>
-        </div>
-        <div class="c-flex-table__column">
-            <div class="c-flex-table__heading">
-                <h3>Puntos</h3>
-            </div>
-            <ul class="c-flex-table__list u-list-clean">
-                <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">1300</span>
-                </li>
-                <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">1300</span>
-                </li>
-            </ul>
-        </div>
-        <div class="c-flex-table__column">
-            <div class="c-flex-table__heading">
-                <h3>Fase</h3>
-            </div>
-            <ul class="c-flex-table__list u-list-clean">
-                <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">Cuadro</span>
-                </li>
-                <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">Cuadro</span>
-                </li>
-            </ul>
-        </div>
-        <div class="c-flex-table__column">
-            <div class="c-flex-table__heading">
-                <h3>Ronda</h3>
-            </div>
-            <ul class="c-flex-table__list u-list-clean">
-                <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">Campeón</span>
-                </li>
-                <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">Campeón</span>
-                </li>
-            </ul>
         </div>
     </div>
 </div>
