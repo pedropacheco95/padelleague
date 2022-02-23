@@ -37,9 +37,12 @@ def for_edit(division_id=None):
 
 
 @bp.route('/<id>', methods=('GET', 'POST'))
-def match(id):
+@bp.route('/<id>/<edited_match>', methods=('GET', 'POST'))
+def match(id,edited_match=False):
+    if edited_match == 'edited_match':
+        edited_match = True
     match = Match.query.filter_by(id=id).first()
-    return render_template('matches/match.html',match=match)
+    return render_template('matches/match.html',match=match,edited_match=edited_match)
 
 @bp.route('player/<player_id>', methods=('GET', 'POST'))
 @bp.route('player/<player_id>/<type>', methods=('GET', 'POST'))
@@ -90,11 +93,10 @@ def edit(id):
         match.field = match_field
         if not match.played:
             match.division.add_match_to_table(match)
+            match.division.edition.league.ranking_add_match(match)
             match.played = True
         match.save()
 
-        match.division.add_match_to_table(match)
-        match.division.edition.league.ranking_add_match(match)
 
-        return redirect(url_for('matches.match',id=match.id))
+        return redirect(url_for('matches.match',id=match.id,edited_match='edited_match'))
     return render_template('matches/edit_match.html',match=match)

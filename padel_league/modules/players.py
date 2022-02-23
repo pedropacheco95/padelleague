@@ -5,10 +5,14 @@ from padel_league.models import League , Player
 
 bp = Blueprint('players', __name__,url_prefix='/players')
 
-@bp.route('/', methods=('GET', 'POST'))
-def players():
+@bp.route('/ranking', methods=('GET', 'POST'))
+@bp.route('/ranking/<recalculate>', methods=('GET', 'POST'))
+def players(recalculate=None):
+    league = League.query.first()
+    if recalculate=='recalculate':
+        league.update_rankings()
     #This should be changed if more leagues are added
-    players = League.query.first().players_rankings_position()
+    players = league.players_rankings_position()
     return render_template('players/players.html',players=players)
 
 @bp.route('/<id>', methods=('GET', 'POST'))
@@ -18,4 +22,5 @@ def player(id):
 
 @bp.route('/edit/<id>', methods=('GET', 'POST'))
 def edit(id):
-    return render_template('players/edit_player.html')
+    player = Player.query.filter_by(id=id).first()
+    return render_template('players/edit_player.html',player=player)

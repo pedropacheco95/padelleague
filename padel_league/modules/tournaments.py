@@ -1,7 +1,6 @@
-from flask import Blueprint, flash, g, redirect, render_template, request, session, url_for
-from werkzeug.security import check_password_hash, generate_password_hash
+from flask import Blueprint, render_template
 
-from padel_league.models import User , Division , Association_PlayerMatch
+from padel_league.models import Division
 
 bp = Blueprint('tournaments', __name__,url_prefix='/tournaments')
 

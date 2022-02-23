@@ -11,7 +11,7 @@ from . import model
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
 
-    database_path = 'sqlite:///' + app.root_path + '/database.db'
+    database_path = 'sqlite:///%s/database.db' % app.root_path
 
     app.config['SECRET_KEY'] = 'hjshjhdjah kjshkjdhjs'
     app.config['SQLALCHEMY_DATABASE_URI'] = database_path

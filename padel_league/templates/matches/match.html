@@ -6,5 +6,10 @@
     <br>
     {{ match_macros.match_card(match) }}
     <br>
+    {% if edited_match %}
+        <a href="{{url_for('matches.for_edit',division_id=match.division.id)}}">
+            <button type="submit" class="btn btn-light" id="match_edit_submit_button">VOLTAR</button>
+        </a>
+    {% endif %}
 </div>
 {% endblock %}

@@ -262,6 +262,16 @@ html{
         margin-left: 0!important;
     }
 
+    .col-md-6 {
+        float: left;
+        width: 50%;
+    }
+
+    .col-md-3 {
+        float: left;
+        width: 25%;
+    }
+
 }
 
 @media (max-width: 75em){
@@ -2115,4 +2125,27 @@ blockquote, body, dd, dl, fieldset, figure, h1, h3, h4, h5, h6, hr, legend, ol, 
 
 .l-grid--flex:not(.l-grid--tickets) .c-tournaments--fixed:nth-of-type(even) {
     margin-left: auto;
+}
+
+.page-customer-account #main .page-content, #main .page-header {
+    margin-bottom: 0.563rem;
+}
+
+.page-customer-account #content {
+    box-shadow: none;
+    background: none;
+    padding-left: 0;
+    padding-top: 0;
+}
+
+.page-customer-account .form-group {
+    margin-bottom: 0rem;
+}
+
+.containerinputs {
+    max-width: 700px;
+}
+
+.edit_player_form{
+    width: 50%;
 }
