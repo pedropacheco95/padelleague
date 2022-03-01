@@ -25,6 +25,11 @@ class Model():
         db.session.commit()
         return True
 
+    def add_to_session(self):
+        db.session.add(self)
+        db.session.commit()
+        return True
+    
     def refresh(self):
         db.session.refresh(self)
         return True
@@ -35,3 +40,9 @@ class Model():
     def table_object(self,table_name):
         tables_dict = {table.__tablename__: table for table in db.Model.__subclasses__()}
         return tables_dict.get(table_name)
+
+    def all_tables_object(self):
+        return {table.__tablename__: table for table in db.Model.__subclasses__()}
+
+    def get_all_tables(self):
+        return {table.__tablename__: db.session.query(table) for table in db.Model.__subclasses__()}

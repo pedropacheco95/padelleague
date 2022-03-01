@@ -1,8 +1,9 @@
 import functools
 import os
 import datetime
+import csv
 
-from flask import Blueprint, flash, g, redirect, render_template, request, session, url_for
+from flask import Blueprint, redirect, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 
@@ -15,43 +16,46 @@ bp = Blueprint('uploads', __name__, url_prefix='/uploads')
 def upload_csv_to_db():
 
     leagues = dict()
-    f = open(os.path.join('padel_league/static/data', 'leagues.csv'))
+    f = open(os.path.join('padel_league/static/data/csv', 'leagues.csv'))
     for line in f:
         line = line.strip('\n')
         columns = line.split(",")
         if columns[0] != 'id':
+            id = columns[0]
             name = columns[1]
             liga = League(name=name)
             liga.create()
-            leagues[name] = liga
+            leagues[id] = liga
     f.close()
 
     editions = dict()
-    f = open(os.path.join('padel_league/static/data', 'editions.csv'))
+    f = open(os.path.join('padel_league/static/data/csv', 'editions.csv'))
     for line in f:
         line = line.strip('\n')
         columns = line.split(",")
         if columns[0] != 'id':
+            id = columns[0]
             name = columns[1]
             league = leagues[columns[2]]
             edicao = Edition(name=columns[1],league_id=league.id)
             edicao.create()
-            editions[name] = edicao
+            editions[id] = edicao
     f.close()
 
     divisions = dict()
-    f = open(os.path.join('padel_league/static/data', 'divisions.csv'))
+    f = open(os.path.join('padel_league/static/data/csv', 'divisions.csv'))
     for line in f:
         line = line.strip('\n')
         columns = line.split(",")
         if columns[0] != 'id':
+            id = columns[0]
             name = columns[1]
-            beginning_datetime = datetime.datetime.strptime(columns[2], '%d/%m/%Y %H:%M') if columns[2] else None
-            end_date = datetime.datetime.strptime(columns[3], '%d/%m/%Y') if columns[3] else None
-            logo_image_path = columns[4]
-            large_picture_path = columns[5]
-            has_ended = True if columns[6] == 'True' else False
-            rating = int(columns[7])
+            beginning_datetime = datetime.datetime.strptime(columns[2], '%Y-%m-%d %H:%M:%S') if columns[2] else None
+            rating = int(columns[3])
+            end_date = datetime.datetime.strptime(columns[4], '%Y-%m-%d') if columns[3] else None
+            logo_image_path = columns[5]
+            large_picture_path = columns[6]
+            has_ended = True if columns[7] == 'True' else False
             edition = editions[columns[8]]
             
             division = Division(name=name,
@@ -64,19 +68,25 @@ def upload_csv_to_db():
             edition_id = edition.id)
 
             division.create()
-            divisions[name] = division
+            divisions[id] = division
     f.close()
 
     players = dict()
-    f = open(os.path.join('padel_league/static/data', 'players.csv'))
+    f = open(os.path.join('padel_league/static/data/csv', 'players.csv'))
     for line in f:
         line = line.strip('\n')
         columns = line.split(",")
         if columns[0] != 'id':
+            id = columns[0]
             name=columns[1]
             full_name=columns[2]
-            birthday = datetime.datetime.strptime(columns[3], '%d/%m/%Y') if columns[3] else None
+            birthday = datetime.datetime.strptime(columns[3], '%Y-%m-%d') if columns[3] else None
             picture_path = columns[4]
+            large_picture_path = columns[5]
+            ranking_points = int(columns[6]) if columns[6] else None
+            ranking_position = int(columns[7]) if columns[7] else None
+            height = float(columns[8]) if columns[8] else None
+            prefered_hand = columns[9]
             player = Player(name=columns[1])
             
             if full_name:
@@ -85,19 +95,28 @@ def upload_csv_to_db():
                 player.birthday = birthday
             if picture_path:
                 player.picture_path = picture_path
+            if ranking_points:
+                player.ranking_points = ranking_points
+            if ranking_position:
+                player.ranking_position = ranking_position
+            if height:
+                player.height = height
+            if prefered_hand:
+                player.prefered_hand = prefered_hand
             player.create()
-            players[full_name] = player
+            players[id] = player
     f.close()
 
     matches = dict()
-    f = open(os.path.join('padel_league/static/data', 'matches.csv'))
+    f = open(os.path.join('padel_league/static/data/csv', 'matches.csv'))
     for line in f:
         line = line.strip('\n')
         columns = line.split(",")
         if columns[0] != 'id':
+            id = columns[0]
             games_home_team = int(columns[1]) if columns[1] else None
             games_away_team = int(columns[2]) if columns[2] else None
-            date_hour = datetime.datetime.strptime(columns[3], '%d/%m/%Y %H:%M') if columns[3] else None
+            date_hour = datetime.datetime.strptime(columns[3], '%Y-%m-%d %H:%M:%S') if columns[3] else None
             winner = int(columns[4]) if columns[4] else None
             matchweek = int(columns[5])
             field = columns[6]
@@ -120,34 +139,82 @@ def upload_csv_to_db():
             
             match.played = played
             match.create()
-            matches[columns[0]] = match
+            matches[id] = match
     f.close()
 
-    f = open(os.path.join('padel_league/static/data', 'players_divisions.csv'))
+    users = dict()
+    f = open(os.path.join('padel_league/static/data/csv', 'users.csv'))
     for line in f:
         line = line.strip('\n')
         columns = line.split(",")
         if columns[0] != 'id':
-            player = players[columns[1]]
-            division = divisions[columns[2]]
+            id = columns[0]
+            username = columns[1]
+            email = columns[2]
+            password = columns[3]
+            player = players[columns[4]]
+            user = User(username=username,email=email,password=password,player_id=player.id)
+            
+            user.create()
+            users[id] = user
+    f.close()
+
+    f = open(os.path.join('padel_league/static/data/csv', 'players_in_division.csv'))
+    for line in f:
+        line = line.strip('\n')
+        columns = line.split(",")
+        if columns[0] != 'player_id':
+            player = players[columns[0]]
+            division = divisions[columns[1]]
             players_divisions = Association_PlayerDivision(player=player,division=division)
             
             players_divisions.create()
     f.close()
 
-    f = open(os.path.join('padel_league/static/data', 'players_matches.csv'))
+    f = open(os.path.join('padel_league/static/data/csv', 'players_in_match.csv'))
     for line in f:
         line = line.strip('\n')
         columns = line.split(",")
-        if columns[0] != 'id':
-            player = players[columns[1]]
-            match = matches[columns[2]]
-            team = columns[3]
+        if columns[0] != 'player_id':
+            player = players[columns[0]]
+            match = matches[columns[1]]
+            team = columns[2]
             players_matches = Association_PlayerMatch(player=player,match=match,team = team)
             
             players_matches.create()
     f.close()
 
+    return redirect(url_for('main.index'))
+
+@bp.route('/export_db_to_csv', methods=['GET', 'POST'])
+def export_db_to_csv():
+    models = User.query.first().all_tables_object()
+    instances = User.query.first().get_all_tables()
+    for model in models.keys():
+        models[model] = models[model].__table__.columns.keys()
+    for model in instances.keys():
+        instances[model] = instances[model].all()
+
+    values = {}
+    for model in models.keys():
+        values[model] = []
+        for instance in instances[model]:
+            instance_values = []
+            for field in models[model]:
+                instance_values.append(getattr(instance, field))
+            values[model].append(instance_values)
+
+
+    for model in models.keys():
+        file = os.path.join('padel_league/static/data/csv', '%s.csv' % model)
+        fields = models[model]
+        rows = values[model]
+
+        with open(file, 'w') as f:
+            write = csv.writer(f)
+            
+            write.writerow(fields)
+            write.writerows(rows)
     return redirect(url_for('main.index'))
 
 

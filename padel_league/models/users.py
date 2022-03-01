@@ -10,5 +10,6 @@ class User(db.Model ,model.Model,model.Base):
     username = Column(String(80), unique=True, nullable=False)
     email = Column(String(120), unique=True, nullable=False)
     password = Column(Text, nullable=False)
+    player_id = Column(Integer, ForeignKey('players.id'))
 
     player = relationship('Player', back_populates="user")

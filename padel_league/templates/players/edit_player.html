@@ -5,24 +5,66 @@
 <section id="content" class="player-form-container">
     <section class="edit_player_form">
         <form method="POST">
-            <div class="form-group optional" >
-                <label for='name' style="color: white;"> Nome (Curto) </label>
-                <input autocomplete="off" autofocus class="form-control" id="name" name="name" placeholder="Nome" type="text">
-            </div>
-            <div class="form-group optional" >
-                <label for='full_name' style="color: white;"> Nome completo </label>
-                <input autocomplete="off" autofocus class="form-control" id="full_name" name="full_name" placeholder="Nome Completo" type="text">
-            </div>
-            <div class="form-group optional" >
-                <label for='birth_date' style="color: white;"> Data de nascimento </label>
-                <input autocomplete="off" autofocus class="form-control" id="birth_date" name="birth_date" type="date">
-            </div>
-            <div class="form-group optional" >
-                <label for='picture' style="color: white;"> Fotografia </label>
-                <input class="form-control" id="picture" name="picture" type="file">
-            </div>
-            <button class="btn btn-primary" type="submit">Acrescentar Jogador</button>
+            <label for='user_data' style="color: black;"> Dados de utilizador </label>
+            <section class="line_group" id="user_data">
+                <div class="form-group optional">
+                    <label for='username' style="color: black;"> Nome de utilizador </label>
+                    <input autocomplete="off" autofocus class="form-control" id="username" name="username" placeholder="{{player.user.username if player.user else 'Nome'}}" type="text">
+                </div>
+                <div class="form-group optional" >
+                    <label for='email' style="color: black;"> Email </label>
+                    <input autocomplete="off" autofocus class="form-control" id="email" name="email" placeholder="{{player.user.email if player.user else 'email@email.com'}}" type="text">
+                </div>
+            </section>
+            <label for='player_data' style="color: black;"> Dados de jogador </label>
+            <section class="line_group" id="player_data">
+                <div class="form-group optional" >
+                    <label for='name' style="color: black;"> Nome (Curto) </label>
+                    <input autocomplete="off" autofocus class="form-control" id="name" name="name" placeholder="{{player.name}}" type="text">
+                </div>
+                <div class="form-group optional" >
+                    <label for='full_name' style="color: black;"> Nome completo </label>
+                    <input autocomplete="off" autofocus class="form-control" id="full_name" name="full_name" placeholder="{{player.full_name if player.full_name else 'Nome Completo'}}" type="text">
+                </div>
+            </section>
+            <section class="line_group" id="player_data">
+                <div class="form-group optional" >
+                    <label for='prefered_hand' style="color: black;"> Mão preferida </label>
+                    <select class="form-control" id="prefered_hand" name="prefered_hand">
+                        <option value="Direita" {% if player.prefered_hand =='Direita' %} selected {% endif %} >Direita</option>
+                        <option value="Esquerda" {% if player.prefered_hand =='Esquerda' %} selected {% endif %}>Esquerda</option>
+                    </select>
+                </div>
+                <div class="form-group optional" >
+                    <label for='height' style="color: black;"> Altura </label>
+                    <input autocomplete="off" autofocus class="form-control" id="height" name="height" type="number" step="0.01" placeholder="{{player.height if player.height else 1.75}}">
+                </div>
+            </section>
+            <section class="line_group">
+                <div class="form-group optional" >
+                    <label for='prefered_position' style="color: black;"> Posição preferida </label>
+                    <select class="form-control" id="prefered_position" name="prefered_position">
+                        <option value="Tanto faz" {% if player.prefered_position =='Tanto faz' %} selected {% endif %}>Tanto faz</option>
+                        <option value="Lado direito" {% if player.prefered_position =='Lado direito' %} selected {% endif %} >Lado direito</option>
+                        <option value="Lado esquerdo" {% if player.prefered_position =='Lado esquerdo' %} selected {% endif %}>Lado esquerdo</option>
+                    </select>
+                </div>
+                <div class="form-group optional" >
+                    <label for='birth_date' style="color: black;"> Data de nascimento </label>
+                    <input autocomplete="off" autofocus class="form-control" id="birth_date" name="birth_date" type="date">
+                </div>
+            </section>
+            <section class="line_group">
+                <button class="btn btn-primary" type="submit">Submeter</button>
+            </section>
         </form>
     </section>
 </section>
+<script>
+    window.addEventListener('load',(event)=>{
+        let birth_date = document.getElementById('birth_date');
+        let date_string = "{{ player.birthday.strftime('%Y-%m-%d') if player.birthday else '2021-01-01'}}";
+        birth_date.value = date_string
+    });
+</script>
 {% endblock %}

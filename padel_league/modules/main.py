@@ -7,6 +7,8 @@ bp = Blueprint('main', __name__)
 
 @bp.route('/', methods=('GET', 'POST'))
 def index():
+    if 'error' in session.keys():
+        flash(session['error'])
     return render_template('index.html')
 
 @bp.route('/calendar', methods=('GET', 'POST'))

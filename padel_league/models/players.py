@@ -19,9 +19,9 @@ class Player(db.Model ,model.Model, model.Base):
     ranking_position = Column(Integer, default=0)
     height = Column(Float,default=1.75)
     prefered_hand = Column(Enum('Direita','Esquerda',default='Direita'))
-    user_id = Column(Integer, ForeignKey('users.id'))
+    prefered_position = Column(Enum('Lado direito','Lado esquerdo','Tanto faz',default='Tanto faz'))
 
-    user = relationship('User',back_populates='player')
+    user = relationship('User',back_populates='player', uselist=False)
     matches_relations = relationship('Association_PlayerMatch', back_populates='player')
     divisions_relations = relationship('Association_PlayerDivision', back_populates='player')
 

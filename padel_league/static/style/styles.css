@@ -272,6 +272,13 @@ html{
         width: 25%;
     }
 
+    .edit_player_form{
+        width: 80%!important;
+    }
+
+    .player-form-container{
+        padding-top: 0!important;
+    }
 }
 
 @media (max-width: 75em){
@@ -2138,14 +2145,28 @@ blockquote, body, dd, dl, fieldset, figure, h1, h3, h4, h5, h6, hr, legend, ol, 
     padding-top: 0;
 }
 
-.page-customer-account .form-group {
-    margin-bottom: 0rem;
-}
-
 .containerinputs {
     max-width: 700px;
 }
 
 .edit_player_form{
     width: 50%;
+}
+
+.player-form-container{
+    padding-top: 5rem;
+    display: flex;
+    align-content: flex-start;
+    justify-content: space-evenly;
+}
+
+.line_group{
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+}
+
+.line_group .form-group{
+    width: 40%;
+    padding: 1%;
 }

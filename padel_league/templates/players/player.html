@@ -67,15 +67,15 @@
                         <h3>Altura</h3>
                         <p>{{player.height}}</p>
                     </li>
+                </ul>
+                <ul class="c-player__data-list u-list-clean" id="sports_data_tab">
                     <li class="c-player__data-item">
                         <h3>Mão preferida</h3>
                         <p>{% if player.prefered_hand %}{{player.prefered_hand}}{% endif %}</p>
                     </li>
-                </ul>
-                <ul class="c-player__data-list u-list-clean" id="sports_data_tab">
                     <li class="c-player__data-item">
                         <h3>Posiçao de jogo</h3>
-                        <p></p>
+                        <p>{% if player.prefered_position %}{{player.prefered_position}}{% endif %}</p>
                     </li>
                 </ul>
             </div>

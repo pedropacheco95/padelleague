@@ -43,7 +43,7 @@
                     </div>
                     {% else %}
                     <div class="c-btn-topright">
-                        <a href="{{url_for('auth.logout')}}">
+                        <a href="{{url_for('players.edit',id=session['user'].player_id)}}">
                             {{ session['user'].username }}
                         </a>
                     </div>
