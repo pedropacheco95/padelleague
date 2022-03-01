@@ -51,7 +51,7 @@ def edit(id):
         player.save()
         return redirect(url_for('players.player',id = player.id))
 
-    if 'user' not in session.keys() or not session['user'].player == player:
+    if 'user' not in session.keys() or not session['user'].player_id == player.id:
         session['error'] = "Não podes editar um jogador que não és tu oh burro."
         return redirect(url_for('main.index'))
 
