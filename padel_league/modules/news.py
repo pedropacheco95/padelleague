@@ -26,7 +26,7 @@ def create():
             for index in range(len(files)):
                 file = files[index]
                 if file.filename != '':
-                    image_name = str(title.name).replace(" ", "").lower()
+                    image_name = str(title).replace(" ", "").lower()
                     image_name = unidecode.unidecode(image_name)
                     image_name = '{image_name}_{news_id}.jpg'.format(image_name=image_name,news_id=news.id)
 
