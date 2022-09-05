@@ -24,6 +24,7 @@ class Player(db.Model ,model.Model, model.Base):
     user = relationship('User',back_populates='player', uselist=False)
     matches_relations = relationship('Association_PlayerMatch', back_populates='player')
     divisions_relations = relationship('Association_PlayerDivision', back_populates='player')
+    editions_relations_registrations = relationship('registration', back_populates='player')
 
     #WHEN ADDING A MATCH THIS DICT SHOULD BE RESET TO {}
     match_relations_in_division = {}

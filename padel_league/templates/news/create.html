@@ -1,0 +1,31 @@
+{% extends 'layout.html' %}
+
+{% block main %}
+<section id="content" class="news-form-container">
+    <section class="create_news_form">
+        <form method="POST" enctype="multipart/form-data>
+            <section class="line_group" id="data">
+                <div class="form-group">
+                    <label for='title' style="color: black;"> Titulo </label>
+                    <input autocomplete="off" autofocus class="form-control" id="title" name="title" placeholder="Titulo" type="text">
+                </div>
+                <div class="form-group full_text">
+                    <label for='text' style="color: black;"> Texto </label>
+                    <input autocomplete="off" autofocus class="form-control" id="text" name="text" placeholder="Noticia" type="text">
+                </div>
+                <div class="form-group">
+                    <label for='author' style="color: black;"> Autor </label>
+                    <input autocomplete="off" autofocus class="form-control" id="author" name="author" placeholder="Nome" type="text">
+                </div>
+                <div class="form-group">
+                    <label for='picture' style="color: black;font-weight: bold;">Fotografia de para a noticia (380x220)</label>
+                    <input type="file" name="pictures">
+                </div>
+            </section>
+            <section class="line_group">
+                <button class="btn btn-primary" type="submit">Submeter</button>
+            </section>
+        </form>
+    </section>
+</section>
+{% endblock %}

@@ -55,7 +55,6 @@ def upload_csv_to_db():
             end_date = datetime.datetime.strptime(columns[4], '%Y-%m-%d') if columns[3] else None
             logo_image_path = columns[5]
             large_picture_path = columns[6]
-            has_ended = True if columns[7] == 'True' else False
             edition = editions[columns[8]]
             
             division = Division(name=name,
@@ -63,7 +62,7 @@ def upload_csv_to_db():
             end_date = end_date,
             logo_image_path=logo_image_path,
             large_picture_path=large_picture_path,
-            has_ended=has_ended,
+            has_ended=False,
             rating=rating,
             edition_id = edition.id)
 

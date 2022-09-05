@@ -14,12 +14,24 @@ class Division(db.Model ,model.Model , model.Base):
     end_date = Column(Date)
     logo_image_path = Column(String(80))
     large_picture_path = Column(String(80))
-    has_ended = Column(Boolean)
+    has_ended = Column(Boolean,default=False)
     edition_id = Column(Integer, ForeignKey('editions.id'))
 
     edition = relationship('Edition', back_populates="divisions")
     matches = relationship('Match', back_populates="division")
     players_relations = relationship('Association_PlayerDivision', back_populates="division")
+
+    def create(self,vals=None):
+        if vals:
+            self.name = vals['name']
+            self.beginning_datetime = vals['beginning_datetime']
+            self.rating = vals['rating']
+            self.end_date = vals['end_date']
+            self.logo_image_path = vals['logo_image_path']
+            self.logo_image_path = vals['logo_image_path']
+            self.edition_id = vals['edition_id']
+        super().create()
+        return True
 
     def get_ordered_matches(self):
         self.matches.sort(key=lambda x: x.matchweek)
@@ -38,7 +50,7 @@ class Division(db.Model ,model.Model , model.Base):
         return '{league_name}: {edition_name} {division_name}'.format(league_name=self.edition.league.name, edition_name=self.edition.name,division_name=self.name)
 
     def players_classification(self,update_places=None):
-        return [rel.player for rel in self.players_relations_classification(update_places=None)]
+        return [rel.player for rel in self.players_relations_classification(update_places)]
 
     def players_relations_classification(self,update_places=None):
         sorted_by_points = self.players_relations
@@ -46,6 +58,7 @@ class Division(db.Model ,model.Model , model.Base):
         if update_places:
             for index,rel in enumerate(sorted_by_points):
                 rel.place = index + 1
+                print(rel.place)
                 rel.save()
         return sorted_by_points
 
@@ -84,7 +97,11 @@ class Division(db.Model ,model.Model , model.Base):
                 relation.games_lost = games_lost
                 relation.matchweek = matchweek
                 relation.save()
-        self.players_classification(update_places=True) 
+        self.players_classification(update_places=True)
+        games_not_played = [match for match in self.matches if not match.played]
+        if not games_not_played:
+            self.has_ended = True
+            self.save()
         return True
 
     def add_match_to_table(self,match):

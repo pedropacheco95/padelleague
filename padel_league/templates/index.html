@@ -1,4 +1,12 @@
 {% extends 'layout.html' %}
+{% import 'macros/news_macros.html' as news_macros %}
 
 {% block main %}
+    <div class="l-grid">
+        <div class="index_container">
+            {% for news in all_news%}
+                {{ news_macros.news_card(news) }}
+            {% endfor %}
+        </div>
+    </div>
 {% endblock %}

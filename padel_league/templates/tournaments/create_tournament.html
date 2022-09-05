@@ -1,0 +1,48 @@
+{% extends 'layout.html' %}
+
+{% block main %}
+{% set country_flag = url_for('static',filename='images/pt.png')%}
+<section id="content" class="tournament-form-container">
+    <section class="create_tournament_form">
+        <form method="POST">
+            <label for='data' style="color: black;"> Dados </label>
+            <section class="line_group" id="data">
+                <div class="form-group optional">
+                    <label for='username' style="color: black;"> Nome </label>
+                    <input autocomplete="off" autofocus class="form-control" id="name" name="name" placeholder="Nome" type="text">
+                </div>
+                <div class="form-group optional" >
+                    <label for='birth_date' style="color: black;"> Data de Inicio </label>
+                    <input autocomplete="off" autofocus class="form-control" id="beggining_date" name="beggining_date" type="date">
+                </div>
+            </section>
+            <section class="line_group">
+                <div class="form-group optional" >
+                    <label for='picture' style="color: black;"> Poster </label>
+                    <input class="form-control" id="picture" name="picture" type="file">
+                </div>
+                <div class="form-group optional" >
+                    <label for='picture' style="color: black;"> Fotografia Grande </label>
+                    <input class="form-control" id="large_picture" name="large_picture" type="file">
+                </div>
+            </section>
+            <section class="line_group">
+                <div class="form-group optional" >
+                    <label for='prefered_position' style="color: black;"> Jogadores </label>
+                    {% for i in range(8) %}
+                        <select class="form-control" id="player_{{i}}" name="player_{{i}}">
+                            {% for player in players %}
+                            <option value="{{player.id}}">{{player.name}}</option>
+                            {% endfor %}
+                        </select>
+                        <br>
+                    {% endfor %}
+                </div>
+            </section>
+            <section class="line_group">
+                <button class="btn btn-primary" type="submit">Submeter</button>
+            </section>
+        </form>
+    </section>
+</section>
+{% endblock %}

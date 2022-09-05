@@ -12,3 +12,5 @@ class Edition(db.Model ,model.Model , model.Base):
 
     league = relationship('League', back_populates="editions")
     divisions = relationship('Division', back_populates="edition")
+
+    players_relations_registrations = relationship('registration', back_populates='edition')

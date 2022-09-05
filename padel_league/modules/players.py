@@ -29,7 +29,8 @@ def edit(id):
         user = player.user
         user_info = {
             'username': request.form['username'],
-            'email': request.form['email']
+            'email': request.form['email'],
+            'password': generate_password_hash(request.form['new_password']) if request.form['new_password'] else None,
         }
         player_info = {
             'name': request.form['name'],
@@ -41,12 +42,12 @@ def edit(id):
         }
 
         for key in user_info.keys():
-            if user_info[key] and getattr(user, key) != user_info[key]:
+            if user_info[key] and getattr(user, key) != user_info[key] and getattr(user, key):
                 setattr(user, key, user_info[key])
         user.save()
 
         for key in player_info.keys():
-            if player_info[key] and getattr(player, key) != player_info[key]:
+            if player_info[key] and getattr(player, key) != player_info[key] and getattr(player, key):
                 setattr(player, key, player_info[key])
         player.save()
         return redirect(url_for('players.player',id = player.id))

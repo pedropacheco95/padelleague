@@ -1,5 +1,3 @@
-from __future__ import division
-from uuid import RFC_4122
 from padel_league import model 
 from padel_league.sql_db import db
 from sqlalchemy import Column, Integer , String , Text, ForeignKey
@@ -22,7 +20,7 @@ class League(db.Model ,model.Model, model.Base):
         return players
 
     def players_rankings_position(self,update_places=False):
-        players = self.all_players_that_played()
+        players = list(set(self.all_players_that_played()))
         if any(player.ranking_position == 0 for player in players):
             self.update_rankings()
         players.sort(key=lambda x: x.ranking_points, reverse=True)
@@ -38,7 +36,7 @@ class League(db.Model ,model.Model, model.Base):
             for division_relation in player.divisions_relations:
                 division = division_relation.division
                 if division.has_ended:
-                    player.ranking_points += (division.rating)/(2**(division_relation.place - 1))
+                    player.ranking_points += int((division.rating)/(2**(division_relation.place - 1)))
                 player.ranking_points += len(player.matches_won(division=division)) * division.rating/100
                 player.ranking_points += len(player.matches_drawn(division=division)) * division.rating/250
                 player.ranking_position = 1

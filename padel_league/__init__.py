@@ -56,6 +56,8 @@ def create_app(test_config=None):
     app.register_blueprint(modules.matches.bp)
     app.register_blueprint(modules.uploads.bp)
     app.register_blueprint(modules.users.bp)
+    app.register_blueprint(modules.news.bp)
+    app.register_blueprint(modules.registrations.bp)
     with app.app_context():
         sql_db.db.init_app(app)
         sql_db.db.create_all()

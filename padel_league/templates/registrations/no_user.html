@@ -1,0 +1,11 @@
+{% extends 'layout.html' %}
+
+{% block main %}
+<div class="news_container">
+    <div class="news_container_info">
+        <div class="news_container_content">
+            <p> Tens que fazer login para te poderes inscrever. Faz login <a class="decorated_link" href="{{url_for('auth.login')}}">aqui</a>!</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

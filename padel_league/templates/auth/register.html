@@ -8,7 +8,7 @@
 <div class="l-grid">
     <div class="login_container">
         <div class="inner_login_container">
-            <form method="post">
+            <form method="POST" enctype="multipart/form-data">
 
                 <div class="form-group">
                     <input autocomplete="off" autofocus class="form-control" name="username" placeholder="Username" type="text" required>
@@ -22,14 +22,48 @@
                     <input class="form-control" name="password" placeholder="Password" type="password" required>
                 </div>
 
+                <label for='player_data' style="color: black;font-weight: bold;"> Dados de jogador </label>
+                <section class="" id="player_data">
+                    <div class="form-group optional" >
+                        <label for='name' style="color: black;"> Nome (Curto) </label>
+                        <input autocomplete="off" autofocus class="form-control" id="name" name="name" placeholder="Nome em forma curta" type="text">
+                    </div>
+                    <div class="form-group optional" >
+                        <label for='full_name' style="color: black;"> Nome e apelido </label>
+                        <input autocomplete="off" autofocus class="form-control" id="full_name" name="full_name" placeholder="Nome e apelido" type="text">
+                    </div>
+                </section>
+                <section class="" id="player_data">
+                    <div class="form-group optional" >
+                        <label for='prefered_hand' style="color: black;"> Mão preferida </label>
+                        <select class="form-control" id="prefered_hand" name="prefered_hand">
+                            <option value="Direita">Direita</option>
+                            <option value="Esquerda">Esquerda</option>
+                        </select>
+                    </div>
+                    <div class="form-group optional" >
+                        <label for='height' style="color: black;"> Altura </label>
+                        <input autocomplete="off" autofocus class="form-control" id="height" name="height" type="number" step="0.01" placeholder="1.75">
+                    </div>
+                </section>
+                <section class="">
+                    <div class="form-group optional" >
+                        <label for='prefered_position' style="color: black;"> Posição preferida </label>
+                        <select class="form-control" id="prefered_position" name="prefered_position">
+                            <option value="Tanto faz">Tanto faz</option>
+                            <option value="Lado direito">Lado direito</option>
+                            <option value="Lado esquerdo">Lado esquerdo</option>
+                        </select>
+                    </div>
+                    <div class="form-group optional" >
+                        <label for='birth_date' style="color: black;"> Data de nascimento </label>
+                        <input autocomplete="off" autofocus class="form-control" id="birth_date" name="birth_date" type="date">
+                    </div>
+                </section>
+
                 <div class="form-group">
-                    <label for='player' style="color: black;"> Jogador </label>
-                    <select class="form-control" id="player" name="player">
-                        <option value=""></option>
-                        {% for player in players %}
-                        <option value="{{player.id}}">{{player.name}}</option>
-                        {% endfor %}
-                    </select>
+                    <label for='picture' style="color: black;font-weight: bold;">Fotografia de jogador (idealmente 300x300)</label>
+                    <input type="file" name="pictures">
                 </div>
                 
                 <button class="btn btn-primary" type="submit">Registar</button>

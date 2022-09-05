@@ -7,3 +7,5 @@ from . import api
 from . import startup
 from . import uploads
 from . import users
+from . import news
+from . import registrations

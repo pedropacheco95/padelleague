@@ -1,0 +1,19 @@
+{% macro news_card(news) %}
+    <article class="news_article">
+        <div class="news_article_image">
+            {% set image_background = news.cover_path %}
+            <div class="news_article_image_background">
+                <a href="{{url_for(news.news,news_id=news.id)}}">
+                    <img src="{{image_background}}" alt="">
+                </a> 
+            </div> 
+        </div> 
+        <header class="news_article_title">
+            <div class="news_article_title_container">
+                <a href="{{url_for(news.news,news_id=news.id)}}">
+                    {{news.title}}
+                </a>
+            </div>
+        </header>
+    </article>
+{% endmacro %}

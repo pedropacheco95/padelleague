@@ -1,0 +1,40 @@
+{% extends 'layout.html' %}
+
+{% block header %}
+    <h1>{% block title %}Register{% endblock %}</h1>
+{% endblock %}
+
+{% block main %}
+<div class="l-grid">
+    <div class="login_container">
+        <div class="inner_login_container">
+            <form method="post">
+
+                <div class="form-group">
+                    <input autocomplete="off" autofocus class="form-control" name="username" placeholder="Username" type="text" required>
+                </div>
+
+                <div class="form-group">
+                    <input autocomplete="off" autofocus class="form-control" name="email" placeholder="example@example.com" type="email" required>
+                </div>
+
+                <div class="form-group">
+                    <input class="form-control" name="password" placeholder="Password" type="password" required>
+                </div>
+
+                <div class="form-group">
+                    <label for='player' style="color: black;"> Jogador </label>
+                    <select class="form-control" id="player" name="player">
+                        <option value=""></option>
+                        {% for player in players %}
+                        <option value="{{player.id}}">{{player.name}}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <button class="btn btn-primary" type="submit">Registar</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
