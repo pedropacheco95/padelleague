@@ -1,0 +1,22 @@
+{% extends 'layout.html' %}
+
+{% block main %}
+<div class="news_container">
+    <table>
+        <thead>
+            <tr>
+                <th>player_id</th>
+                <th>edition_id</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for registration in registrations %}
+            <tr>
+                <td>{{ registration.player_id }}</td>
+                <td>{{ registration.edition_id }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

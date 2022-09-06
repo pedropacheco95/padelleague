@@ -1,7 +1,7 @@
 from flask import Blueprint, flash, g, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from padel_league.models import  Edition , registration
+from padel_league.models import  Edition , Registration , Player
 
 bp = Blueprint('registrations', __name__,url_prefix='/registrations')
 
@@ -12,8 +12,19 @@ def create(edition_id):
     edition = Edition.query.filter_by(id=edition_id).first()
     if not edition:
         return 'error'
-    player = session['user'].player
-    registration = registration(edition_id=edition_id, player_id=player.id)
+    player_id = session['user'].player_id
+    registration = Registration(edition_id=edition_id, player_id=player_id)
     registration.create()
 
     return render_template('registrations/done.html')
+
+@bp.route('/', methods=('GET', 'POST'))
+def registrations():
+    registrations = Registration.query.all()
+    return render_template('registrations/registrations.html', registrations=registrations)
+
+@bp.route('/delete/<id>', methods=('GET', 'POST'))
+def delete(id):
+    registration = Registration.query.filter_by(id=id).first()
+    registration.delete()
+    return redirect(url_for('main.index'))
