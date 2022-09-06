@@ -13,6 +13,9 @@ def create(edition_id):
     if not edition:
         return 'error'
     player_id = session['user'].player_id
+    old_registration = Registration.query.filter_by(player_id=player_id,edition_id=edition_id).first()
+    if old_registration:
+        return render_template('registrations/already_registered.html')
     registration = Registration(edition_id=edition_id, player_id=player_id)
     registration.create()
 
