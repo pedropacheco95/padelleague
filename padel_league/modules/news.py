@@ -38,7 +38,7 @@ def create():
                         img_file.close()
                     file.save(path)
 
-                    news.cover_path = path
+                    news.cover_path = filename
                     news.save()
             
             return redirect(url_for('main.index'))
@@ -50,3 +50,9 @@ def create():
 def news(news_id):
     news = News.query.filter_by(id=news_id).first()
     return render_template('news/news.html',news=news)
+
+@bp.route('delete/<news_id>', methods=('GET', 'POST'))
+def delete(news_id):
+    news = News.query.filter_by(id=news_id).first()
+    news.delete()
+    return redirect(url_for('main.index'))

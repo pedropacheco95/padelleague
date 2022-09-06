@@ -4,7 +4,7 @@
             {% set image_background = news.cover_path %}
             <div class="news_article_image_background">
                 <a href="{{url_for('news.news',news_id=news.id)}}">
-                    <img src="{{image_background}}" alt="">
+                    <img src="{{ url_for('static', filename=image_background)}}" alt="">
                 </a> 
             </div> 
         </div> 
