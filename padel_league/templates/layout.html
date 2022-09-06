@@ -91,7 +91,7 @@
                         {% if admin%}
                         <a class="c-main-nav__link" href="{{url_for('matches.for_edit')}}">Editar jogos</a><a class="c-main-nav__link" href="{{url_for('auth.logout')}}">Log out</a>
                         {% else %}
-                        <a class="c-main-nav__link" href="#">{{ session['user'].username }}</a><a class="c-main-nav__link" href="{{url_for('auth.logout')}}">Log out</a>
+                        <a class="c-main-nav__link" href="{{url_for('players.edit',id=session['user'].player_id)}}">{{ session['user'].username }}</a><a class="c-main-nav__link" href="{{url_for('auth.logout')}}">Log out</a>
                         {% endif %}
                         {% endif %}
                     </li>
