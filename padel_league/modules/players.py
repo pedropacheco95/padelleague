@@ -30,7 +30,7 @@ def edit(id):
         user_info = {
             'username': request.form['username'],
             'email': request.form['email'],
-            'password': generate_password_hash(request.form['new_password']) if request.form['new_password'] else None,
+            'password': generate_password_hash(request.form['password']) if request.form['password'] else None,
         }
         player_info = {
             'name': request.form['name'],
