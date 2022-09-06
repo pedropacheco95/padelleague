@@ -288,6 +288,10 @@ html{
         flex-direction: column!important;
         align-items: center!important;
     }
+
+    .news_container_image img{
+        max-width: 100%!important;
+    }
 }
 
 @media (max-width: 75em){
