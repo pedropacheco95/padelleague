@@ -1,15 +1,15 @@
 import cv2
 import os
-import mediapipe as mp
-import numpy as np
+#import mediapipe as mp
+#import numpy as np
 
 
 from flask import url_for , current_app
 
-mp_drawing = mp.solutions.drawing_utils
-mp_selfie_segmentation = mp.solutions.selfie_segmentation
+#mp_drawing = mp.solutions.drawing_utils
+#mp_selfie_segmentation = mp.solutions.selfie_segmentation
 
-def remove_background(filename):
+""" def remove_background(filename):
     BG_COLOR = (255, 255, 255)
     with mp_selfie_segmentation.SelfieSegmentation(model_selection=0) as selfie_segmentation:
         filename = os.path.join('images',filename)
@@ -22,7 +22,7 @@ def remove_background(filename):
         bg_image[:] = BG_COLOR
         output_image = np.where(condition, image, bg_image)
         cv2.imwrite(path, output_image)
-    return True
+    return True """
 
 def save_file(file, filename):
     filename = os.path.join('images',filename)

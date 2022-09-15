@@ -67,7 +67,7 @@ def register():
                     filename = os.path.join('players',image_name)
 
                     image_tools.save_file(file, filename)
-                    image_tools.remove_background(filename)
+                    #image_tools.remove_background(filename)
 
                     player.picture_path = image_name
                     player.save()
