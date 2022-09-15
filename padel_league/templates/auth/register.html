@@ -1,4 +1,5 @@
 {% extends 'layout.html' %}
+{% import 'macros/input_macros.html' as input_macros %}
 
 {% block header %}
     <h1>{% block title %}Register{% endblock %}</h1>
@@ -62,8 +63,8 @@
                 </section>
 
                 <div class="form-group">
-                    <label for='picture' style="color: black;font-weight: bold;">Fotografia de jogador (idealmente 300x300)</label>
-                    <input type="file" name="pictures">
+                    <label for='picture' style="color: black;font-weight: bold;">Fotografia de jogador</label>
+                    {{input_macros.player_picture_input()}}
                 </div>
                 
                 <button class="btn btn-primary" type="submit">Registar</button>

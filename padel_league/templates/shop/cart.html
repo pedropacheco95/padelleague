@@ -1,0 +1,53 @@
+{% extends 'layout.html' %}
+{% block main %}
+<script>
+    let api_url = "{{url_for('api.delete_order_line',id=0)}}";
+</script>
+
+<script src="{{url_for('static',filename='js/shop_cart.js')}}" defer></script>
+<div class="l-grid">
+    {% if order.order_lines %}
+        <form method="POST">
+            <div class="order_line_container">
+                {% for order_line in order.order_lines %}
+                    <div class="order_line">
+                        <div class="order_line_image">
+                            <img src="{{url_for('static',filename='images/' + order_line.product.images[0].path)}}" alt="product_image">
+                        </div>
+                        <div class="order_line_info">
+                            <div class="order_line_name">{{order_line.product.name}}</div>
+                            <div class="order_line_specifications">
+                                {% for info in order_line.get_specification_list() %}
+                                    <p> {{info}} </p>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="order_line_quantity">
+                            <input type="number" value="{{order_line.quantity}}" name="orderline_{{order_line.id}}">
+                        </div>
+                        <div class="order_line_price">{{"{:,.2f} €".format(order_line.product.price)}}</div>
+                        <div class="order_line_delete">
+                            <button data-orderline_id="{{order_line.id}}" onclick="deleteOrderLine(this)" class="btn">
+                                <img src="{{url_for('static',filename='images/delete_icon.png')}}" alt="">
+                            </button>
+                        </div>
+                    </div>
+                {% endfor %}
+                {% if not order.closed %}
+                <div class="product_info_button_container">
+                    <button class="btn btn-primary add_to_cart_button">Finalizar encomenda</button>
+                </div>
+                {% endif %}
+            </div>
+        </form>
+    {% else %}
+        <div class="news_container">
+            <div class="news_container_info">
+                <div class="news_container_content">
+                    <p> Não tem produtos no carrinho. Vai para a loja <a class="decorated_link" href="{{url_for('shop.index')}}">aqui</a>!</p>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

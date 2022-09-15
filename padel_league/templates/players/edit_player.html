@@ -1,11 +1,12 @@
 {% extends 'layout.html' %}
+{% import 'macros/input_macros.html' as input_macros %}
 
 {% block main %}
 {% set country_flag = url_for('static',filename='images/pt.png')%}
 <div class="l-grid">
     <div class="login_container">
             <div class="inner_login_container">
-            <form method="POST">
+            <form method="POST" enctype="multipart/form-data">
                 <label for='user_data' style="color: black;"> Dados de utilizador </label>
                 <section class="" id="user_data">
                     <div class="form-group optional">
@@ -57,6 +58,10 @@
                     <div class="form-group optional" >
                         <label for='birth_date' style="color: black;"> Data de nascimento </label>
                         <input autocomplete="off" autofocus class="form-control" id="birth_date" name="birth_date" type="date">
+                    </div>
+                    <div class="form-group">
+                        <label for='picture' style="color: black;font-weight: bold;">Fotografia de jogador</label>
+                        {{input_macros.player_picture_input(player)}}
                     </div>
                 </section>
                 <section class="line_group">

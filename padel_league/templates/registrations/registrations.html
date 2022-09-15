@@ -5,15 +5,15 @@
     <table>
         <thead>
             <tr>
-                <th>player_id</th>
-                <th>edition_id</th>
+                <th style="padding: 1rem;">player</th>
+                <th style="padding: 1rem;">edition</th>
             </tr>
         </thead>
         <tbody>
             {% for registration in registrations %}
             <tr>
-                <td>{{ registration.player_id }}</td>
-                <td>{{ registration.edition_id }}</td>
+                <td style="padding: 1rem;">{{ registration.player.name }}</td>
+                <td style="padding: 1rem;">{{ registration.edition.name }}</td>
             </tr>
             {% endfor %}
         </tbody>

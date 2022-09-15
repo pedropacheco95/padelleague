@@ -1,0 +1,12 @@
+{% extends 'layout.html' %}
+{% import 'macros/product_macros.html' as product_macros %}
+
+{% block main %}
+    <div class="l-grid">
+        <div class="products_container">
+            {% for product in products %}
+                {{ product_macros.product_card(product) }}
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}

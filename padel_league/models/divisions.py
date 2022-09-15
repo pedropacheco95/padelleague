@@ -15,6 +15,7 @@ class Division(db.Model ,model.Model , model.Base):
     logo_image_path = Column(String(80))
     large_picture_path = Column(String(80))
     has_ended = Column(Boolean,default=False)
+    open_division = Column(Boolean,default=False)
     edition_id = Column(Integer, ForeignKey('editions.id'))
 
     edition = relationship('Edition', back_populates="divisions")
@@ -28,7 +29,7 @@ class Division(db.Model ,model.Model , model.Base):
             self.rating = vals['rating']
             self.end_date = vals['end_date']
             self.logo_image_path = vals['logo_image_path']
-            self.logo_image_path = vals['logo_image_path']
+            self.large_picture_path = vals['large_picture_path']
             self.edition_id = vals['edition_id']
         super().create()
         return True
@@ -58,7 +59,6 @@ class Division(db.Model ,model.Model , model.Base):
         if update_places:
             for index,rel in enumerate(sorted_by_points):
                 rel.place = index + 1
-                print(rel.place)
                 rel.save()
         return sorted_by_points
 
@@ -73,7 +73,7 @@ class Division(db.Model ,model.Model , model.Base):
 
     def update_table(self,force_update=False):
         last_upadted_matchweek = self.last_updated_matchweek()
-        matchweek = self.get_ordered_matches_played()[-1].matchweek
+        matchweek = self.get_ordered_matches_played()[-1].matchweek if self.get_ordered_matches_played() else 0
         if last_upadted_matchweek != matchweek or force_update:
             for relation in self.players_relations:
                 player = relation.player

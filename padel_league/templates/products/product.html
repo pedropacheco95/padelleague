@@ -1,0 +1,92 @@
+{% extends 'layout.html' %}
+
+{% block main %}
+<script src="{{ url_for('static', filename='js/products.js')}}" defer></script>
+<div class="l-grid">
+    <form method="POST">
+        <div class="product_page">
+            <h2 class="product_page_title"> {{product.name}}</h2>
+            <div class="product_page_top">
+                <div class="product_images">
+                    {% if product.images %}
+                        {% set filename = 'images/' + product.images[0].path%}
+                    {% else %}
+                        {% set filename = 'images/products/default_product.png' %}
+                    {% endif %}
+                    <img class="main_image" id="main_image" src="{{url_for('static',filename=filename)}}" alt="product_image">
+                    {% if product.images|length > 1 %}
+                        <div class="product_images_thumbs">
+                            {% for image in product.images %}
+                                {% set filename = 'images/' + image.path%}
+                                {% set image_source = url_for('static',filename=filename) %}
+                                <img src="{{image_source}}" onclick="changeMainImage(this)" alt="product_image">
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="product_info">
+                    <div class="text_block product_brand">Padel League</div>
+                    <div class="text_block product_description">{{product.small_description}}</div>
+                    <div class="text_block product_price">{{"{:,.2f} €".format(product.price)}}</div>
+                    {% if product.product_attribute_values_relations %}
+                    <div class="text_block product_attribute_values">
+                        {% set dict_of_values = product.dict_of_values()%}
+                        {% for key in dict_of_values %}
+                            <div class="product_attribute">
+                                {% if key.user_input %}
+                                <span class="product_attribute_name">{{key.name}}:</span>
+                                    <div class="product_attribute_value">
+                                        <div class="radio_value">
+                                            <input type="text" name="{{key.name}}" required>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <span class="product_attribute_name">{{key.name}}:</span>
+                                    <div class="product_attribute_value">
+                                    {% for tup in dict_of_values[key] %}
+                                    <div class="radio_value">
+                                        <label for="{{tup[1]}}">
+                                            {{tup[1]}}
+                                        </label>
+                                        <input type="radio" id="{{tup[1]}}" name="{{key.name}}" value="{{tup[0]}}" required>
+                                    </div>
+                                    {% endfor %}
+                                    </div>
+                                {% endif%}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    <div class="product_info_button_container">
+                        <button class="btn btn-primary add_to_cart_button">Adicionar ao carrinho</button>
+                    </div>
+                </div>
+            </div>
+            <div class="product_page_bottom">
+                <div class="product_big_description">
+                    {% for p in product.get_big_description_list() %}
+                    <p>{{p}}</p>
+                    {% endfor%}
+                </div>
+                {% if product.features %}
+                    <div class="product_features">
+                        <div class="product_features_title">Características</div>
+                        <div class="product_features_info">
+                            <table>
+                                <tbody>
+                                    {% for key in product.features.keys() %}
+                                        <tr>
+                                            <td class="product_feature_key" >{{key}}</td>
+                                            <td class="product_feature_value">{{product.features[key]}}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock%}

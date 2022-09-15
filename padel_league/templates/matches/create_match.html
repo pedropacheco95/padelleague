@@ -1,0 +1,10 @@
+{% extends 'layout.html' %}
+{% import 'macros/match_macros.html' as match_macros %}
+
+{% block main %}
+<div class="l-grid l-grid--tor">
+    <br>
+    {{ match_macros.create_match_card(division.id,players) }}
+    <br>
+</div>
+{% endblock %}

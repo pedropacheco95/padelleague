@@ -4,7 +4,7 @@
 {% set country_flag = url_for('static',filename='images/pt.png')%}
 <section id="content" class="tournament-form-container">
     <section class="create_tournament_form">
-        <form method="POST">
+        <form method="POST" enctype="multipart/form-data">
             <label for='data' style="color: black;"> Dados </label>
             <section class="line_group" id="data">
                 <div class="form-group optional">
@@ -24,6 +24,17 @@
                 <div class="form-group optional" >
                     <label for='picture' style="color: black;"> Fotografia Grande </label>
                     <input class="form-control" id="large_picture" name="large_picture" type="file">
+                </div>
+            </section>
+            <section class="line_group">
+                <div class="form-group optional" >
+                    <label for='prefered_position' style="color: black;"> Edição </label>
+                    <select class="form-control" id="edition" name="edition">
+                        {% for edition in editions %}
+                        <option value="{{edition.id}}">{{edition.name}}</option>
+                        {% endfor %}
+                    </select>
+                    <br>
                 </div>
             </section>
             <section class="line_group">

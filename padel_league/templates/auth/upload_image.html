@@ -1,0 +1,42 @@
+{% extends 'modal_layout.html' %}
+
+{% block main %}
+<button id="modalActivation" style="visibility: hidden;height:0;width:0;"></button>
+<div class='container-form'>
+    <input id='selectedFile' class="disp-none" type='file' accept=".png, .jpg, .jpeg, .svg">
+    <img src="{{url_for('static',filename='images/players/default_player.jpg')}}" id="upload-aphoto">
+</div>
+<input id='finalFile' name="finalFile" class="disp-none" type='file' accept=".png, .jpg, .jpeg, .svg">
+
+<script src="{{ url_for('static', filename='js/upload_image.js')}}" defer></script>
+{% endblock %}
+
+{% block modal_header %}
+    <h4>Acrescenta uma fotografia</h4>
+{% endblock %}
+{% block modal_body %}
+    <div class="like_modal">
+        <div class="like_modal_container">
+            <div class='container-image container-canvas'>
+                <!-- <div class="overlay_canvas"></div> -->
+                <canvas class="player_input_image" id='canvas'></canvas>
+            </div>
+            <div class='container-image' style="visibility: hidden;display: none;">
+                <img class="player_input_image" id='uploaded_image' style="visibility: hidden;display: none;"/>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block modal_footer %}
+    <div class="player_input_image_footer">
+        <input type="range" id="picture_scale" name="picture_scale" min="0.01" max="5" step="0.01">
+        <div class="player_input_image_footer_button">
+            <button class="btn-secondary btn closeModal">Cancelar</button>
+            <button class="btn-success btn closeModal" id="confirm_chosen_picture">Confirmar</button>
+        </div>
+    </div>
+{% endblock %}
+
+{% block modal %}
+    {{super()}}
+{% endblock %}

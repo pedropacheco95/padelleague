@@ -1,0 +1,71 @@
+{% extends 'layout.html' %}
+{% import 'macros/input_macros.html' as input_macros %}
+
+{% block header %}
+    <h1>{% block title %}Create Product{% endblock %}</h1>
+{% endblock %}
+
+{% block main %}
+<div class="l-grid">
+    <div class="login_container">
+        <div class="inner_login_container">
+            <form method="POST" enctype="multipart/form-data">
+
+                <div class="form-group">
+                    <label for='name' style="color: black;"> Nome </label>
+                    <input autocomplete="off" autofocus class="form-control" name="name" placeholder="Name" type="text" required>
+                </div>
+
+                <div class="form-group">
+                    <label for='price' style="color: black;"> Preço </label>
+                    <input autocomplete="off" autofocus class="form-control" name="price" type="number" required>
+                </div>
+
+                <div class="form-group">
+                    <label for='small_description' style="color: black;"> Descrição pequena </label>
+                    <input class="form-control" name="small_description" placeholder="Small Description" type="text">
+                </div>
+
+                <div class="form-group">
+                    <label for='small_description' style="color: black;"> Descrição grande </label>
+                    <input class="form-control" name="big_description" placeholder="Big Description" type="text">
+                </div>
+
+                <div class="form-group table_of_attribute_values">
+                    <label for='features' style="color: black;"> Caracteristica: Especificacao (ex: Material: Algodão) </label>
+                    <input autocomplete="off" autofocus class="form-control" name="features" type="text" onchange="duplicateInputElement(this)">
+                </div>
+
+                <div class="form-group table_of_attribute_values">
+                    <label for='table_of_attributes' style="color: black;"> Atributos </label>
+                    <table name="table_of_attributes" class="table_for_attributes">
+                        {% for attribute in attributes %}
+                        <tr class="attribute_value_input">
+                            <td>
+                                <label for='attribute' style="color: black;"> {{attribute.name}} </label>
+                                <input autocomplete="off" autofocus class="form-control" name="attribute" value="{{attribute.id}}" type="checkbox">
+                            </td>
+                            <td class="input_attribute_values">
+                                {% for value in attribute.values%}
+                                    <div class="value_container">
+                                        <label for='value' style="color: black;"> {{value.value}} </label>
+                                        <input autocomplete="off" autofocus class="form-control" name="value" value="{{value.id}}" type="checkbox">
+                                    </div>
+                                {% endfor %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+
+                <div class="form-group">
+                    <label for='picture' style="color: black;font-weight: bold;">Fotografias de produto</label>
+                    {{input_macros.product_picture_input()}}
+                </div>
+
+                <button class="btn btn-primary" type="submit">Registar</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

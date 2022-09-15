@@ -1,16 +1,24 @@
 from padel_league import model 
 from padel_league.sql_db import db
-from sqlalchemy import Column, Integer, ForeignKey, Enum 
+from sqlalchemy import Column, Integer, ForeignKey, Enum , Text
 from sqlalchemy.orm import relationship 
 
 class OrderLine(db.Model ,model.Model, model.Base):
     __tablename__ = 'order_lines'
     __table_args__ = {'extend_existing': True}
-    player_id = Column(Integer, ForeignKey('players.id'), primary_key=True)
-    product_id = Column(Integer, ForeignKey('products.id'), primary_key=True)
+    id = Column(Integer, primary_key=True)
+    order_id = Column(Integer, ForeignKey('orders.id'))
+    product_id = Column(Integer, ForeignKey('products.id'))
     quantity = Column(Integer, nullable=False)
+    specification = Column(Text)
 
-    product = relationship('Product', back_populates='players_relations')
-    player = relationship('Player', back_populates='products_relations')
+    product = relationship('Product', back_populates='order_lines')
+    order = relationship('Order', back_populates="order_lines")
 
-    order_relations = relationship('Association_OrderOrderLine', back_populates='order_line')
+    def __eq__(self, other):
+        if isinstance(other, OrderLine):
+            return self.product_id == other.product_id and self.order_id == other.order_id and self.specification == other.specification
+        return False
+
+    def get_specification_list(self):
+        return self.specification.split('; ')

@@ -1,6 +1,6 @@
 from padel_league import model 
 from padel_league.sql_db import db
-from sqlalchemy import Column, Integer , String , Text , ForeignKey
+from sqlalchemy import Column, Integer , String , Text , ForeignKey , Boolean
 from sqlalchemy.orm import relationship
 
 class User(db.Model ,model.Model,model.Base):
@@ -10,6 +10,9 @@ class User(db.Model ,model.Model,model.Base):
     username = Column(String(80), unique=True, nullable=False)
     email = Column(String(120), unique=True, nullable=False)
     password = Column(Text, nullable=False)
+    is_admin = Column(Boolean, default=False)
     player_id = Column(Integer, ForeignKey('players.id'))
 
     player = relationship('Player', back_populates="user")
+    
+    orders = relationship('Order', back_populates="user")

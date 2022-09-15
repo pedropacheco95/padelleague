@@ -5,6 +5,14 @@ from .users import User
 from .players import Player
 from .matches import Match
 from .news import News
+from .registrations import Registration
+from .products import Product
+from .product_images import ProductImage
+from .product_attributes import ProductAttribute
+from .product_attribute_values import ProductAttributeValue
+from .orders import Order
+from .order_lines import OrderLine
 from .Association_PlayerDivision import Association_PlayerDivision
 from .Association_PlayerMatch import Association_PlayerMatch
-from .registrations import Registration
+from .Association_ProductProductAttribute import Association_ProductProductAttribute
+from .Association_ProductProductAttributeValue import Association_ProductProductAttributeValue

@@ -52,6 +52,11 @@
             <li class="c-tor-header__item" role="presentation">
                 <a id="calendar_button">Calendário</a>
             </li>
+            {% if tournament.open_division and session['user']%}
+            <li class="c-tor-header__item" role="presentation">
+                <a id="add_game_button">Adicionar jogo</a>
+            </li>
+            {% endif %}
             {% if admin %}
             <li class="c-tor-header__item">
                 <a href="{{url_for('matches.for_edit',division_id=tournament.id)}}">Editar Jogos</a>
@@ -82,7 +87,7 @@
                     <td name="position">{{tournament.player_position(player)}}</td>
                     <td name="image">
                         <a class="c-trigger" href="{{ url_for('players.player',id=player.id) }}">
-                            {% set filename = 'images/' + player.picture_path %}
+                            {% set filename = 'images/players/' + player.picture_path %}
                             {% set player_image = url_for('static',filename=filename)%}
                             <div class="c-teams__img u-img-cropped u-img-cropped--classification" style="background-image: url({{player_image}})"></div>
                         </a>
@@ -109,6 +114,9 @@
         <br>
             <div id="calendar" class="calendar_in_tournament"></div>
         <br>
+    </div>
+    <div class="c-flex-table c-flex-table--ranking" id="add_game_tab">
+        {{ match_macros.create_match_card(tournament.id,players)}}
     </div>
 </div>
 {% endblock %}

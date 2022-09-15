@@ -9,3 +9,6 @@ from . import uploads
 from . import users
 from . import news
 from . import registrations
+from . import products
+from . import products_attributes
+from . import shop

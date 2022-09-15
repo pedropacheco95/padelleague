@@ -1,0 +1,19 @@
+{% include 'layout.html' %}
+
+{% block main %}{% endblock %}
+{% block modal %}
+    <div id="Modal" class="modal">
+        <div class="modal_content">
+            <div class="modal_header">
+                {% block modal_header %}{% endblock %}
+                <span class="closeModal">&times;</span>
+            </div>
+            <div class="modal_body">
+                {% block modal_body %}{% endblock %}
+            </div>
+            <div class="modal_footer">
+                {% block modal_footer %}{% endblock %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
