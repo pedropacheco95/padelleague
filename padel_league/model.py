@@ -16,6 +16,10 @@ class Model():
         db.session.commit()
         return True
 
+    def add_to_session(self):
+        db.session.add(self)
+        return True
+
     def delete(self):
         db.session.delete(self)
         db.session.commit()
@@ -39,8 +43,9 @@ class Model():
         return True
 
     def merge(self):
-        db.session.merge(self)
-        return True
+        new = db.session.merge(self)
+        db.session.commit()
+        return new
 
     def flush(self):
         db.session.flush(self)
