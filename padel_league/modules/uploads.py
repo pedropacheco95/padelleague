@@ -8,7 +8,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 
 from padel_league.sql_db import db
-from padel_league.models import User , Match , League , Edition , Division , Player , Association_PlayerDivision , Association_PlayerMatch
+from padel_league.models import User , Match , League , Edition , Division , Player , Association_PlayerDivision , Association_PlayerMatch , Registration , News
 
 bp = Blueprint('uploads', __name__, url_prefix='/uploads')
 
@@ -42,6 +42,23 @@ def upload_csv_to_db():
             editions[id] = edicao
     f.close()
 
+    all_news = dict()
+    f = open(os.path.join('padel_league/static/data/csv', 'news.csv'))
+    for line in f:
+        line = line.strip('\n')
+        columns = line.split("|")
+        if columns[0] != 'id':
+            id = columns[0]
+            title = columns[1]
+            cover_path = columns[2]
+            author = columns[3]
+            text = columns[4]
+            news = News(title=title,cover_path=cover_path,author=author,text=text)
+
+            news.create()
+            all_news[id] = news
+    f.close()
+
     divisions = dict()
     f = open(os.path.join('padel_league/static/data/csv', 'divisions.csv'))
     for line in f:
@@ -55,7 +72,8 @@ def upload_csv_to_db():
             end_date = datetime.datetime.strptime(columns[4], '%Y-%m-%d') if columns[3] else None
             logo_image_path = columns[5]
             large_picture_path = columns[6]
-            edition = editions[columns[8]]
+            open_division = True if columns[8] == 'True' else False
+            edition = editions[columns[9]]
             
             division = Division(name=name,
             beginning_datetime=beginning_datetime,
@@ -63,6 +81,7 @@ def upload_csv_to_db():
             logo_image_path=logo_image_path,
             large_picture_path=large_picture_path,
             has_ended=False,
+            open_division=open_division,
             rating=rating,
             edition_id = edition.id)
 
@@ -181,6 +200,18 @@ def upload_csv_to_db():
             players_matches = Association_PlayerMatch(player=player,match=match,team = team)
             
             players_matches.create()
+    f.close()
+
+    f = open(os.path.join('padel_league/static/data/csv', 'registrations.csv'))
+    for line in f:
+        line = line.strip('\n')
+        columns = line.split(",")
+        if columns[0] != 'player_id':
+            player = players[columns[0]]
+            edition = editions[columns[1]]
+            registration = Registration(player=player,edition=edition)
+            
+            registration.create()
     f.close()
 
     return redirect(url_for('main.index'))

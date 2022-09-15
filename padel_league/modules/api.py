@@ -4,7 +4,7 @@ import json
 from flask import Blueprint, flash, g, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from padel_league.models import Division , Match , Player
+from padel_league.models import Division , Match , Player , OrderLine
 
 bp = Blueprint('api', __name__, url_prefix='/api')
 
@@ -41,3 +41,9 @@ def points_by_matchweek(division_id):
     
     points_by_matchweek['matchweek'] = division.last_updated_matchweek()
     return json.dumps(points_by_matchweek)
+
+@bp.route('/delete_order_line/<id>',methods=('GET', 'POST'))
+def delete_order_line(id):
+    order_line = OrderLine.query.filter_by(id=id).first()
+    order_line.delete()
+    return True

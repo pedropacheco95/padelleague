@@ -1,0 +1,102 @@
+{% import 'macros/player_macros.html' as player_macros %}
+{% macro player_picture_input(player = None) %}
+<script src="{{ url_for('static', filename='js/modal.js')}}" defer></script>
+<script src="{{ url_for('static', filename='js/upload_image.js')}}" defer></script>
+<button class="disp-none" id="modalActivation" type="button"></button>
+{% if player %}
+{% set filename = 'images/players/' + player.picture_path %}
+{% set picture = url_for('static',filename=filename)%}
+{% else %}
+{% set picture = url_for('static',filename='images/players/default_player.jpg') %}
+{% endif %}
+<div class='container-form'>
+    <input id='selectedFile' class="disp-none" type='file'>
+    <img class="u-img-cropped-input u-img-cropped--blue" src="{{picture}}" id="upload-aphoto">
+</div>
+<input id='finalFile' name="finalFile" class="disp-none" type='file' accept=".png, .jpg, .jpeg, .svg">
+<div id="Modal" class="modal">
+    <div class="modal_content">
+        <div class="modal_header">
+            <h4>Acrescenta uma fotografia</h4>
+            <span class="closeModal">&times;</span>
+        </div>
+        <div class="modal_body">
+            <div class="like_modal">
+                <div class="like_modal_container">
+                    <div class='container-image container-canvas'>
+                        <!-- <div class="overlay_canvas"></div> -->
+                        <canvas class="player_input_image u-img-cropped-input u-img-cropped--blue" id='canvas'></canvas>
+                    </div>
+                    <div class='container-image' style="visibility: hidden;display: none;">
+                        <img class="player_input_image" id='uploaded_image' style="visibility: hidden;display: none;"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal_footer">
+            <div class="player_input_image_footer">
+                <input type="range" id="picture_scale" name="picture_scale" min="0.5" max="5" step="0.01">
+                <div class="player_input_image_footer_button">
+                    <button class="btn-secondary btn closeModal" type="button">Cancelar</button>
+                    <button class="btn-success btn closeModal" id="confirm_chosen_picture" type="button">Confirmar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro product_picture_input() %}
+<script src="{{ url_for('static', filename='js/modal.js')}}" defer></script>
+<script src="{{ url_for('static', filename='js/upload_image.js')}}" defer></script>
+<button class="disp-none" id="modalActivation" type="button"></button>
+<div class='container-form'>
+    <input id='selectedFile' class="disp-none" type='file'>
+    <img src="{{url_for('static',filename='images/products/default_product.png')}}" id="upload-aphoto">
+    <div class="product_galery" id="galery"></div>
+</div>
+<input id='finalFile' name="finalFile" class="disp-none" type='file' accept=".png, .jpg, .jpeg, .svg" multiple>
+<div id="Modal" class="modal">
+    <div class="modal_content">
+        <div class="modal_header">
+            <h4>Acrescenta uma fotografia</h4>
+            <span class="closeModal">&times;</span>
+        </div>
+        <div class="modal_body">
+            <div class="like_modal">
+                <div class="like_modal_container">
+                    <div class='container-image container-canvas'>
+                        <canvas class="player_input_image" id='canvas'></canvas>
+                    </div>
+                    <div class='container-image' style="visibility: hidden;display: none;">
+                        <img class="player_input_image" id='uploaded_image' style="visibility: hidden;display: none;"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal_footer">
+            <div class="player_input_image_footer">
+                <input type="range" id="picture_scale" name="picture_scale" min="0.5" max="5" step="0.01">
+                <div class="player_input_image_footer_button">
+                    <button class="btn-secondary btn closeModal" type="button">Cancelar</button>
+                    <button class="btn-success btn closeModal" id="confirm_chosen__product_picture" type="button">Confirmar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro select_player(players) %}
+<script src="{{ url_for('static', filename='js/modal.js')}}" defer></script>
+<button class="disp-none" id="modalActivation" type="button"></button>
+<div id="Modal" class="modal">
+    <div class="modal_content">
+        <div class="player_in_modal_container">
+            {% for player in players %}
+            {{player_macros.choose_player_line(player)}}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endmacro %}

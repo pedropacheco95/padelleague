@@ -1,6 +1,10 @@
 document.getElementById('general_information_button').addEventListener('click',activateDataTabs);
 document.getElementById('matches_information_button').addEventListener('click',activateDataTabs);
 document.getElementById('calendar_button').addEventListener('click',activateDataTabs);
+let add_game_button = document.getElementById('add_game_button')
+if (add_game_button){
+    add_game_button.addEventListener('click',activateDataTabs);
+}
 
 function activateDataTabs(button_element){
     for (element of document.getElementsByClassName('c-tor-header__item--active')){
@@ -19,6 +23,9 @@ function activateDataTabs(button_element){
     }
     if (button_element.currentTarget.id == 'calendar_button'){
         document.getElementById('calendar_tab').classList.add('is-visible');
+    }
+    if (button_element.currentTarget.id == 'add_game_button'){
+        document.getElementById('add_game_tab').classList.add('is-visible');
     }
 }
 

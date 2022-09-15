@@ -1,3 +1,4 @@
+{% import 'macros/input_macros.html' as input_macros %}
 {% macro match_card(match) %}
 
 {% set home_players = match.home_players() %}
@@ -100,7 +101,7 @@
                     <div class="c-teams__container">
                         <div class="l-wrapper">
                             <a class="c-trigger" href="{{ home_players0_link }}">
-                                {% set filename = 'images/' + home_players0_picture_path %}
+                                {% set filename = 'images/players/' + home_players0_picture_path %}
                                 {% set player_image = url_for('static',filename=filename)%}
                                 <div class="c-teams__img u-img-cropped u-img-cropped--team" style="background-image: url({{player_image}})"></div>
                             </a>
@@ -118,7 +119,7 @@
                         </div>
                         <div class="l-wrapper">
                             <a class="c-trigger" href="{{ home_players1_link }}">
-                                {% set filename = 'images/' + home_players1_picture_path %}
+                                {% set filename = 'images/players/' + home_players1_picture_path %}
                                 {% set player_image = url_for('static',filename=filename)%}
                                 <div class="c-teams__img u-img-cropped u-img-cropped--team" style="background-image: url({{player_image}})"></div>
                             </a>
@@ -134,7 +135,7 @@
                     <div class="c-teams__container">
                         <div class="l-wrapper">
                             <a class="c-trigger" href="{{ away_players0_link }}">
-                                {% set filename = 'images/' + away_players0_picture_path %}
+                                {% set filename = 'images/players/' + away_players0_picture_path %}
                                 {% set player_image = url_for('static',filename=filename)%}
                                 <div class="c-teams__img u-img-cropped u-img-cropped--team" style="background-image: url({{player_image}})"></div>
                             </a>
@@ -152,7 +153,7 @@
                         </div>
                         <div class="l-wrapper">
                             <a class="c-trigger" href="{{ away_players1_link }}">
-                                {% set filename = 'images/' + away_players1_picture_path %}
+                                {% set filename = 'images/players/' + away_players1_picture_path %}
                                 {% set player_image = url_for('static',filename=filename)%}
                                 <div class="c-teams__img u-img-cropped u-img-cropped--team" style="background-image: url({{player_image}})"></div>
                             </a>
@@ -329,7 +330,7 @@
                     <div class="c-teams__container_for_edit">
                         <div class="l-wrapper">
                             <div class="eliminate_player" value="homeplayer0" id="player_button" onclick = "void(0)">
-                                {% set filename = 'images/' + home_players0_picture_path %}
+                                {% set filename = 'images/players/' + home_players0_picture_path %}
                                 {% set player_image = url_for('static',filename=filename)%}
                                 <div class="c-teams__img u-img-cropped u-img-cropped--team" id="homeplayer0_image" style="background-image: url({{player_image}});"></div>
                             </div>
@@ -347,7 +348,7 @@
                         </div>
                         <div class="l-wrapper">
                             <div class="eliminate_player" value="homeplayer1" id="player_button" onclick = "void(0)">
-                                {% set filename = 'images/' + home_players1_picture_path %}
+                                {% set filename = 'images/players/' + home_players1_picture_path %}
                                 {% set player_image = url_for('static',filename=filename)%}
                                 <div class="c-teams__img u-img-cropped u-img-cropped--team" id="homeplayer1_image" style="background-image: url({{player_image}});"></div>
                             </div>
@@ -363,7 +364,7 @@
                     <div class="c-teams__container_for_edit">
                         <div class="l-wrapper">
                             <div class="eliminate_player" value="awayplayer0" id="player_button" onclick = "void(0)">
-                                {% set filename = 'images/' + away_players0_picture_path %}
+                                {% set filename = 'images/players/' + away_players0_picture_path %}
                                 {% set player_image = url_for('static',filename=filename)%}
                                 <div class="c-teams__img u-img-cropped u-img-cropped--team" id="awayplayer0_image" style="background-image: url({{player_image}});"></div>
                             </div>
@@ -381,7 +382,7 @@
                         </div>
                         <div class="l-wrapper">
                             <div class="eliminate_player" value="awayplayer1" id="player_button" onclick = "void(0)">
-                                {% set filename = 'images/' + away_players1_picture_path %}
+                                {% set filename = 'images/players/' + away_players1_picture_path %}
                                 {% set player_image = url_for('static',filename=filename)%}
                                 <div class="c-teams__img u-img-cropped u-img-cropped--team" id="awayplayer1_image" style="background-image: url({{player_image}});"></div>
                             </div>
@@ -393,5 +394,101 @@
     </div>
     <br>
     </form>
+</section>
+{% endmacro %}
+
+
+{% macro create_match_card(division_id,players) %}
+
+{% set unknown_image = url_for('static',filename='images/players/default_player.jpg')%}
+
+<script src="{{ url_for('static', filename='js/matches_create_match.js')}}" defer></script>
+<section class="c-tor-box c-tor-box--m">
+    <form action="{{url_for('matches.create',division_id=division_id)}}" method="post" onsubmit="return check_inputs();">
+    <br>
+    <div class="c-teams c-teams--double c-teams--vs">
+        <div class="c-teams__header c-teams__header--played">
+            <div class="c-teams__iandt_create">
+                <img class="small_watch" src="{{ url_for('static', filename='images/watch.png')}}">
+                <input type="datetime-local" id="match_time" name="date_hour"/>
+            </div>
+            <div class="c-teams__iandt_create">
+                <span contenteditable="true" class="game_results" value="hometeam_games" pattern="\d*" inputmode="decimal">0</span>
+                <span>-</span>
+                <span contenteditable="true" class="game_results" value="awayteam_games" pattern="\d*" inputmode="decimal">0</span>
+                <input name="hometeam_games_input" type="number" id="hometeam_games_input" class="game_inputs" style="display: none;">
+                <input name="awayteam_games_input" type="number" id="awayteam_games_input" class="game_inputs" style="display: none;">
+            </div>
+        </div>
+    </div>
+    <div class="c-teams__box">
+        <div class="c-teams__column">
+            <ul class="c-teams__list u-list-clean">
+                <li class="c-teams__item on_match">
+                    <div class="c-teams__container_for_edit">
+                        <div class="l-wrapper">
+                            <div class="choose_player" value="homeplayer0" id="player_button" onclick = "void(0)">
+                                <div class="c-teams__img u-img-cropped u-img-cropped--team" id="homeplayer0_image" style="background-image: url({{unknown_image}});"></div>
+                            </div>
+                        </div>
+                        <div class="c-teams__details">
+                            <div class="l-wrapper">
+                                <div class="c-teams__players">
+                                    <div class="c-teams__name" name="homeplayer0_name">home_players0_full_name</div>
+                                    <div class="c-teams__name" name="homeplayer1_name">home_players1_full_name</div>
+                                    <div class="c-teams__name_small" name="homeplayer0_name">home_players0_name</div>
+                                    <div class="c-teams__name_small" name="homeplayer1_name">home_players1_name</div>
+                                    <input type="text" name="homeplayer0_id" id="homeplayer0_id" class="disp-none">
+                                    <input type="text" name="homeplayer1_id" id="homeplayer1_id" class="disp-none">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="l-wrapper">
+                            <div class="choose_player" value="homeplayer1" id="player_button" onclick = "void(0)">
+                                <div class="c-teams__img u-img-cropped u-img-cropped--team" id="homeplayer1_image" style="background-image: url({{unknown_image}});"></div>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+            </ul>
+        </div>
+        <span class="c-teams__vs">VS</span>
+        <div class="c-teams__column">
+            <ul class="c-teams__list u-list-clean">
+                <li class="c-teams__item on_match">
+                    <div class="c-teams__container_for_edit">
+                        <div class="l-wrapper">
+                            <div class="choose_player" value="awayplayer0" id="player_button" onclick = "void(0)">
+                                <div class="c-teams__img u-img-cropped u-img-cropped--team" id="awayplayer0_image" style="background-image: url({{unknown_image}});"></div>
+                            </div>
+                        </div>
+                        <div class="c-teams__details">
+                            <div class="l-wrapper">
+                                <div class="c-teams__players">
+                                    <div class="c-teams__name" name="awayplayer0_name">away_players0_full_name</div>
+                                    <div class="c-teams__name" name="awayplayer1_name">away_players1_full_name</div>
+                                    <div class="c-teams__name_small" name="awayplayer0_name">away_players0_name</div>
+                                    <div class="c-teams__name_small" name="awayplayer1_name">away_players1_name</div>
+                                    <input type="text" name="awayplayer0_id" id="awayplayer0_id" class="disp-none">
+                                    <input type="text" name="awayplayer1_id" id="awayplayer1_id" class="disp-none">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="l-wrapper">
+                            <div class="choose_player" value="awayplayer1" id="player_button" onclick = "void(0)">
+                                <div class="c-teams__img u-img-cropped u-img-cropped--team" id="awayplayer1_image" style="background-image: url({{unknown_image}});"></div>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <br>
+    <div class="create_game_button">
+        <button onclick="copyToInput()" class="btn btn-primary" type="submit">Criar jogo</button>
+    </div>
+    </form>
+    {{input_macros.select_player(players)}}
 </section>
 {% endmacro %}

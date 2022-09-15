@@ -5,9 +5,10 @@ import unidecode
 
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for , current_app
 from werkzeug.security import check_password_hash, generate_password_hash
-from sqlalchemy import null
+from sqlalchemy import null, inspect
 
-from padel_league.models import User , Player
+from padel_league.models import User , Player , Order , Association_PlayerDivision , Division
+from padel_league.tools import image_tools
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -29,7 +30,7 @@ def register():
         height= request.form['height']
         birthday= datetime.datetime.strptime(request.form['birth_date'], '%Y-%m-%d') if request.form['birth_date'] else None
 
-        files = request.files.getlist('pictures')
+        final_files = request.files.getlist('finalFile')
 
         error = None
         if not username:
@@ -57,23 +58,22 @@ def register():
             if prefered_position:
                 player.prefered_position = prefered_position
             player.save()
-            for index in range(len(files)):
-                file = files[index]
+            for file in final_files:
                 if file.filename != '':
                     image_name = str(player.name).replace(" ", "").lower()
                     image_name = unidecode.unidecode(image_name)
-                    image_name = '{image_name}_{player_id}.jpg'.format(image_name=image_name,player_id=player.id)
+                    image_name = '{image_name}_{player_id}.png'.format(image_name=image_name,player_id=player.id)
 
-                    filename = os.path.join('images',image_name)
-                    path = current_app.root_path + url_for('static', filename = filename)
-                    file_exists = os.path.exists(path)
-                    if not file_exists:
-                        img_file = open(path,'wb')
-                        img_file.close()
-                    file.save(path)
+                    filename = os.path.join('players',image_name)
+
+                    image_tools.save_file(file, filename)
+                    image_tools.remove_background(filename)
 
                     player.picture_path = image_name
                     player.save()
+            division = Division.query.filter_by(id=5).first()
+            players_divisions = Association_PlayerDivision(player=player,division=division)
+            players_divisions.create()
             user = User(username=username, email=email , password= password, player_id=player.id)
             user.create()
             return redirect(url_for('auth.login'))
@@ -102,6 +102,10 @@ def login():
         if error is None:
             session.clear()
             session['user'] = user
+            #Check if user has an open order
+            if not [order for order in user.orders if not order.closed]:
+                order = Order(user_id=user.id)
+                order.create()
             if username == 'admin':
                 session['admin_logged'] = True
             return redirect(url_for('main.index'))

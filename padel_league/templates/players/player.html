@@ -53,7 +53,7 @@
         </div>
         <div class="c-player__footer">
             <div class="c-player__img-container">
-                {% set filename = 'images/' + player.picture_path %}
+                {% set filename = 'images/players/' + player.picture_path %}
                 {% set player_image = url_for('static',filename=filename)%}
                 <div class="u-img-cropped" id="player_image_top" style="background-image: url({{player_image}});"></div>
             </div>
@@ -107,7 +107,11 @@
             </div> 
             <div class="c-ranking-header__data-box">
                 <p class="c-ranking-header__data-title">Eficácia</p>
+                {% if n_matches_played %}
                 <p class="c-ranking-header__data">{{(n_matches_won / n_matches_played * 100)|round(2) }}%</p>
+                {% else %}
+                <p class="c-ranking-header__data">0%</p>
+                {% endif %}
             </div>
         </div>
     </div>

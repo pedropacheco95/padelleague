@@ -25,13 +25,25 @@ class Model():
         db.session.commit()
         return True
 
-    def add_to_session(self):
-        db.session.add(self)
-        db.session.commit()
+    def logout(self):
+        db.session.expunge_all()
+        db.session.close()
         return True
     
     def refresh(self):
         db.session.refresh(self)
+        return True
+
+    def expire(self):
+        db.session.expire(self)
+        return True
+
+    def merge(self):
+        db.session.merge(self)
+        return True
+
+    def flush(self):
+        db.session.flush(self)
         return True
 
     def get_table(self,model):

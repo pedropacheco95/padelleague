@@ -58,8 +58,12 @@ def create_app(test_config=None):
     app.register_blueprint(modules.users.bp)
     app.register_blueprint(modules.news.bp)
     app.register_blueprint(modules.registrations.bp)
+    app.register_blueprint(modules.products.bp)
+    app.register_blueprint(modules.products_attributes.bp)
+    app.register_blueprint(modules.shop.bp)
     with app.app_context():
         sql_db.db.init_app(app)
+        sql_db.db.session.expire_on_commit = False
         sql_db.db.create_all()
 
     return app

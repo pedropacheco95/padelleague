@@ -1,3 +1,4 @@
+from dataclasses import field
 import datetime 
 from flask import Blueprint, flash, g, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -100,3 +101,49 @@ def edit(id):
 
         return redirect(url_for('matches.match',id=match.id,edited_match='edited_match'))
     return render_template('matches/edit_match.html',match=match)
+
+
+@bp.route('/create/<division_id>', methods=('GET', 'POST'))
+def create(division_id):
+    division = Division.query.filter_by(id=division_id).first()
+    players = [rel.player for rel in division.players_relations]
+    if request.method == 'POST':
+        date_hour = datetime.datetime.strptime(request.form['date_hour'], '%Y-%m-%dT%H:%M')
+        hometeam_games_input = int(request.form['hometeam_games_input'])
+        awayteam_games_input = int(request.form['awayteam_games_input'])
+        home = [int(request.form['homeplayer0_id']),int(request.form['homeplayer1_id'])]
+        away = [int(request.form['awayplayer0_id']),int(request.form['awayplayer1_id'])]
+        winner = 1 if hometeam_games_input > awayteam_games_input else -1 if awayteam_games_input > hometeam_games_input else 0
+        if len(list(set(home+away))) != 4:
+            error = 'Puseste o mesmo jogador duas vezes'
+            flash(error)
+            return render_template('matches/create_match.html',division=division, players=players)
+        players_in_match = {
+            'home': home,
+            'away': away
+        }
+
+        match = Match(division_id = division.id,
+            date_hour = date_hour,
+            played = True,
+            games_home_team = hometeam_games_input,
+            games_away_team = awayteam_games_input,
+            winner = winner,
+            field = 'Campo 1',
+            matchweek = 1
+        )
+        match.create()
+        for player_id in players_in_match['home']:
+            association = Association_PlayerMatch(player_id=player_id,match_id=match.id, team='Home')
+            association.create()
+        for player_id in players_in_match['away']:
+            association = Association_PlayerMatch(player_id=player_id,match_id=match.id, team='Away')
+            association.create()
+
+        match.division.add_match_to_table(match)
+        match.division.edition.league.ranking_add_match(match)
+        match.save()
+        
+
+        return redirect(url_for('matches.match',id=match.id,edited_match='edited_match'))
+    return render_template('matches/create_match.html',division=division, players=players)

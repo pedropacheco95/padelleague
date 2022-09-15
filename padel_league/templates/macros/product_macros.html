@@ -1,0 +1,23 @@
+{% macro product_card(product) %}
+<div class="product_card">
+    <div class="product_card_image">
+        <a href="{{url_for('products.show',id=product.id)}}">
+            {% if product.images %}
+                {% set filename = 'images/' + product.images[0].path%}
+            {% else %}
+                {% set filename = 'images/products/default_product.png' %}
+            {% endif %}
+            <img src="{{url_for('static',filename=filename)}}" alt="product_image">
+        </a>
+    </div>
+    <div class="product_card_info">
+        <div class="product_card_name">
+            <a href="{{url_for('products.show',id=product.id)}}">{{product.name}}</a>
+        </div>
+        <div class="product_card_price">
+            <span class="sr-only">Preço</span>
+            <span itemprop="price" class="price">{{"{:,.2f} €".format(product.price)}}</span>
+        </div>
+    </div>
+</div>
+{% endmacro %}
