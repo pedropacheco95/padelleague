@@ -45,7 +45,7 @@
                     </div>
                     {% else %}
                     <div class="c-btn-topright">
-                        <a href="{{url_for('players.edit',id=session['user'].player_id)}}">
+                        <a href="{{url_for('players.edit',id=session.get('user').player_id)}}">
                             {{ session['user'].username }}
                         </a>
                     </div>

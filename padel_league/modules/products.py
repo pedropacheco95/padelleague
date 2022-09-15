@@ -2,8 +2,9 @@ from flask import Blueprint, flash, g, redirect, render_template, request, sessi
 from werkzeug.security import check_password_hash, generate_password_hash
 import os
 import unidecode
+from sqlalchemy import inspect
 
-from padel_league.models import Product , ProductAttribute , Association_ProductProductAttribute , Association_ProductProductAttributeValue , ProductImage , ProductAttributeValue , OrderLine
+from padel_league.models import Product , ProductAttribute , Association_ProductProductAttribute , Association_ProductProductAttributeValue , ProductImage , ProductAttributeValue , OrderLine , Order
 from padel_league.tools import image_tools
 
 bp = Blueprint('products', __name__,url_prefix='/products')
@@ -80,7 +81,9 @@ def show(id):
                         values[attribute.name] = ProductAttributeValue.query.get(int(value)).value
             values_string = ['{key}: {value}'.format(key=key,value=values[key]) for key in values.keys()]
             specification = '; '.join(values_string)
-            order = [order for order in user.orders if not order.closed][-1]
+            #order = [order for order in user.orders if not order.closed][-1]
+            orders = Order.query.filter_by(user_id=user.id).all()
+            order = [order for order in orders if not order.closed][-1]
 
             if order:
                 order_line = OrderLine(product_id=product.id,order_id=order.id,quantity=1,specification=specification)

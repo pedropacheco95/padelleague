@@ -92,7 +92,8 @@ def login():
         password = request.form['password']
         error = None
 
-        user = User.query.filter_by(username=username).first()
+        step_user = User.query.filter_by(username=username).first()
+        user = step_user.merge()
 
         if user is None:
             error = 'Enganaste-te no username oh burro.'
@@ -102,10 +103,7 @@ def login():
         if error is None:
             session.clear()
             session['user'] = user
-            #Check if user has an open order
-            if not [order for order in user.orders if not order.closed]:
-                order = Order(user_id=user.id)
-                order.create()
+            
             if username == 'admin':
                 session['admin_logged'] = True
             return redirect(url_for('main.index'))
