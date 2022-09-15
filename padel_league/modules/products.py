@@ -94,3 +94,9 @@ def show(id):
             return redirect(url_for('shop.cart',order_id = order.id))
         flash(error)
     return render_template('products/product.html',product=product)
+
+@bp.route('/delete/<id>', methods=('GET', 'POST'))
+def delete(id):
+    product = Product.query.get(id)
+    product.delete()
+    return redirect(url_for('main.index'))

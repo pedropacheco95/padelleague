@@ -1,0 +1,42 @@
+{% extends 'layout.html' %}
+
+{% block main %}
+<div class="l-grid">
+    <div class="login_container">
+        <div class="inner_login_container">
+            <form method="POST">
+
+                <div class="form-group">
+                    <label for='name' style="color: black;"> Nome </label>
+                    <input autocomplete="off" autofocus class="form-control" name="name" placeholder="{{product_attribute.name}}" type="text">
+                </div>
+
+                <div class="form-group">
+                    <label for='user_input' style="color: black;"> Tem user input </label>
+                    <input autocomplete="off" autofocus class="form-control" name="user_input" type="checkbox" {% if product_attribute.user_input %} checked {% endif %}>
+                </div>
+
+                <div class="form-group table_of_attribute_values">
+                    <table>
+                        {% for value in product_attribute.values%}
+                        <tr class="attribute_value_input" onclick="duplicateElement(this)">
+                            <td style="font-weight: bold;">
+                                {{value.value}}
+                            </td>
+                        </tr>
+                        {% endfor%}
+                        <tr class="attribute_value_input" onclick="duplicateElement(this)">
+                            <td>
+                                <label for='attribute_value_name' style="color: black;"> Valor </label>
+                                <input autocomplete="off" autofocus class="form-control" name="attribute_value_name" type="text">
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <button class="btn btn-primary" type="submit">Criar</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

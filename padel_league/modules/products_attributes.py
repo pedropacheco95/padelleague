@@ -23,3 +23,41 @@ def create():
 
         return redirect(url_for('main.index'))
     return render_template('product_attributes/create.html')
+
+
+@bp.route('/edit', methods=('GET', 'POST'))
+@bp.route('/edit/<id>', methods=('GET', 'POST'))
+def edit(id=None):
+    if not id:
+        product_attributes = ProductAttribute.query.all()
+        return render_template('product_attributes/edit_choose.html',product_attributes=product_attributes)
+    product_attribute = ProductAttribute.query.filter_by(id=id).first()
+    if request.method == 'POST':
+        name = request.form['name']
+        user_input = True if request.form.get('user_input') == 'on' else False
+    
+        values = request.form.getlist('attribute_value_name')
+
+        if name != product_attribute.name and name:
+            product_attribute.name = name
+        if user_input != product_attribute.user_input:
+            product_attribute.user_input = user_input
+
+        product_attribute.save()
+        for value in values:
+            exists = ProductAttributeValue.query.filter_by(value=value).first()
+            if not exists:
+                product_value = ProductAttributeValue(value=value,product_attribute_id=product_attribute.id)
+                product_value.create()
+
+        return redirect(url_for('product_attributes.edit.html'))
+    return render_template('product_attributes/edit.html',product_attribute=product_attribute)
+
+
+@bp.route('/delete/<id>', methods=('GET', 'POST'))
+def delete(id):
+    product_attribute = ProductAttribute.query.get(id)
+    for value in product_attribute.values:
+        value.delete()
+    product_attribute.delete()
+    return redirect(url_for('main.index'))
