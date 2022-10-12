@@ -47,3 +47,9 @@ def delete_order_line(id):
     order_line = OrderLine.query.filter_by(id=id).first()
     order_line.delete()
     return True
+
+@bp.route('/delete_player/<id>', methods=('GET', 'POST'))
+def delete_player(id):
+    player = Player.query.filter_by(id=id).first()
+    player.delete()
+    return True
