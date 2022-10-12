@@ -80,18 +80,6 @@ def create():
                 match.played = False
                 match.create()
 
-                print('============')
-                print('============')
-                print('============')
-                print('============')
-                print(games)
-                print(games[game_index])
-                print(games[game_index][0])
-                print(games[game_index][1])
-                print('============')
-                print('============')
-                print('============')
-
                 home_players = games[game_index][0]
                 away_players = games[game_index][1]
 
