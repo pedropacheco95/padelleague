@@ -104,7 +104,7 @@ def login():
             session.clear()
             session['user'] = user
             
-            if username == 'admin':
+            if username == 'admin' or user.is_admin:
                 session['admin_logged'] = True
             return redirect(url_for('main.index'))
 
