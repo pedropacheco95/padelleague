@@ -51,7 +51,6 @@ def delete_order_line(id):
 @bp.route('/delete_player/<id>', methods=('GET', 'POST'))
 def delete_player(id):
     player = Player.query.filter_by(id=id).first()
-
     for association in player.divisions_relations:
         association.delete()
     player.delete()
