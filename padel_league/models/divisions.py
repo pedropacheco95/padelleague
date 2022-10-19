@@ -123,12 +123,6 @@ class Division(db.Model ,model.Model , model.Base):
             division_relation.losts += lost
             division_relation.games_won += games_won
             division_relation.games_lost += games_lost
-            division_relation.save()
-            division_relation.wins += win
-            division_relation.draws += draw
-            division_relation.losts += lost
-            division_relation.games_won += games_won
-            division_relation.games_lost += games_lost
             division_relation.matchweek = match.matchweek
             division_relation.save()
         self.players_classification(update_places=True) 
