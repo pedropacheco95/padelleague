@@ -117,7 +117,13 @@ class Division(db.Model ,model.Model , model.Base):
             division_relation = [relation for relation in match_relation.player.divisions_relations if relation.division == self][0]
             division_relation.points += points
             division_relation.appearances += 1
-            division_relation.percentage_of_appearances = round((division_relation.appearances / len(self.get_matches_played()))*100,2)
+            division_relation.percentage_of_appearances = round((division_relation.appearances / len(self.get_matches_played()))*100,2) if len(self.get_matches_played()) else 0
+            division_relation.wins += win
+            division_relation.draws += draw
+            division_relation.losts += lost
+            division_relation.games_won += games_won
+            division_relation.games_lost += games_lost
+            division_relation.save()
             division_relation.wins += win
             division_relation.draws += draw
             division_relation.losts += lost
