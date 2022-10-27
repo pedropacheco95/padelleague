@@ -93,14 +93,15 @@ def login():
         error = None
 
         step_user = User.query.filter_by(username=username).first()
-        user = step_user.merge()
 
-        if user is None:
+        if step_user is None:
             error = 'Enganaste-te no username oh burro.'
-        elif not check_password_hash(user.password, password):
+        elif not check_password_hash(step_user.password, password):
             error = 'Enganaste-te na password oh burro.'
 
+        
         if error is None:
+            user = step_user.merge()
             session.clear()
             session['user'] = user
             
