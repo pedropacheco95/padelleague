@@ -76,10 +76,10 @@ def edit(id):
             home_players = match.home_players()
             away_players = match.away_players()
             players = {
-                'homeplayer0': home_players[0], 
-                'homeplayer1': home_players[1], 
-                'awayplayer0': away_players[0], 
-                'awayplayer1': away_players[1]
+                'homeplayer0': home_players[0] if len(home_players) > 0 else None, 
+                'homeplayer1': home_players[1] if len(home_players) > 1 else None, 
+                'awayplayer0': away_players[0] if len(away_players) > 0 else None, 
+                'awayplayer1': away_players[1] if len(away_players) > 1 else None
             }
             for player in eliminated_players:
                 association = Association_PlayerMatch.query.filter_by(match_id=match.id,player_id=players[player].id).first()
