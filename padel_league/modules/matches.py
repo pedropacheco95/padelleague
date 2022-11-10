@@ -76,9 +76,9 @@ def edit(id):
             home_players = match.home_players()
             away_players = match.away_players()
             players = {
-                'homeplayer0': home_players[0] if len(home_players) > 0 else None, 
+                'homeplayer0': home_players[0] if home_players else None, 
                 'homeplayer1': home_players[1] if len(home_players) > 1 else None, 
-                'awayplayer0': away_players[0] if len(away_players) > 0 else None, 
+                'awayplayer0': away_players[0] if away_players else None, 
                 'awayplayer1': away_players[1] if len(away_players) > 1 else None
             }
             for player in eliminated_players:
