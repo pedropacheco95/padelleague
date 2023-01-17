@@ -170,8 +170,9 @@ def upload_csv_to_db():
             username = columns[1]
             email = columns[2]
             password = columns[3]
-            player = players[columns[4]]
-            user = User(username=username,email=email,password=password,player_id=player.id)
+            is_admin = True if columns[4] == 'True' else False
+            player = players[columns[5]]
+            user = User(username=username,email=email,password=password,is_admin=is_admin,player_id=player.id)
             
             user.create()
             users[id] = user

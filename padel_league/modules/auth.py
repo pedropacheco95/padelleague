@@ -2,13 +2,14 @@ import functools
 import datetime
 import os
 import unidecode
+import random
 
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for , current_app
 from werkzeug.security import check_password_hash, generate_password_hash
 from sqlalchemy import null, inspect
 
 from padel_league.models import User , Player , Order , Association_PlayerDivision , Division
-from padel_league.tools import image_tools
+from padel_league.tools import image_tools , email_tools
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -112,6 +113,63 @@ def login():
         flash(error)
 
     return render_template('auth/login.html')
+
+@bp.route('/forgot_password', methods=('GET', 'POST'))
+def forgot_password():
+    if request.method == 'POST':
+        username = request.form['username']
+        error = None
+
+        user = User.query.filter_by(username=username).first()
+
+        if user is None:
+            error = 'Enganaste-te no username oh burro.'
+
+        if error is None:
+
+            email = user.email
+            generated_code = random.randint(10000, 99999)
+
+            user.generated_code = generated_code
+            user.save()
+
+            mail_body = render_template('messages/forgot_password_email.html', user=user, generated_code = generated_code)
+
+            email_tools.send_email('Código autenticação', [email], html = mail_body)
+
+            return redirect(url_for('auth.verify_generated_code',user_id=user.id))
+
+        flash(error)
+
+    return render_template('auth/forgot_password.html')
+
+@bp.route('/verify_generated_code/<user_id>', methods=('GET', 'POST'))
+def verify_generated_code(user_id):
+    if request.method == 'POST':
+        generated_code = int(request.form['generated_code']) if request.form['generated_code'] else None
+        user = User.query.filter_by(id=user_id).first()
+        error = None
+
+        if generated_code == user.generated_code:
+            session.clear()
+            session['user'] = user
+            user.generated_code = None
+            return redirect(url_for('players.edit', id=user.player_id))
+        
+        error = 'Código errado oh burro.'
+        flash(error)
+    return render_template('auth/verify_generated_code.html',user_id=user_id)
+
+@bp.route('/generate_new_code/<user_id>', methods=('GET', 'POST'))
+def generate_new_code(user_id):
+    user = User.query.filter_by(id=user_id).first()
+    email = user.email
+    generated_code = random.randint(10000, 99999)
+    user.generated_code = generated_code
+    user.save()
+    mail_body = render_template('messages/forgot_password_email.html', user=user, generated_code = generated_code)
+    email_tools.send_email('Código autenticação', [email], html = mail_body)
+    return redirect(url_for('auth.verify_generated_code',user_id=user.id))
 
 @bp.route('/logout')
 def logout():

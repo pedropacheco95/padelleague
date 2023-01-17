@@ -11,6 +11,7 @@ class User(db.Model ,model.Model,model.Base):
     email = Column(String(120), unique=True, nullable=False)
     password = Column(Text, nullable=False)
     is_admin = Column(Boolean, default=False)
+    generated_code = Column(Integer)
     player_id = Column(Integer, ForeignKey('players.id'))
 
     player = relationship('Player', back_populates="user")

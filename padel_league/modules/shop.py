@@ -14,12 +14,6 @@ def index():
 @bp.route('/cart/<order_id>', methods=('GET', 'POST'))
 def cart(order_id):
     user = session.get('user')
-    print('::::::::')
-    print('::::::::')
-    print(user)
-    print(inspect(user).detached)
-    print('::::::::')
-    print('::::::::')
     error = None
     if not user:
         error = 'Não podes aceder ao carrinho sem estar logado'

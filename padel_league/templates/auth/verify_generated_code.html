@@ -1,0 +1,19 @@
+{% extends 'layout.html' %}
+
+{% block main %}
+<div class="l-grid">
+    <div class="login_container">
+        <div class="inner_login_container">
+            <form method="post">
+                <div class="form-group">
+                    <input autocomplete="off" autofocus class="form-control" name="generated_code" placeholder="Código" type="number" required>
+                </div>
+                <button class="btn btn-primary" type="submit">Confirmar</button>
+            </form>
+            <div class="forgot_password_container">
+                <a href="{{url_for('auth.generate_new_code',user_id=user_id)}}">Gerar novo código</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
