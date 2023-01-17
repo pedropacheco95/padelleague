@@ -1,0 +1,32 @@
+{% extends 'layout.html' %}
+
+{% block main %}
+{% set country_flag = url_for('static',filename='images/pt.png')%}
+<section id="content" class="tournament-form-container">
+    <section class="create_tournament_form">
+        <form method="POST" enctype="multipart/form-data">
+            <label for='data' style="color: black;"> Dados </label>
+            <section class="line_group" id="data">
+                <div class="form-group optional">
+                    <label for='username' style="color: black;"> Nome </label>
+                    <input autocomplete="off" autofocus class="form-control" id="name" name="name" placeholder="Nome" type="text">
+                </div>
+            </section>
+            <section class="line_group">
+                <div class="form-group optional" >
+                    <label for='prefered_position' style="color: black;"> Liga </label>
+                    <select class="form-control" id="league" name="league">
+                        {% for league in leagues %}
+                        <option value="{{league.id}}">{{league.name}}</option>
+                        {% endfor %}
+                    </select>
+                    <br>
+                </div>
+            </section>
+            <section class="line_group">
+                <button class="btn btn-primary" type="submit">Submeter</button>
+            </section>
+        </form>
+    </section>
+</section>
+{% endblock %}
