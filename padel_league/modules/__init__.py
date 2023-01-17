@@ -12,3 +12,4 @@ from . import registrations
 from . import products
 from . import products_attributes
 from . import shop
+from . import editions
