@@ -3027,3 +3027,10 @@ blockquote, body, dd, dl, fieldset, figure, h1, h3, h4, h5, h6, hr, legend, ol, 
 .choose_player_line_container{
     width: 100%;
 }
+
+.forgot_password_container{
+    padding: 1rem;
+    color: #1a73e8;
+    font-family: roboto,"Noto Sans Myanmar UI",arial,sans-serif;
+    letter-spacing: .25px;
+}

@@ -4,9 +4,11 @@ from flask import Flask
 from tempfile import mkdtemp
 from flask_session import Session
 
+
 from . import sql_db
 from . import modules
 from . import model
+from . import mail
 
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
@@ -35,6 +37,18 @@ def create_app(test_config=None):
     app.config["SESSION_PERMANENT"] = False
     app.config["SESSION_TYPE"] = "filesystem"
     Session(app)
+
+    app.config.update(
+        DEBUG=True,
+        # Email Server Configuration
+        MAIL_SERVER='smtp.gmail.com',
+        MAIL_PORT=465,
+        MAIL_USE_SSL=True,
+        MAIL_USERNAME='padelleagueporto@gmail.com',
+        MAIL_PASSWORD='mvheiqexdjewhyvy',
+    )
+
+    mail.mail.init_app(app)
 
     if test_config is None:
         # Load the instance config when not testing
