@@ -30,6 +30,7 @@ class Division(db.Model ,model.Model , model.Base):
             self.end_date = vals['end_date']
             self.logo_image_path = vals['logo_image_path']
             self.large_picture_path = vals['large_picture_path']
+            self.rating = vals['rating']
             self.edition_id = vals['edition_id']
         super().create()
         return True

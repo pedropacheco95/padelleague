@@ -32,6 +32,7 @@ def edit(id):
 def create():
     if request.method == 'POST':
         name = request.form['name']
+        rating = int(request.form['rating']) if request.form['rating'] else None
         beggining_date= datetime.datetime.strptime(request.form['beggining_date'], '%Y-%m-%d') if request.form['beggining_date'] else None
         picture = request.files.getlist('picture')
         large_picture = request.files.getlist('large_picture')
@@ -59,7 +60,7 @@ def create():
             large_image_name = '{image_name}.png'.format(image_name=image_name)
             image_tools.save_file(file, large_image_name)
 
-        tournament = Division(name=name,beginning_datetime=beggining_date,logo_image_path=image_name,large_picture_path=large_image_name,edition_id=edition_id)
+        tournament = Division(name=name,beginning_datetime=beggining_date,logo_image_path=image_name,large_picture_path=large_image_name,rating = rating,edition_id=edition_id)
         tournament.create()
 
         for player_id in players_ids:
