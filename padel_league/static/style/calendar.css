@@ -2,6 +2,18 @@
 -moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box;
 }
 
+@media(max-width: 47.99em){
+    .event {
+        width: 100%!important;
+        font-size: 12px!important;
+    }
+
+    .day .day-events span {
+        width: 3px!important;
+        height: 3px!important;
+    }
+}
+
 #calendar {
     -webkit-transform: translate3d(0, 0, 0);
     -moz-transform: translate3d(0, 0, 0);
@@ -157,7 +169,7 @@
 .details {
     position: relative;
     width: 100%;
-    height: 75px;
+    height: 17rem;
     background: rgba(164, 164, 164, 1);
     margin-top: 5px;
     border-radius: 4px;
@@ -189,10 +201,14 @@
 }
 
 .events {
-    height: 75px;
+    height: 17rem;
     padding: 7px 0;
     overflow-y: auto;
     overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    align-content: space-around;
+    align-items: center;
 }
 
 .events.in {
@@ -225,6 +241,9 @@
     letter-spacing: .5px;
     padding: 2px 16px;
     vertical-align: top;
+    width: 35%;
+    display: flex;
+    justify-content: space-between;
 }
 
 .event.empty {

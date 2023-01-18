@@ -20,7 +20,7 @@ def by_matchweek(matchweek,division=None):
         matches = Match.query.filter_by(matchweek=matchweek).all()
     else:
         matches = [match for match in division.matches if match.matchweek == int(matchweek)]
-    return render_template('matches/matches.html',matches=matches)
+    return render_template('matches/matches.html',matches=matches, matchweek=int(matchweek))
 
 @bp.route('/for_edit', methods=('GET', 'POST'))
 @bp.route('/for_edit/<division_id>', methods=('GET', 'POST'))

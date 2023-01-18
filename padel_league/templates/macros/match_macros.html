@@ -167,7 +167,7 @@
 </section>
 {% endmacro %}
 
-{% macro matches_cards(matches,division=None) %}
+{% macro matches_cards(matches,division=None,matchweek=None) %}
 {% if division %}
 <script>
     var matchweek_url = "{{url_for('matches.by_matchweek',division = division.name, matchweek=1)}}";
@@ -180,6 +180,11 @@
 <script src="{{ url_for('static', filename='js/matches_macros.js')}}" defer></script>
 <div class="select_container">
     <select class="form-select matchweek_select" onchange="chooseMatchweek(this);">
+        {% if matchweek %}
+        {% for mw in range(1, 8) %}
+        <option value="{{mw}}" {% if mw == matchweek %} selected {% endif %}> Jornada {{mw}}</option>
+        {% endfor %}
+        {% else %}
         <option selected>Jornada</option>
         <option value="1">1</option>
         <option value="2">2</option>
@@ -188,6 +193,8 @@
         <option value="5">5</option>
         <option value="6">6</option>
         <option value="7">7</option>
+        {% endif %}
+
     </select>
 </div>
 <br>
