@@ -35,7 +35,7 @@ class League(db.Model ,model.Model, model.Base):
             player.ranking_points = 0
             for division_relation in player.divisions_relations:
                 division = division_relation.division
-                if division.has_ended:
+                if division.has_ended and not division.open_division or division.open_division and len(division.matches) > 20:
                     player.ranking_points += int((division.rating)/(2**(division_relation.place - 1)))
                 player.ranking_points += len(player.matches_won(division=division)) * division.rating/100
                 player.ranking_points += len(player.matches_drawn(division=division)) * division.rating/250
