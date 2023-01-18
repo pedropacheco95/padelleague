@@ -171,8 +171,9 @@ def upload_csv_to_db():
             email = columns[2]
             password = columns[3]
             is_admin = True if columns[4] == 'True' else False
-            player = players[columns[5]]
-            user = User(username=username,email=email,password=password,is_admin=is_admin,player_id=player.id)
+            generated_code = int(columns[5]) if columns[5] else None
+            player = players[columns[6]]
+            user = User(username=username,email=email,password=password,is_admin=is_admin,generated_code=generated_code,player_id=player.id)
             
             user.create()
             users[id] = user
@@ -237,15 +238,26 @@ def export_db_to_csv():
 
 
     for model in models.keys():
-        file = os.path.join('padel_league/static/data/csv', '%s.csv' % model)
-        fields = models[model]
-        rows = values[model]
+        if model != 'news':
+            file = os.path.join('padel_league/static/data/csv', '%s.csv' % model)
+            fields = models[model]
+            rows = values[model]
 
-        with open(file, 'w') as f:
-            write = csv.writer(f)
-            
-            write.writerow(fields)
-            write.writerows(rows)
+            with open(file, 'w') as f:
+                write = csv.writer(f)
+                
+                write.writerow(fields)
+                write.writerows(rows)
+        else:
+            file = os.path.join('padel_league/static/data/csv', '%s.csv' % model)
+            fields = models[model]
+            rows = values[model]
+
+            with open(file, 'w') as f:
+                write = csv.writer(f, delimiter='|')
+                
+                write.writerow(fields)
+                write.writerows(rows)
     return redirect(url_for('main.index'))
 
 
