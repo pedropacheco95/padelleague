@@ -1,7 +1,7 @@
 import os
 import datetime
 import unidecode
-from flask import Blueprint, render_template, request , flash
+from flask import Blueprint, render_template, request , flash , redirect , url_for
 
 from padel_league.models import Division , Player , Association_PlayerDivision , Match , Association_PlayerMatch , Edition
 from padel_league.tools import image_tools , tools
@@ -96,3 +96,16 @@ def create():
     players = Player.query.all()
     editions = Edition.query.all()
     return render_template('tournaments/create_tournament.html',players=players,editions=editions)
+
+
+@bp.route('/delete/<division_id>', methods=('GET', 'POST'))
+def delete(division_id):
+    division = Division.query.filter_by(id=division_id).first()
+    for match in division.matches:
+        for association in match.players_relations:
+            association.delete()
+        match.delete()
+    for association in division.players_relations:
+        association.delete()
+    division.delete()
+    return redirect(url_for('tournaments.tournaments'))
