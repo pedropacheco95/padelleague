@@ -7,9 +7,27 @@
     {{ match_macros.match_card(match) }}
     <br>
     {% if edited_match %}
+    <section class="previous_next_container">
+        {% set next_match = match.next_match()%}
+        {% set previous_match = match.previous_match()%}
+        {% if previous_match %}
+        <a href="{{url_for('matches.edit',id=previous_match.id)}}">
+            <button type="submit" class="arrow_button previous_button"></button>
+        </a>
+        {% endif %}
+        {% if next_match %}
+        <a href="{{url_for('matches.edit',id=next_match.id)}}">
+            <button type="submit" class="arrow_button next_button"></button>
+        </a>
+        {% endif %}
+    </section>
+    <br>
+    <section class="return_container">
         <a href="{{url_for('matches.for_edit',division_id=match.division.id)}}">
             <button type="submit" class="btn btn-light" id="match_edit_submit_button">VOLTAR</button>
         </a>
+    </section>
+    <br>
     {% endif %}
 </div>
 {% endblock %}

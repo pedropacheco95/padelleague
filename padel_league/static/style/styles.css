@@ -426,6 +426,16 @@ html{
     .l-grid--flex:not(.l-grid--tickets) .c-tournaments--fixed:nth-of-type(even) {
         margin-left: 0!important;
     }
+    
+    .previous_next_container{
+        width: 80%!important;
+        margin: 0 auto;
+    }
+
+    .return_container{
+        width: 80%!important;
+        margin: 0 auto;
+    }
 }
 
 @media (min-width: 34em){
@@ -3033,4 +3043,42 @@ blockquote, body, dd, dl, fieldset, figure, h1, h3, h4, h5, h6, hr, legend, ol, 
     color: #1a73e8;
     font-family: roboto,"Noto Sans Myanmar UI",arial,sans-serif;
     letter-spacing: .25px;
+}
+
+.arrow_button {
+    width: 5rem;
+    height: 5rem;
+    background-color: #fff;
+    border-radius: 5rem;
+    border: 2px solid #14519f;
+    transition: all 0.3s ease;
+}
+
+.arrow_button:hover {
+    border-color: #032045;
+}
+
+.arrow_button:hover::after {
+    color: #032045;
+}
+    
+.next_button::after {
+    content: "\203A";
+    font-weight: bold;
+    font-size: 2.5rem;
+    color: #14519f;
+    transition: all 0.3s ease;
+}
+
+.previous_button::after {
+    content: "\2039";
+    font-weight: bold;
+    font-size: 2.5rem;
+    color: #14519f;
+    transition: all 0.3s ease;
+}
+
+.previous_next_container{
+    display: flex;
+    justify-content: space-around;
 }

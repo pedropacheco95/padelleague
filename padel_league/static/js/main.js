@@ -10,3 +10,7 @@ function duplicateInputElement(element){
     newElement.value = ""
     element.parentNode.insertBefore(newElement, element.nextSibling);
 }
+
+function linkToDatasetHref(element){
+    window.location.href = element.dataset.href;
+}

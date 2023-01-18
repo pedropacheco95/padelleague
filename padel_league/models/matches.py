@@ -33,4 +33,19 @@ class Match(db.Model ,model.Model, model.Base):
         home1 = home_players[1].name if len(home_players) == 2 else 'Substituto'
         away0 = away_players[0].name if away_players else 'Substituto'
         away1 = away_players[1].name if len(away_players) == 2 else 'Substituto'
-        return '{player1};{player2} VS {player3};{player4}'.format(player1=home0, player2=home1,player3=away0,player4=away1)
+        return '{player1} ; {player2} VS {player3} ; {player4}'.format(player1=home0, player2=home1,player3=away0,player4=away1)
+
+    def next_match_to_edit(self):
+        matches = self.division.get_ordered_matches()
+        matches_not_played = [match for match in matches if not match.played]
+        for match in matches_not_played:
+            return match
+        return None
+
+    def next_match(self):
+        match = Match.query.filter_by(id=self.id+1).first()
+        return match if match else None
+
+    def previous_match(self):
+        match = Match.query.filter_by(id=self.id-1).first()
+        return match if match else None
