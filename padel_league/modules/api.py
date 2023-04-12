@@ -55,3 +55,15 @@ def delete_player(id):
         association.delete()
     player.delete()
     return True
+
+@bp.route('/delete_tournament/<id>', methods=('GET', 'POST'))
+def delete_tournament(id):
+    division = Division.query.filter_by(id=id).first()
+    for association in division.players_relations:
+        association.delete()
+    for match in division.matches:
+        for association in match.players_relations:
+            association.delete()
+        match.delete()
+    division.delete()
+    return True
