@@ -1,7 +1,9 @@
+import random
+import json
 import os
 import datetime
 import unidecode
-from flask import Blueprint, render_template, request , flash , redirect , url_for
+from flask import Blueprint, render_template, request , flash , redirect , url_for , current_app
 
 from padel_league.models import Division , Player , Association_PlayerDivision , Match , Association_PlayerMatch , Edition
 from padel_league.tools import image_tools , tools
@@ -67,23 +69,31 @@ def create():
             association = Association_PlayerDivision(player_id=player_id,division_id=tournament.id)
             association.create()
 
-        matchweeks = tools.create_chamionship_games(players_ids)
-        for index,matchweek in enumerate(matchweeks):
-            d = datetime.timedelta(days=7*index)
+        filename = os.path.join(current_app.root_path, 'tools', 'games_order.json')
+        print(filename)
+        f = open(filename)
+        matchweeks = json.load(f)
+        order = {}
+        random.shuffle(players_ids)
+        for i in range(len(players_ids)):
+            order[f'Player {i+1}'] = players_ids[i]
+            
+        for matchweek in matchweeks.keys():
+            d = datetime.timedelta(days=7*(int(matchweek)-1))
             date = beggining_date + d
-            games = tools.get_games_from_matchweek(matchweek)
+            games = matchweeks[matchweek]
             for game_index in range(len(games)):
                 match = Match(division_id = tournament.id)
 
                 match.date_hour = date
-                match.matchweek = index + 1
-                match.field = 'Campo 1' if game_index < 3 else 'Campo 2'
+                match.matchweek = matchweek
+                match.field = 'Campo 1' if game_index%2==0 else 'Campo 2'
                 match.played = False
                 match.create()
 
-                home_players = games[game_index][0]
-                away_players = games[game_index][1]
-
+                home_players = [order[key] for key in games[game_index][0]]
+                away_players = [order[key] for key in games[game_index][1]]
+                
                 for player_id in home_players:
                     association = Association_PlayerMatch(player_id=player_id,match_id=match.id,team='Home')
                     association.create()
