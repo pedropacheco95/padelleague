@@ -31,7 +31,7 @@
             <div class="l-wrapper">
                 <img class="c-player-card__flag" src="{{country_flag}}" alt="" role="presentation">
             </div>
-            <div class="c-player-card__score">{{player.ranking_points}}</div>
+            <div class="c-player-card__score">{{player.ranking_points|round|int}}</div>
         </div>
     </a>
 </li>
