@@ -34,7 +34,7 @@ class League(db.Model ,model.Model, model.Base):
         for player in self.all_players_that_played():
             player.ranking_points = 0
             ranking_points_non_average = 0
-            divisions_played = [div for div in player.divisions_relations if div.has_ended]
+            divisions_played = [div for div in player.divisions_relations if div.division.has_ended]
             n_divisions_played = len(divisions_played) - 1 if divisions_played else 1 
             for division_relation in player.divisions_relations:
                 division = division_relation.division
