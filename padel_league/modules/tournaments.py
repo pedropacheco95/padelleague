@@ -62,7 +62,9 @@ def create():
             large_image_name = '{image_name}.png'.format(image_name=image_name)
             image_tools.save_file(file, large_image_name)
 
-        tournament = Division(name=name,beginning_datetime=beggining_date,logo_image_path=image_name,large_picture_path=large_image_name,rating = rating,edition_id=edition_id)
+        end_datetime = beggining_date + datetime.timedelta(days=7)
+        end_date = end_datetime.date()
+        tournament = Division(name=name,beginning_datetime=beggining_date,end_date=end_date,logo_image_path=image_name,large_picture_path=large_image_name,rating = rating,edition_id=edition_id)
         tournament.create()
 
         for player_id in players_ids:
@@ -70,7 +72,6 @@ def create():
             association.create()
 
         filename = os.path.join(current_app.root_path, 'tools', 'games_order.json')
-        print(filename)
         f = open(filename)
         matchweeks = json.load(f)
         order = {}

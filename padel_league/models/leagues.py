@@ -40,7 +40,8 @@ class League(db.Model ,model.Model, model.Base):
                 player.ranking_points += len(player.matches_won(division=division)) * division.rating/100
                 player.ranking_points += len(player.matches_drawn(division=division)) * division.rating/250
                 player.ranking_position = 1
-                player.save()
+            player.ranking_points = player.ranking_points/len(player.divisions_relations) if player.divisions_relations else 0
+            player.save()
         self.players_rankings_position(update_places=True) 
         return True
 
