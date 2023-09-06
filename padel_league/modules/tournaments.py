@@ -77,7 +77,7 @@ def create():
         random.shuffle(players_ids)
         for i in range(len(players_ids)):
             order[f'Player {i+1}'] = players_ids[i]
-            
+
         for matchweek in matchweeks.keys():
             d = datetime.timedelta(days=7*(int(matchweek)-1))
             date = beggining_date + d
@@ -93,7 +93,7 @@ def create():
 
                 home_players = [order[key] for key in games[game_index][0]]
                 away_players = [order[key] for key in games[game_index][1]]
-                
+
                 for player_id in home_players:
                     association = Association_PlayerMatch(player_id=player_id,match_id=match.id,team='Home')
                     association.create()
@@ -102,7 +102,7 @@ def create():
                     association.create()
                 match.save()
         return render_template('tournaments/tournament.html',tournament=tournament)
-        
+
     players = Player.query.all()
     editions = Edition.query.all()
     return render_template('tournaments/create_tournament.html',players=players,editions=editions)
