@@ -9,7 +9,7 @@ bp = Blueprint('main', __name__)
 def index():
     if 'error' in session.keys():
         flash(session['error'])
-    all_news = News.query.all()
+    all_news = News.query.order_by(News.id.desc()).all()
     return render_template('index.html',all_news=all_news)
 
 @bp.route('/calendar', methods=('GET', 'POST'))
