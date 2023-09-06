@@ -13,11 +13,9 @@ class League(db.Model ,model.Model, model.Base):
 
     def all_players_that_played(self):
         players = []
-        for edition in self.editions:
-            for division in edition.divisions:
-                players_in_division = [relation.player for relation in division.players_relations]
-                players += players_in_division
-        return players
+        Association = self.editions[0].divisions[0].players_relations[0].__class__
+        all_associations = Association.query.all()
+        return list(set([assoc.player for assoc in all_associations]))
 
     def players_rankings_position(self,update_places=False):
         players = list(set(self.all_players_that_played()))
