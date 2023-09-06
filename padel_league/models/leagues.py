@@ -43,7 +43,7 @@ class League(db.Model ,model.Model, model.Base):
                 ranking_points_non_average += len(player.matches_won(division=division)) * division.rating/100
                 ranking_points_non_average += len(player.matches_drawn(division=division)) * division.rating/250
                 player.ranking_position = 1
-            player.ranking_points = ranking_points_non_average/n_divisions_played
+            player.ranking_points = ranking_points_non_average/n_divisions_played if n_divisions_played else 0
             player.save()
         self.players_rankings_position(update_places=True) 
         return True
@@ -57,7 +57,7 @@ class League(db.Model ,model.Model, model.Base):
             ranking_points_non_average += (win * match.division.rating/100 + draw * match.division.rating/250)
             divisions_played = [div for div in player.divisions_relations if div.has_ended]
             n_divisions_played = len(divisions_played) - 1 if divisions_played else 1 
-            player.ranking_points = ranking_points_non_average / n_divisions_played
+            player.ranking_points = ranking_points_non_average / n_divisions_played if n_divisions_played else 0
             player.save()
         self.players_rankings_position(update_places=True) 
         return True """
