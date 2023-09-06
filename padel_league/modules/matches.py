@@ -94,7 +94,7 @@ def edit(id):
         match.field = match_field
         if not match.played:
             match.division.add_match_to_table(match)
-            match.division.edition.league.ranking_add_match(match)
+            #match.division.edition.league.ranking_add_match(match)
             match.played = True
         match.save()
 
@@ -141,7 +141,7 @@ def create(division_id):
             association.create()
 
         match.division.add_match_to_table(match)
-        match.division.edition.league.ranking_add_match(match)
+        #match.division.edition.league.ranking_add_match(match)
         match.save()
         
 
