@@ -101,7 +101,12 @@ class Division(db.Model ,model.Model , model.Base):
         self.players_classification(update_places=True)
         games_not_played = [match for match in self.matches if not match.played]
         if not games_not_played:
-            self.has_ended = True
+            if not self.has_ended:
+                self.edition.league.update_rankings()
+                self.has_ended = True
+            sorted_matches = sorted(self.matches, key=lambda match: match.date_hour, reverse=True)
+            last_played_date = sorted_matches[0].date_hour.date() if sorted_matches else None
+            self.end_date = last_played_date
             self.save()
         return True
 
