@@ -29,7 +29,7 @@
                         </div>
                         <div class="c-ranking-header__data-box">
                             <p class="c-ranking-header__data-title">Pontos</p>
-                            <p class="c-ranking-header__data">{{ player.ranking_points }}</p>
+                            <p class="c-ranking-header__data">{{ player.ranking_points|round|int }}</p>
                         </div>
                     </div>
                     <img src="{{country_flag}}">

@@ -33,14 +33,15 @@ class League(db.Model ,model.Model, model.Base):
     def update_rankings(self):
         for player in self.all_players_that_played():
             player.ranking_points = 0
+            matches_played = 
             for division_relation in player.divisions_relations:
                 division = division_relation.division
                 if division.has_ended and not division.open_division or division.open_division and len(division.matches) > 20:
                     player.ranking_points += int((division.rating)/(2**(division_relation.place - 1)))
-                player.ranking_points += (len(player.matches_won(division=division)) * division.rating/100 * len(player.divisions_relations))/len(player.matches_relations) if player.matches_relations else 0
-                player.ranking_points += len(player.matches_drawn(division=division)) * division.rating/250 * len(player.divisions_relations)/len(player.matches_relations) if player.matches_relations else 0
+                player.ranking_points += len(player.matches_won(division=division)) * division.rating/100
+                player.ranking_points += len(player.matches_drawn(division=division)) * division.rating/250
                 player.ranking_position = 1
-            player.ranking_points = (player.ranking_points/len(player.divisions_relations)) if player.divisions_relations else 0
+            player.ranking_points = (player.ranking_points/(len(player.divisions_relations) - 1)) if (len(player.divisions_relations) - 1) else 0
             player.save()
         self.players_rankings_position(update_places=True) 
         return True
@@ -50,7 +51,7 @@ class League(db.Model ,model.Model, model.Base):
             win = 1 if (match.winner == 1 and match_relation.team == 'Home') or  (match.winner == -1 and match_relation.team == 'Away') else 0
             draw = 1 if match.winner == 0 else 0
             player =  match_relation.player
-            player.ranking_points += (win * match.division.rating/100 + draw * match.division.rating/250)/len(player.matches_relations) if player.matches_relations else 0
+            player.ranking_points += (win * match.division.rating/100 + draw * match.division.rating/250)/(len(player.divisions_relations) - 1) if (len(player.divisions_relations) - 1) else 0
             player.save()
         self.players_rankings_position(update_places=True) 
         return True
