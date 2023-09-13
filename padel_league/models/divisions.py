@@ -2,6 +2,7 @@ from padel_league import model
 from padel_league.sql_db import db
 from sqlalchemy import Column, Integer , String , Table, ForeignKey , Boolean, DateTime , Date
 from sqlalchemy.orm import relationship
+from padel_league.tools import tools
 
 class Division(db.Model ,model.Model , model.Base):
     __tablename__ = 'divisions'
@@ -47,6 +48,11 @@ class Division(db.Model ,model.Model , model.Base):
         matches_played = self.get_matches_played()
         matches_played.sort(key=lambda x: x.matchweek)
         return matches_played
+    
+    def get_last_matchweek_and_matches(self):
+        matches = self.get_ordered_matches_played()
+        matchweek = matches[-1].matchweek
+        return matchweek, [match for match in matches if match.matchweek == matchweek]
 
     def tournament_name(self):
         return '{league_name}: {edition_name} {division_name}'.format(league_name=self.edition.league.name, edition_name=self.edition.name,division_name=self.name)
@@ -133,3 +139,26 @@ class Division(db.Model ,model.Model , model.Base):
             division_relation.save()
         self.players_classification(update_places=True) 
         return True
+    
+    def last_week_results_string(self):
+        matchweek, matches = self.get_last_matchweek_and_matches()
+
+        all_lines = [match.match_dict_line() for match in matches]
+
+        return matchweek, tools.dict_to_table(all_lines)
+    
+    def get_next_matchweek_games(self,matchweek):
+        return tools.dict_to_table([{'Jogo':match.name()} for match in self.matches if match.matchweek == matchweek])
+    
+    def get_classications_string(self):
+
+        player_relations = self.players_relations_classification()
+
+        dict_line = []
+        for player_relation in player_relations:
+            dict_line.append({
+                'Jogador': player_relation.player.name,
+                'Lugar': player_relation.place,
+                'Pontos': player_relation.points
+            })
+        return tools.dict_to_table(dict_line)

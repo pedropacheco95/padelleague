@@ -49,3 +49,18 @@ class Match(db.Model ,model.Model, model.Base):
     def previous_match(self):
         match = Match.query.filter_by(id=self.id-1).first()
         return match if match else None
+    
+    def match_dict_line(self):
+        name = self.name()
+        teams = name.split(' VS ')
+        home_players = teams[0]
+        away_players = teams[1]
+
+        winner = home_players if self.winner == 1 else away_players if self.winner == -1 else None
+
+        dict_line = {
+            'Players': self.name(),
+            'Score': f"{self.games_home_team} - {self.games_away_team}",
+            'Result': f"{winner} won" if winner else 'Draw'
+        }
+        return dict_line

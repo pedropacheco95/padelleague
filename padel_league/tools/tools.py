@@ -33,3 +33,24 @@ def get_games_from_matchweek(matchweek):
         for j in range(i+1,len(matchweek)):
             games.append([matchweek[i],matchweek[j]])
     return games
+
+def dict_to_table(data):
+    if not data:
+        return None
+
+    headers = list(data[0].keys())
+    rows = [list(entry.values()) for entry in data]
+
+    column_widths = [max(len(str(row[i])) for row in rows + [headers]) for i in range(len(headers))]
+    table = []
+
+    header_row = "| " + " | ".join(f"{headers[i]:<{column_widths[i]}}" for i in range(len(headers))) + " |"
+    table.append(header_row)
+    separator_row = "|-" + "-|-".join("-" * width for width in column_widths) + "-|"
+    table.append(separator_row)
+
+    for row in rows:
+        data_row = "| " + " | ".join(f"{row[i]:<{column_widths[i]}}" for i in range(len(headers))) + " |"
+        table.append(data_row)
+
+    return "\n".join(table)
