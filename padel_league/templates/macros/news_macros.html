@@ -1,19 +1,21 @@
 {% macro news_card(news) %}
-    <article class="news_article">
-        <div class="news_article_image">
-            {% set image_background = news.cover_path %}
-            <div class="news_article_image_background">
-                <a href="{{url_for('news.news',news_id=news.id)}}">
-                    <img src="{{ url_for('static', filename=image_background)}}" alt="">
-                </a> 
+    <article class="news_article" data-href="{{url_for('news.news',news_id=news.id)}}" onclick="linkToDatasetHref(this)">
+        <div class="news_article_container">
+            <div class="news_article_image">
+                {% set image_background = news.cover_path %}
+                <div class="news_article_image_background">
+                    <a href="{{url_for('news.news',news_id=news.id)}}">
+                        <img src="{{ url_for('static', filename=image_background)}}" alt="">
+                    </a> 
+                </div> 
             </div> 
-        </div> 
-        <header class="news_article_title">
-            <div class="news_article_title_container">
-                <a href="{{url_for('news.news',news_id=news.id)}}">
-                    {{news.title}}
-                </a>
+            <div class="news_article_title">
+                <div class="news_article_title_container">
+                    <a href="{{url_for('news.news',news_id=news.id)}}">
+                        {{news.title}}
+                    </a>
+                </div>
             </div>
-        </header>
+        </div>
     </article>
 {% endmacro %}
