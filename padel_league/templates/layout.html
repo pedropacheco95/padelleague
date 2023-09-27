@@ -26,6 +26,8 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.4.1/croppie.min.js"></script>
         <script src="{{ url_for('static', filename='js/main.js')}}"></script>
         <script src="{{ url_for('static', filename='js/main_defered.js')}}" defer></script>
+
+        {% block head %}{% endblock %}
         
     </head>
 

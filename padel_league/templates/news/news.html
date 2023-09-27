@@ -1,5 +1,15 @@
 {% extends 'layout.html' %}
 
+{% set image_background = news.cover_path %}
+
+{% block head %}
+<meta charset="UTF-8">
+<meta property="og:title" content="{{news.title|safe}}" />
+<meta property="og:description" content="Padel League Porto" />
+<meta property="og:url" content="{{ request.url }}" />
+<meta property="og:image" content="{{ url_for('static', filename=image_background)}}" />
+{% endblock %}
+
 {% block main %}
 <div class="news_container">
     <div class="news_container_info">
