@@ -8,7 +8,7 @@
 {% if home_players[0] %}
     {% set home_players0_link = url_for('players.player',id=home_players[0].id) %}
     {% set home_players0_picture_path = home_players[0].picture_path %}
-    {% set home_players0_ranking_points = home_players[0].ranking_points %}
+    {% set home_players0_ranking_points = home_players[0].ranking_points|round|int %}
     {% set home_players0_full_name = home_players[0].full_name %}
     {% set home_players0_name = home_players[0].name %}
 {% else %}
@@ -22,7 +22,7 @@
 {% if home_players[1] %}
     {% set home_players1_link = url_for('players.player',id=home_players[1].id) %}
     {% set home_players1_picture_path = home_players[1].picture_path %}
-    {% set home_players1_ranking_points = home_players[1].ranking_points %}
+    {% set home_players1_ranking_points = home_players[1].ranking_points|round|int %}
     {% set home_players1_full_name = home_players[1].full_name %}
     {% set home_players1_name = home_players[1].name %}
 {% else %}
@@ -36,7 +36,7 @@
 {% if away_players[0] %}
     {% set away_players0_link = url_for('players.player',id=away_players[0].id) %}
     {% set away_players0_picture_path = away_players[0].picture_path %}
-    {% set away_players0_ranking_points = away_players[0].ranking_points %}
+    {% set away_players0_ranking_points = away_players[0].ranking_points|round|int %}
     {% set away_players0_full_name = away_players[0].full_name %}
     {% set away_players0_name = away_players[0].name %}
 {% else %}
@@ -50,7 +50,7 @@
 {% if away_players[1] %}
     {% set away_players1_link = url_for('players.player',id=away_players[1].id) %}
     {% set away_players1_picture_path = away_players[1].picture_path %}
-    {% set away_players1_ranking_points = away_players[1].ranking_points %}
+    {% set away_players1_ranking_points = away_players[1].ranking_points|round|int %}
     {% set away_players1_full_name = away_players[1].full_name %}
     {% set away_players1_name = away_players[1].name %}
 {% else %}
@@ -239,7 +239,7 @@
 {% if home_players[0] %}
     {% set home_players0_link = url_for('players.player',id=home_players[0].id) %}
     {% set home_players0_picture_path = home_players[0].picture_path %}
-    {% set home_players0_ranking_points = home_players[0].ranking_points %}
+    {% set home_players0_ranking_points = home_players[0].ranking_points|round|int %}
     {% set home_players0_full_name = home_players[0].full_name %}
     {% set home_players0_name = home_players[0].name %}
 {% else %}
@@ -253,7 +253,7 @@
 {% if home_players[1] %}
     {% set home_players1_link = url_for('players.player',id=home_players[1].id) %}
     {% set home_players1_picture_path = home_players[1].picture_path %}
-    {% set home_players1_ranking_points = home_players[1].ranking_points %}
+    {% set home_players1_ranking_points = home_players[1].ranking_points|round|int %}
     {% set home_players1_full_name = home_players[1].full_name %}
     {% set home_players1_name = home_players[1].name %}
 {% else %}
@@ -267,7 +267,7 @@
 {% if away_players[0] %}
     {% set away_players0_link = url_for('players.player',id=away_players[0].id) %}
     {% set away_players0_picture_path = away_players[0].picture_path %}
-    {% set away_players0_ranking_points = away_players[0].ranking_points %}
+    {% set away_players0_ranking_points = away_players[0].ranking_points|round|int %}
     {% set away_players0_full_name = away_players[0].full_name %}
     {% set away_players0_name = away_players[0].name %}
 {% else %}
@@ -281,7 +281,7 @@
 {% if away_players[1] %}
     {% set away_players1_link = url_for('players.player',id=away_players[1].id) %}
     {% set away_players1_picture_path = away_players[1].picture_path %}
-    {% set away_players1_ranking_points = away_players[1].ranking_points %}
+    {% set away_players1_ranking_points = away_players[1].ranking_points|round|int %}
     {% set away_players1_full_name = away_players[1].full_name %}
     {% set away_players1_name = away_players[1].name %}
 {% else %}
