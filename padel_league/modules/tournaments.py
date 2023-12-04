@@ -54,6 +54,8 @@ def create():
             image_name = unidecode.unidecode(image_name)
             image_name = '{image_name}.png'.format(image_name=image_name)
             image_tools.save_file(file, image_name)
+        else:
+            image_name = 'division_logo_image_default.png'
 
         file = large_picture[0]
         if file.filename != '':
@@ -61,6 +63,8 @@ def create():
             large_image_name = unidecode.unidecode(image_name)
             large_image_name = '{image_name}.png'.format(image_name=image_name)
             image_tools.save_file(file, large_image_name)
+        else:
+            large_image_name = 'division_large_picture_default.png'
 
         end_datetime = beggining_date + datetime.timedelta(days=7)
         end_date = end_datetime.date()

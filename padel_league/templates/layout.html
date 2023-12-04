@@ -71,9 +71,6 @@
             <div class="c-header-line__container">
                 <div class="c-header-line__item"></div>
                 <div class="c-global-header__logo-container">
-                    <a class="c-global-header__logo c-global-header__logo-full" href="{{ url_for('main.index') }}" id="logo">
-                        <img class="main-logo" src="{{url_for('static',filename='images/logo.png')}}">
-                    </a>
                 </div>
                 <div class="c-header-line__item"></div>
             </div>
@@ -89,11 +86,6 @@
                     <li class="c-main-nav__item ">
                         <a class="c-main-nav__link" href="{{url_for('main.calendar')}}" title="calendar">Calendário</a>
                     </li>
-                    {% if session['user'] %}
-                    <li class="c-main-nav__item ">
-                        <a class="c-main-nav__link" href="{{url_for('shop.index')}}" title="shop">Loja</a>
-                    </li>
-                    {% endif %}
                     <li class="c-main-nav__item for_login_logout">
                         {% if not session['user'] %}
                         <a class="c-main-nav__link" href="{{url_for('auth.login')}}">Log in</a><a class="c-main-nav__link" href="{{url_for('auth.register')}}">Registar</a>
