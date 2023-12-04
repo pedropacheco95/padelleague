@@ -239,7 +239,7 @@ def export_db_to_csv():
 
     for model in models.keys():
         if model != 'news':
-            file = os.path.join('padel_league/static/data/csv', '%s.csv' % model)
+            file = os.path.join('segundasnonstop/static/data/csv', '%s.csv' % model)
             fields = models[model]
             rows = values[model]
 
@@ -249,7 +249,7 @@ def export_db_to_csv():
                 write.writerow(fields)
                 write.writerows(rows)
         else:
-            file = os.path.join('padel_league/static/data/csv', '%s.csv' % model)
+            file = os.path.join('segundasnonstop/static/data/csv', '%s.csv' % model)
             fields = models[model]
             rows = values[model]
 
