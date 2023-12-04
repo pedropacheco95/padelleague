@@ -1,4 +1,4 @@
-import cv2
+""" import cv2 """
 import os
 #import mediapipe as mp
 #import numpy as np
@@ -34,10 +34,10 @@ def save_file(file, filename):
     file.save(path)
     return True
 
-def resize(filename, width, height):
+""" def resize(filename, width, height):
     filename = os.path.join('images',filename)
     path = current_app.root_path + url_for('static', filename = filename)
     image = cv2.imread(path)
     image = cv2.resize(image, (width, height))
     cv2.imwrite(path, image)
-    return True
+    return True """
