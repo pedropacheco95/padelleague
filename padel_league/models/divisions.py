@@ -152,6 +152,7 @@ class Division(db.Model ,model.Model , model.Base):
     
     def get_classications_string(self):
 
+        so = self.players_relations
         player_relations = self.players_relations_classification()
 
         dict_line = []
@@ -159,6 +160,20 @@ class Division(db.Model ,model.Model , model.Base):
             dict_line.append({
                 'Jogador': player_relation.player.name,
                 'Lugar': player_relation.place,
-                'Pontos': player_relation.points
+                'Pontos': player_relation.points,
+                'Pontos por jornada': 3 * (player_relation.points/(player_relation.wins + player_relation.draws + player_relation.losts)),
             })
         return tools.dict_to_table(dict_line)
+    
+    def get_last_matchweek_points(self):
+        matchweek, matches = self.get_last_matchweek_and_matches()
+        players = {rel.player.name:0 for rel in self.players_relations}
+        for match in matches:
+            home_points = 1.5*(match.winner)**2 + 0.5*match.winner + 1
+            away_points = 1.5*(match.winner)**2 - 0.5*match.winner + 1
+            for player in match.home_players():
+                players[player.name] += home_points
+            for player in match.away_players():
+                players[player.name] += away_points
+
+        return players
