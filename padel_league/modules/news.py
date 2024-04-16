@@ -70,3 +70,17 @@ def new_prompt():
     print(':::::::::::::::::::::')
 
     return prompt
+
+@bp.route('/test_prompt', methods=('GET', 'POST'))
+def test_prompt():
+    prompt = News.get_all_jornalists_inputs(Division)
+
+    print(':::::::::::::::::::::')
+    print(':::::::::::::::::::::')
+    print(':::::::::::::::::::::')
+    print(prompt)
+    print(':::::::::::::::::::::')
+    print(':::::::::::::::::::::')
+    print(':::::::::::::::::::::')
+
+    return prompt

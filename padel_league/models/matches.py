@@ -57,10 +57,15 @@ class Match(db.Model ,model.Model, model.Base):
         away_players = teams[1]
 
         winner = home_players if self.winner == 1 else away_players if self.winner == -1 else None
+        loser = home_players if self.winner == -1 else away_players if self.winner == 1 else None
+
+        winner_games = self.games_home_team if self.games_home_team >= self.games_away_team else self.games_away_team
+        loser_games = self.games_home_team if self.games_home_team <= self.games_away_team else self.games_away_team
+
+        score = f"{winner_games} - {loser_games}"
 
         dict_line = {
             'Players': self.name(),
-            'Score': f"{self.games_home_team} - {self.games_away_team}",
-            'Result': f"{winner} won" if winner else 'Draw'
+            'Result': f"{winner} won {score} against {loser}" if winner else f'{home_players} e {away_players} empataram {score}'
         }
         return dict_line
