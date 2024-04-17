@@ -31,7 +31,7 @@ def for_edit(division_id=None):
         matches = division.matches
     else:
         matches = Match.query.all()
-    divisions = Division.query.all()
+    divisions = Division.query.filter_by(has_ended=0).all()
     tomorrow = datetime.datetime.combine(datetime.date.today() + datetime.timedelta(days=1), datetime.datetime.min.time())
     matches = [match for match in matches if match.date_hour <= tomorrow and (not match.played)]
     return render_template('matches/matches_for_edit.html',matches=matches ,divisions=divisions ,division=division)

@@ -12,7 +12,6 @@ class League(db.Model ,model.Model, model.Base):
     editions = relationship('Edition', back_populates="league")
 
     def all_players_that_played(self):
-        players = []
         Association = self.editions[0].divisions[0].players_relations[0].__class__
         all_associations = Association.query.all()
         return list(set([assoc.player for assoc in all_associations]))
@@ -29,15 +28,17 @@ class League(db.Model ,model.Model, model.Base):
         return players
 
     def update_rankings(self):
+        all_editions = sorted(self.editions, key=lambda x: x.id, reverse=True)
+        last_five_editions = all_editions[:5]
         for player in self.all_players_that_played():
             player.ranking_points = 0
             ranking_points_non_average = 0
-            divisions_played = [div for div in player.divisions_relations if div.division.has_ended]
-            n_divisions_played = len(divisions_played) - 1 if divisions_played else 1 
-            for division_relation in player.divisions_relations:
+            divisions_played = [div for div in player.divisions_relations if div.division.has_ended and div.division.edition in last_five_editions]
+            n_divisions_played = len(divisions_played)
+            for division_relation in divisions_played:
                 division = division_relation.division
                 if division.has_ended and not division.open_division or division.open_division and len(division.matches) > 20:
-                    ranking_points_non_average += int((division.rating)/(2**(division_relation.place - 1)))
+                    ranking_points_non_average += int((division.rating) - (division_relation.place - 1)*(division.rating/100))
                 ranking_points_non_average += len(player.matches_won(division=division)) * division.rating/100
                 ranking_points_non_average += len(player.matches_drawn(division=division)) * division.rating/250
                 player.ranking_position = 1

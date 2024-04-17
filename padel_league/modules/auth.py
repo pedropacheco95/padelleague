@@ -72,9 +72,6 @@ def register():
 
                     player.picture_path = image_name
                     player.save()
-            division = Division.query.filter_by(id=5).first()
-            players_divisions = Association_PlayerDivision(player=player,division=division)
-            players_divisions.create()
             user = User(username=username, email=email , password= password, player_id=player.id)
             user.create()
             return redirect(url_for('auth.login'))

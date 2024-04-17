@@ -120,6 +120,50 @@
         </div>
     </div>
 </div>
+<div class="l-grid">
+    <div class="c-ranking-header c-ranking-header--no-image c-ranking-header--table">
+        <div class="l-container_player l-container--data player_games_table">
+            {% set n_matches_played = player.matches_played()|length %}
+            {% set n_tournaments_played = player.divisions_relations|length %}
+            <div class="c-ranking-header__data-box">
+                <p class="c-ranking-header__data-title">Torneios jogados</p>
+                <p class="c-ranking-header__data">{{n_tournaments_played}}</p>
+            </div> 
+            <div class="c-ranking-header__data-box">
+                <p class="c-ranking-header__data-title">Jornadas jogadas</p>
+                {% if n_matches_played %}
+                <p class="c-ranking-header__data">{{n_matches_played / 3}}</p>
+                {% else %}
+                <p class="c-ranking-header__data">0</p>
+                {% endif %}
+            </div> 
+            <div class="c-ranking-header__data-box">
+                <p class="c-ranking-header__data-title">Jornadas Faltadas</p>
+                {% if n_matches_played and n_tournaments_played %}
+                <p class="c-ranking-header__data">{{n_tournaments_played*7 - n_matches_played / 3}}</p>
+                {% else %}
+                <p class="c-ranking-header__data">0</p>
+                {% endif %}
+            </div> 
+            <div class="c-ranking-header__data-box">
+                <p class="c-ranking-header__data-title">Jornadas por torneio</p>
+                {% if n_matches_played and n_tournaments_played %}
+                <p class="c-ranking-header__data">{{n_matches_played / 3 / n_tournaments_played}}</p>
+                {% else %}
+                <p class="c-ranking-header__data">0</p>
+                {% endif %}
+            </div> 
+            <div class="c-ranking-header__data-box">
+                <p class="c-ranking-header__data-title">Assiduidade</p>
+                {% if n_matches_played and n_tournaments_played %}
+                <p class="c-ranking-header__data">{{(n_tournaments_played*3 / n_matches_played * 100)|round(2) }}%</p>
+                {% else %}
+                <p class="c-ranking-header__data">0%</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
 <div class="l-grid" id="l-grid_as_title" style="display: none;">
     <h2 class="c-ranking__heading">Estadísticas anuales</h2>
     <div class="c-form c-form--top c-form--ranking">
