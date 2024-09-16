@@ -50,7 +50,7 @@ def create():
 
                 image_tools.save_file(file, filename)
                 #image_tools.remove_background(filename)
-                image_tools.resize(filename, 500, 500)
+                #image_tools.resize(filename, 500, 500)
                 
                 product_image = ProductImage(path=filename,product_id=product.id)
                 product_image.create()

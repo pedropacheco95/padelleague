@@ -86,10 +86,10 @@
         </div>
     </div>
 </div>
+{% set n_matches_played = player.matches_played()|length %}
 <div class="l-grid">
     <div class="c-ranking-header c-ranking-header--no-image c-ranking-header--table">
         <div class="l-container_player l-container--data player_games_table">
-            {% set n_matches_played = player.matches_played()|length %}
             {% set n_matches_won = player.matches_won()|length %}
             {% set n_matches_lost = player.matches_lost()|length %}
             {% set n_matches_drawn = player.matches_drawn()|length %}
@@ -111,7 +111,7 @@
             </div> 
             <div class="c-ranking-header__data-box">
                 <p class="c-ranking-header__data-title">Eficácia</p>
-                {% if n_matches_played %}
+                {% if n_league_matches_played %}
                 <p class="c-ranking-header__data">{{(n_matches_won / n_matches_played * 100)|round(2) }}%</p>
                 {% else %}
                 <p class="c-ranking-header__data">0%</p>
@@ -123,7 +123,6 @@
 <div class="l-grid">
     <div class="c-ranking-header c-ranking-header--no-image c-ranking-header--table">
         <div class="l-container_player l-container--data player_games_table">
-            {% set n_matches_played = player.matches_played()|length %}
             {% set n_tournaments_played = player.divisions_relations|length %}
             <div class="c-ranking-header__data-box">
                 <p class="c-ranking-header__data-title">Torneios jogados</p>
@@ -132,7 +131,7 @@
             <div class="c-ranking-header__data-box">
                 <p class="c-ranking-header__data-title">Jornadas jogadas</p>
                 {% if n_matches_played %}
-                <p class="c-ranking-header__data">{{n_matches_played / 3}}</p>
+                <p class="c-ranking-header__data">{{(n_matches_played / 3)|round(0)}}</p>
                 {% else %}
                 <p class="c-ranking-header__data">0</p>
                 {% endif %}
@@ -140,7 +139,7 @@
             <div class="c-ranking-header__data-box">
                 <p class="c-ranking-header__data-title">Jornadas Faltadas</p>
                 {% if n_matches_played and n_tournaments_played %}
-                <p class="c-ranking-header__data">{{n_tournaments_played*7 - n_matches_played / 3}}</p>
+                <p class="c-ranking-header__data">{{(n_tournaments_played*7 - n_matches_played / 3)|round(0)}}</p>
                 {% else %}
                 <p class="c-ranking-header__data">0</p>
                 {% endif %}
@@ -148,7 +147,7 @@
             <div class="c-ranking-header__data-box">
                 <p class="c-ranking-header__data-title">Jornadas por torneio</p>
                 {% if n_matches_played and n_tournaments_played %}
-                <p class="c-ranking-header__data">{{n_matches_played / 3 / n_tournaments_played}}</p>
+                <p class="c-ranking-header__data">{{(n_matches_played / 3 / n_tournaments_played)|round(2)}}</p>
                 {% else %}
                 <p class="c-ranking-header__data">0</p>
                 {% endif %}
@@ -156,111 +155,11 @@
             <div class="c-ranking-header__data-box">
                 <p class="c-ranking-header__data-title">Assiduidade</p>
                 {% if n_matches_played and n_tournaments_played %}
-                <p class="c-ranking-header__data">{{(n_tournaments_played*3 / n_matches_played * 100)|round(2) }}%</p>
+                <p class="c-ranking-header__data">{{(n_matches_played/ (n_tournaments_played*3*7) * 100)|round(2) }}%</p>
                 {% else %}
                 <p class="c-ranking-header__data">0%</p>
                 {% endif %}
             </div>
-        </div>
-    </div>
-</div>
-<div class="l-grid" id="l-grid_as_title" style="display: none;">
-    <h2 class="c-ranking__heading">Estadísticas anuales</h2>
-    <div class="c-form c-form--top c-form--ranking">
-        <div class="c-form__header">
-            <div class="c-form__container">
-                <div class="c-form__column">
-                    <div class="c-form__select">
-                        <select class="c-form__control select-is-hidden" id="ranking-year" name="ranking-year">
-                            <option>Año</option>
-                            <option value="2021">2021</option>
-                            <option value="2020">2020</option>
-                        </select>
-                        <div class="c-form__select-block" data-id="2020">
-                            2020
-                        </div>
-                        <ul class="c-form__select-options" style="display: none;">
-                            <li rel="Año">Año</li>
-                            <li rel="2021">2021</li>
-                            <li rel="2020">2020</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-<div class="l-grid" style="display: none;">
-    <div class="c-flex-table c-flex-table--ranking is-visible">
-        <div class="c-flex-table__column">
-            <div class="c-flex-table__heading">
-                <h3>Estadísticas <span>2021</span></h3>
-            </div>
-            <ul class="c-flex-table__list u-list-clean">
-                <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">Partidos jugados</span><span class="c-flex-table__item-data">64</span>
-                </li>
-                <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">Partidos ganados</span> <span class="c-flex-table__item-data">52</span>
-                </li>
-                <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">Efectividad</span>
-                    <span class="c-flex-table__item-data">81,25</span>
-                </li>
-            </ul>
-        </div>
-        <div class="c-flex-table__column">
-            <div class="c-flex-table__heading">
-                <h3>Estadísticas <span>2021</span></h3>
-            </div>
-            <ul class="c-flex-table__list u-list-clean">
-                <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">Partidos jugados</span><span class="c-flex-table__item-data">64</span>
-                </li>
-                <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">Partidos ganados</span> <span class="c-flex-table__item-data">52</span>
-                </li>
-                <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">Efectividad</span>
-                    <span class="c-flex-table__item-data">81,25</span>
-                </li>
-            </ul>
-        </div>
-    </div>
-    <div class="c-flex-table c-flex-table--ranking">
-        <div class="c-flex-table__column">
-            <div class="c-flex-table__heading">
-                <h3>Estadísticas <span>2021</span></h3>
-            </div>
-            <ul class="c-flex-table__list u-list-clean">
-                <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">Partidos jugados</span><span class="c-flex-table__item-data">64</span>
-                </li>
-                <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">Partidos ganados</span> <span class="c-flex-table__item-data">52</span>
-                </li>
-                <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">Efectividad</span>
-                    <span class="c-flex-table__item-data">81,25</span>
-                </li>
-            </ul>
-        </div>
-        <div class="c-flex-table__column">
-            <div class="c-flex-table__heading">
-                <h3>Estadísticas <span>2021</span></h3>
-            </div>
-            <ul class="c-flex-table__list u-list-clean">
-                <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">Partidos jugados</span><span class="c-flex-table__item-data">64</span>
-                </li>
-                <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">Partidos ganados</span> <span class="c-flex-table__item-data">52</span>
-                </li>
-                <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">Efectividad</span>
-                    <span class="c-flex-table__item-data">81,25</span>
-                </li>
-            </ul>
         </div>
     </div>
 </div>
@@ -301,6 +200,18 @@
                 {% for relation in player.divisions_relations %}
                 <li class="c-flex-table__item">
                     <span class="c-flex-table__item-title">{{player.matches_won(relation.division)|length}}</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="c-flex-table__column">
+            <div class="c-flex-table__heading">
+                <h3>Encontros jogados</h3>
+            </div>
+            <ul class="c-flex-table__list u-list-clean">
+                {% for relation in player.divisions_relations %}
+                <li class="c-flex-table__item">
+                    <span class="c-flex-table__item-title">{{player.matches_played(relation.division)|length}}</span>
                 </li>
                 {% endfor %}
             </ul>

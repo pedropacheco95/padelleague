@@ -20,7 +20,7 @@ class League(db.Model ,model.Model, model.Base):
         players = list(set(self.all_players_that_played()))
         if any(player.ranking_position == 0 for player in players):
             self.update_rankings()
-        players.sort(key=lambda x: x.ranking_points, reverse=True)
+        players.sort(key=lambda x: (-x.ranking_points, x.ranking_position))
         if update_places:
             for index,player in enumerate(players):
                 player.ranking_position = index + 1

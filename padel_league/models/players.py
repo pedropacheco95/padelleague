@@ -121,3 +121,9 @@ class Player(db.Model ,model.Model, model.Base):
     def points_by_matchweek_for_graph(self,division):
         points_by_matchweek = self.points_by_matchweek(division)
         return {'x':list(points_by_matchweek.keys()),'y':list(points_by_matchweek.values())}
+    
+    def all_league_matches_played(self):
+        matches = []
+        for relation in self.divisions_relations:
+            matches += self.matches_played(relation.division)
+        return matches
