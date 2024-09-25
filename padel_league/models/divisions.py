@@ -150,6 +150,19 @@ class Division(db.Model ,model.Model , model.Base):
     def get_next_matchweek_games(self,matchweek):
         return tools.dict_to_table([{'Jogo':match.name()} for match in self.matches if match.matchweek == matchweek])
     
+    def get_next_matchweek_pairs(self,matchweek):
+        games = [match.name() for match in self.matches if match.matchweek == matchweek]
+        parelhas = set()
+        for game in games:
+            parts = game.split(" VS ")
+            first_pair = parts[0].strip()
+            second_pair = parts[1].strip()
+            parelhas.add(first_pair)
+            parelhas.add(second_pair)
+        
+        return list(parelhas)
+
+    
     def get_classications_string(self):
 
         so = self.players_relations
@@ -157,11 +170,12 @@ class Division(db.Model ,model.Model , model.Base):
 
         dict_line = []
         for player_relation in player_relations:
+            games = player_relation.wins + player_relation.draws + player_relation.losts
             dict_line.append({
                 'Jogador': player_relation.player.name,
                 'Lugar': player_relation.place,
                 'Pontos': player_relation.points,
-                'Pontos por jornada': 3 * (player_relation.points/(player_relation.wins + player_relation.draws + player_relation.losts)),
+                'Pontos por jornada': 3 * (player_relation.points/games) if games else 0,
             })
         return tools.dict_to_table(dict_line)
     

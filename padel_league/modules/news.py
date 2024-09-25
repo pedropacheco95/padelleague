@@ -3,7 +3,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 import unidecode
 import os
 
-from padel_league.models import News , Division
+from padel_league.models import News , Division, Player
 
 bp = Blueprint('news', __name__,url_prefix='/news')
 
@@ -59,7 +59,7 @@ def delete(news_id):
 
 @bp.route('/new_prompt', methods=('GET', 'POST'))
 def new_prompt():
-    prompt = News.create_prompt(Division)
+    prompt = News.create_matchweek_prompt(Division,Player)
 
     print(':::::::::::::::::::::')
     print(':::::::::::::::::::::')
