@@ -1,4 +1,4 @@
-from padel_league import model 
+from padel_league import model
 from padel_league.sql_db import db
 from sqlalchemy import Column, Integer , String , Text, ForeignKey
 from sqlalchemy.orm import relationship
@@ -8,13 +8,19 @@ class League(db.Model ,model.Model, model.Base):
     __table_args__ = {'extend_existing': True}
     id = Column(Integer, primary_key=True)
     name = Column(String(80), unique=True, nullable=False)
-    
+
     editions = relationship('Edition', back_populates="league")
 
     def all_players_that_played(self):
         Association = self.editions[0].divisions[0].players_relations[0].__class__
         all_associations = Association.query.all()
-        return list(set([assoc.player for assoc in all_associations]))
+
+        all_editions = sorted(self.editions, key=lambda x: x.id, reverse=True)
+        last_five_editions = all_editions[:5]
+        last_divisions = []
+        for edition in last_five_editions:
+            last_divisions += [division for division in edition.divisions if division.has_ended]
+        return list(set([assoc.player for assoc in all_associations if assoc.division in last_divisions]))
 
     def players_rankings_position(self,update_places=False):
         players = list(set(self.all_players_that_played()))
@@ -44,7 +50,7 @@ class League(db.Model ,model.Model, model.Base):
                 player.ranking_position = 1
             player.ranking_points = ranking_points_non_average/n_divisions_played if n_divisions_played else 0
             player.save()
-        self.players_rankings_position(update_places=True) 
+        self.players_rankings_position(update_places=True)
         return True
 
     """ def ranking_add_match(self,match):
@@ -55,8 +61,8 @@ class League(db.Model ,model.Model, model.Base):
             ranking_points_non_average = (player.ranking_points) * (len(player.divisions_relations) - 1) if (len(player.divisions_relations) - 1) else 0
             ranking_points_non_average += (win * match.division.rating/100 + draw * match.division.rating/250)
             divisions_played = [div for div in player.divisions_relations if div.has_ended]
-            n_divisions_played = len(divisions_played) - 1 if divisions_played else 1 
+            n_divisions_played = len(divisions_played) - 1 if divisions_played else 1
             player.ranking_points = ranking_points_non_average / n_divisions_played if n_divisions_played else 0
             player.save()
-        self.players_rankings_position(update_places=True) 
+        self.players_rankings_position(update_places=True)
         return True """
