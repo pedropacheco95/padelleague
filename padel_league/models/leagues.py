@@ -16,9 +16,9 @@ class League(db.Model ,model.Model, model.Base):
         all_associations = Association.query.all()
 
         all_editions = sorted(self.editions, key=lambda x: x.id, reverse=True)
-        last_five_editions = all_editions[:5]
+        last_four_editions = all_editions[:4]
         last_divisions = []
-        for edition in last_five_editions:
+        for edition in last_four_editions:
             last_divisions += [division for division in edition.divisions if division.has_ended]
         return list(set([assoc.player for assoc in all_associations if assoc.division in last_divisions]))
 
@@ -34,22 +34,36 @@ class League(db.Model ,model.Model, model.Base):
         return players
 
     def update_rankings(self):
-        all_editions = sorted(self.editions, key=lambda x: x.id, reverse=True)
-        last_five_editions = all_editions[:5]
+        """
+        Update the ranking points for all players based on the latest four editions.
+        For each player, this function computes ranking points from divisions they played
+        in editions that have ended. Points are calculated using the division rating,
+        a decay factor based on the player's placement, and additional points for wins and draws.
+        """
+        # Determine the most recent four editions.
+        editions = sorted(self.editions, key=lambda edition: edition.id, reverse=True)
+        editions = [edition for edition in editions if (not edition.has_ended()) and (not edition.is_open_division())]
+        recent_editions = sorted(self.editions, key=lambda edition: edition.id, reverse=True)[:4]
+
+        # Process each player who has participated.
         for player in self.all_players_that_played():
-            player.ranking_points = 0
-            ranking_points_non_average = 0
-            divisions_played = [div for div in player.divisions_relations if div.division.has_ended and div.division.edition in last_five_editions]
-            n_divisions_played = len(divisions_played)
-            for division_relation in divisions_played:
-                division = division_relation.division
-                if division.has_ended and not division.open_division or division.open_division and len(division.matches) > 20:
-                    ranking_points_non_average += int((division.rating) - (division_relation.place - 1)*(division.rating/100))
-                ranking_points_non_average += len(player.matches_won(division=division)) * division.rating/100
-                ranking_points_non_average += len(player.matches_drawn(division=division)) * division.rating/250
-                player.ranking_position = 1
-            player.ranking_points = ranking_points_non_average/n_divisions_played if n_divisions_played else 0
+            total_points = 0
+            
+            # Filter player's division relations to only those in recent editions with ended divisions.
+            recent_division_relations = [
+                relation for relation in player.divisions_relations
+                if relation.division.edition in recent_editions
+            ]
+            
+            for relation in recent_division_relations:
+                total_points += relation.compute_ranking_points()
+            
+            # Update player's ranking points and set the default ranking position.
+            player.ranking_points = total_points
+            player.ranking_position = 1
             player.save()
+        
+        # Update ranking positions based on the new points.
         self.players_rankings_position(update_places=True)
         return True
 
