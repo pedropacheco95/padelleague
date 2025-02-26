@@ -22,3 +22,20 @@ class Association_PlayerDivision(db.Model ,model.Model, model.Base):
 
     division = relationship('Division', back_populates='players_relations')
     player = relationship('Player', back_populates='divisions_relations')
+    
+    def compute_ranking_points(self):
+        if not self.division.has_ended:
+            return 0
+        division = self.division
+        # Add base points if the division qualifies:
+        # For closed divisions or open divisions with more than 20 matches.
+        if division.has_ended and (not division.open_division):
+            decay_factor = 0.75 ** (self.place - 1)
+            total_points = int(division.rating * decay_factor)
+        
+        # Bonus points for wins and draws in the division.
+        wins = len(self.player.matches_won(division=division))
+        draws = len(self.player.matches_drawn(division=division))
+        total_points += wins * (division.rating / 100)
+        total_points += draws * (division.rating / 250)
+        return total_points

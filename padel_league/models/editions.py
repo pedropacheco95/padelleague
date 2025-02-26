@@ -14,3 +14,9 @@ class Edition(db.Model ,model.Model , model.Base):
     divisions = relationship('Division', back_populates="edition")
 
     players_relations_registrations = relationship('Registration', back_populates='edition')
+
+    def has_ended(self):
+        return all([division.has_ended for division in self.divisions])
+    
+    def is_open_division(self):
+        return all([division.open_division for division in self.divisions])

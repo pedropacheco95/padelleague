@@ -228,6 +228,18 @@
                 {% endfor %}
             </ul>
         </div>
+        <div class="c-flex-table__column">
+            <div class="c-flex-table__heading">
+                <h3>Pontos de Ranking</h3>
+            </div>
+            <ul class="c-flex-table__list u-list-clean">
+                {% for relation in player.divisions_relations %}
+                <li class="c-flex-table__item">
+                    <span class="c-flex-table__item-title">{{relation.compute_ranking_points()}}</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
     </div>
 </div>
 {% endblock %}

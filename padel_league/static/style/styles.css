@@ -536,7 +536,7 @@ html{
 
 
     .c-flex-table--ranking .c-flex-table__column:first-child {
-        width: 50%;
+        width: 20%;
     }
 
     .c-flex-table--classification .c-flex-table__column:first-child {
@@ -544,7 +544,7 @@ html{
     }
 
     .c-flex-table--blue .c-flex-table__column:not(:first-child) {
-        width: 20%!important;
+        width: 16%!important;
     }
 
     .c-tor-header__img-container .c-trigger, .c-tor-header__img-container > img {
@@ -1695,7 +1695,6 @@ a {
 }
 
 .c-flex-table__heading {
-    min-width: 28.2rem;
     min-height: 4.5rem;
     font-family: "Fira Sans",Helvetica,Arial,sans-serif;
     font-size: 1.5rem;
@@ -1721,7 +1720,7 @@ a {
 
 .c-flex-table--ranking .c-flex-table__item {
     display: flex;
-    height: 5.2rem;
+    height: 7.2rem;
     align-items: center;
     margin: 0;
     padding: 0 2rem;
@@ -1775,11 +1774,14 @@ a {
 .c-flex-table--blue .c-flex-table__heading {
     display: flex;
     align-items: center;
+    justify-content: center;
+    flex-direction: column;
     height: 5rem;
     background-color: #22356d;
     padding: 0;
     border-right: none!important;
 }
+
 
 .c-flex-table--blue .c-flex-table__heading>h3{
     padding-left: 2rem!important;
@@ -1793,6 +1795,7 @@ a {
     font-family: "Fira Sans",Helvetica,Arial,sans-serif;
     text-transform: none;
     margin-bottom: 0;
+    padding: 0!important;
 }
 
 .c-flex-table--blue .c-flex-table__list {
