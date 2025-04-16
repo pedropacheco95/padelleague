@@ -1,0 +1,26 @@
+<div style="border: 1px solid #ccc; padding: 15px; margin-bottom: 20px;">
+    <h3>Pedido ID: {{ order.id }}</h3>
+    <p>Utilizador: {{ order.user.name if order.user else order.name or 'Convidado' }}</p>
+    <p>Fechado: {{ 'Sim' if order.closed else 'Não' }}</p>
+  
+    <form method="post" style="margin-top: 10px;">
+      <input type="hidden" name="order_id" value="{{ order.id }}">
+      <label for="delivered_{{ order.id }}">Entregue:</label>
+      <select name="delivered" id="delivered_{{ order.id }}" onchange="this.form.submit()">
+        <option value="true" {% if order.delivered %}selected{% endif %}>Sim</option>
+        <option value="false" {% if not order.delivered %}selected{% endif %}>Não</option>
+      </select>
+    </form>
+  
+    <h4>Linhas do Pedido:</h4>
+    <ul>
+      {% for line in order.order_lines %}
+        <li>
+          Produto: {{ line.product.name }}<br>
+          Quantidade: {{ line.quantity }}<br>
+          Especificação: {{ line.specification }}
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+  

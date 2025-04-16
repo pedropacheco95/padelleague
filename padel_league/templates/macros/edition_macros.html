@@ -1,0 +1,32 @@
+{% import 'macros/match_macros.html' as match_macros %}
+
+{% macro edition_result_card(edition) %}
+<div class="edition_container index_item">
+    <div class="main_edition_container">
+        <div class="edition_dates">{{ edition.short_date_string() }}</div>
+        <div class="edition_name">{{ edition.get_full_name() }}</div>
+    </div>
+
+    <div class="edition_results_container">
+        <div class="division_results_wrapper">
+            {% for division in edition.divisions %}
+            <div class="division_result_block" id="division-{{ loop.index0 }}" style="display: {{ 'block' if loop.first else 'none' }}">
+                <div class="division_name">{{ division.name }}</div>
+                <div class="match_list">
+                    {% for match in division.last_played_matches() %}
+                        {{ match_macros.match_line(match) }}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% if edition.divisions|length > 1 %}
+        <div class="division_nav">
+            <button type="button" class="prev_division" onclick="changeDivision('{{ edition.id }}', -1)"><</button>
+            <button type="button" class="next_division" onclick="changeDivision('{{ edition.id }}', 1)">></button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endmacro %}

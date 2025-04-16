@@ -101,7 +101,7 @@ def upload_csv_to_db():
             birthday = datetime.datetime.strptime(columns[3], '%Y-%m-%d') if columns[3] else None
             picture_path = columns[4]
             large_picture_path = columns[5]
-            ranking_points = int(columns[6]) if columns[6] else None
+            ranking_points = int(float(columns[6])) if columns[6] else None
             ranking_position = int(columns[7]) if columns[7] else None
             height = float(columns[8]) if columns[8] else None
             prefered_hand = columns[9]

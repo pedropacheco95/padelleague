@@ -87,7 +87,7 @@
     </div>
 </div>
 {% set n_matches_played = player.matches_played()|length %}
-<div class="l-grid">
+<div class="l-grid player_tables_container">
     <div class="c-ranking-header c-ranking-header--no-image c-ranking-header--table">
         <div class="l-container_player l-container--data player_games_table">
             {% set n_matches_won = player.matches_won()|length %}
@@ -120,7 +120,7 @@
         </div>
     </div>
 </div>
-<div class="l-grid">
+<div class="l-grid player_tables_container">
     <div class="c-ranking-header c-ranking-header--no-image c-ranking-header--table">
         <div class="l-container_player l-container--data player_games_table">
             {% set n_tournaments_played = player.divisions_relations|length %}
@@ -163,8 +163,7 @@
         </div>
     </div>
 </div>
-<div class="l-grid">
-    <h2 class="c-ranking__heading" id="close_title">Torneios participados</h2>
+<div class="l-grid player_tables_container">
     <div class="c-flex-table c-flex-table--ranking c-flex-table--blue is-visible">
         <div class="c-flex-table__column">
             <div class="c-flex-table__heading">

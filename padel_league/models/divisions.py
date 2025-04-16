@@ -191,3 +191,10 @@ class Division(db.Model ,model.Model , model.Base):
                 players[player.name] += away_points
 
         return players
+    
+    def last_played_matches(self, limit=4):
+        return sorted(
+            [m for m in self.matches if m.played],
+            key=lambda m: m.date_hour,
+            reverse=True
+        )[:limit]

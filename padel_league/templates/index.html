@@ -1,12 +1,17 @@
 {% extends 'layout.html' %}
 {% import 'macros/news_macros.html' as news_macros %}
+{% import 'macros/edition_macros.html' as edition_macros %}
+{% import 'macros/tournaments_macros.html' as tournaments_macros %}
 
 {% block main %}
     <div class="l-grid">
         <div class="index_container">
-            {% for news in all_news%}
-                {{ news_macros.news_card(news) }}
-            {% endfor %}
+            <h1 class="index_title">Notícias</h1>
+            {{ news_macros.news_container(all_news) }}
+            <h1 class="index_title">Torneios</h1>
+            {{ tournaments_macros.index_tournaments(tournaments) }}
+            <h1 class="index_title">Últimos resultados</h1>
+            {{ edition_macros.edition_result_card(last_edition) }}
         </div>
     </div>
 {% endblock %}

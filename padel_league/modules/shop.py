@@ -49,3 +49,43 @@ def cart(order_id):
 @bp.route('/cart_sucess', methods=('GET', 'POST'))
 def cart_sucess():
     return render_template('shop/cart_sucess.html')
+
+@bp.route('/admin_orders', methods=('GET', 'POST'))
+def admin_orders():
+    user = session.get('user')
+    error = None
+
+    if not user:
+        error = 'Não podes aceder ao carrinho sem estar logado'
+        flash(error)
+        return redirect(url_for('main.index'))
+
+    if not user.is_admin:
+        error = 'Não podes ver esta página'
+        flash(error)
+        return redirect(url_for('main.index'))
+
+    if request.method == 'POST':
+        order_id = request.form.get('order_id')
+        delivered = request.form.get('delivered') == 'true'
+
+        order = Order.query.get(order_id)
+        if order:
+            order.delivered = delivered
+            order.save()
+            flash(f'Estado do pedido #{order.id} atualizado para {"Entregue" if delivered else "Não entregue"}.')
+
+        return redirect(url_for('shop.admin_orders'))
+
+    orders = Order.query.order_by(Order.id.desc()).all()
+    orders = [order for order in orders if order.order_lines]
+
+    # Split into delivered and not delivered
+    delivered_orders = [order for order in orders if order.delivered]
+    undelivered_orders = [order for order in orders if not order.delivered]
+
+    return render_template(
+        'shop/admin_orders.html',
+        delivered_orders=delivered_orders,
+        undelivered_orders=undelivered_orders
+    )

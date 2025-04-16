@@ -1,7 +1,7 @@
 from email.policy import default
 from padel_league import model 
 from padel_league.sql_db import db
-from sqlalchemy import Column, Integer, ForeignKey, Enum , Boolean
+from sqlalchemy import Column, Integer, ForeignKey, String , Boolean
 from sqlalchemy.orm import relationship 
 
 class Order(db.Model ,model.Model, model.Base):

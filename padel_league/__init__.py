@@ -3,6 +3,7 @@ import os
 from flask import Flask
 from tempfile import mkdtemp
 from flask_session import Session
+from flask_assets import Environment, Bundle
 
 
 from . import sql_db
@@ -62,20 +63,13 @@ def create_app(test_config=None):
     except OSError:
         pass
     
-    app.register_blueprint(modules.main.bp)
-    app.register_blueprint(modules.auth.bp)
-    app.register_blueprint(modules.api.bp)
-    app.register_blueprint(modules.players.bp)
-    app.register_blueprint(modules.tournaments.bp)
-    app.register_blueprint(modules.matches.bp)
-    app.register_blueprint(modules.uploads.bp)
-    app.register_blueprint(modules.users.bp)
-    app.register_blueprint(modules.news.bp)
-    app.register_blueprint(modules.registrations.bp)
-    app.register_blueprint(modules.products.bp)
-    app.register_blueprint(modules.products_attributes.bp)
-    app.register_blueprint(modules.shop.bp)
-    app.register_blueprint(modules.editions.bp)
+    modules.register_blueprints(app)
+
+    assets = Environment(app)
+
+    scss_bundle = Bundle('style/scss/main.scss', filters='pyscss', depends='style/scss/*.scss',output='style/styles.css')
+    assets.register('scss', scss_bundle)
+    
     with app.app_context():
         sql_db.db.init_app(app)
         sql_db.db.create_all()
