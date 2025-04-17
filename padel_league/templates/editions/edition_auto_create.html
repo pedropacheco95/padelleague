@@ -1,0 +1,57 @@
+{% extends 'layout.html' %}
+{% block main %}
+<div class="l-grid">
+    <section class="tournament-form-container">
+      <h2>Criar Divisões para {{ edition_name }}</h2>
+      {% for div in divisions %}
+        <section class="create_tournament_form">
+            <form method="POST" action="{{ url_for('tournaments.create') }}" enctype="multipart/form-data">
+            <input type="hidden" name="edition" value="{{ league_id }}">
+            <label>Divisão {{ loop.index }}</label>
+            <div class="form-group">
+                <label>Nome da Divisão</label>
+                <input class="form-control" name="name" value="{{ div.name }}" required>
+            </div>
+            <div class="form-group">
+                <label>Data de Início</label>
+                <input class="form-control" type="date" name="beggining_date" value="{{ div.beggining_date.strftime('%Y-%m-%d') if div.beggining_date else '' }}" required>
+            </div>
+            <div class="form-group">
+                <label>Rating</label>
+                <input class="form-control" type="number" name="rating" value="{{ div.rating }}">
+            </div>
+            <div class="form-group">
+                <label>Poster (620w x 875h)</label>
+                <input class="form-control" type="file" name="picture">
+            </div>
+            <div class="form-group">
+                <label>Fotografia Grande (1024w x 340h)</label>
+                <input class="form-control" type="file" name="large_picture">
+            </div>
+            <div class="form-group">
+                <label>Jogadores</label>
+                {% for i in range(8) %}
+                <select class="form-control" name="player_{{ i }}" required>
+                    <option value="">-- Jogador --</option>
+                    {% for player in all_players %}
+                    {% if div.players|length > i %}
+                    {% set selected_id = div.players[i].id %}
+                    {% else %}
+                    {% set selected_id = None %}
+                    {% endif %}
+                    <option value="{{ player.id }}"
+                        {% if player.id == selected_id %} selected {% endif %}>
+                        {{ player.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                {% endfor %}
+            </div>
+            <button class="btn btn-primary" type="submit">Criar Divisão</button>
+            </form>
+        </section>
+        <hr>
+        {% endfor %}
+    </section>
+</div>
+{% endblock %}

@@ -139,3 +139,22 @@ dmypy.json
 #DS_Store
 
 .DS_Store
+
+# Terraform state
+terraform.tfstate
+terraform.tfstate.backup
+*.tfstate
+*.tfstate.*
+
+# Terraform crash logs
+crash.log
+
+# Terraform plan files
+*.tfplan
+
+# Local .terraform/ directory
+.terraform/
+
+# Sensitive variable files (if any)
+*.tfvars
+*.tfvars.json

@@ -193,8 +193,18 @@ class Division(db.Model ,model.Model , model.Base):
         return players
     
     def last_played_matches(self, limit=4):
-        return sorted(
+        played_matches = sorted(
             [m for m in self.matches if m.played],
             key=lambda m: m.date_hour,
             reverse=True
         )[:limit]
+
+        if played_matches:
+            return played_matches
+
+        upcoming_matches = sorted(
+            [m for m in self.matches if not m.played],
+            key=lambda m: m.date_hour
+        )[:limit]
+
+        return upcoming_matches

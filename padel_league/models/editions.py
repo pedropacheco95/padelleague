@@ -23,6 +23,8 @@ class Edition(db.Model ,model.Model , model.Base):
         return all([division.open_division for division in self.divisions])
     
     def short_date_string(self):
+        if not self.divisions:
+            return 'Sem data'
         division = self.divisions[0]
         start_day = division.beginning_datetime.day
         end_day = division.end_date.day
@@ -35,6 +37,7 @@ class Edition(db.Model ,model.Model , model.Base):
         month = months_pt[division.end_date.month - 1]
 
         return f"{start_day}-{end_day} {month}"
+    
     def get_full_name(self):
         return f"{self.league.name}: {self.name} "
     
