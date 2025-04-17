@@ -17,7 +17,7 @@ def create_app(test_config=None):
     POSTGRES_USER = os.getenv('POSTGRES_USER', 'padel_user')
     POSTGRES_PW = os.getenv('POSTGRES_PW', 'portopadelleague')
     POSTGRES_DB = os.getenv('POSTGRES_DB', 'padel_league')
-    POSTGRES_HOST = os.getenv('POSTGRES_HOST', '172.17.0.1')
+    POSTGRES_HOST = os.getenv('POSTGRES_HOST', '35.205.246.86')
     POSTGRES_PORT = os.getenv('POSTGRES_PORT', '5432')
     
     db_uri = f"postgresql://{POSTGRES_USER}:{POSTGRES_PW}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"

@@ -2,6 +2,7 @@ from padel_league import model
 from padel_league.sql_db import db
 from sqlalchemy import Column, Integer , String , Text , ForeignKey , Float ,JSON
 from sqlalchemy.orm import relationship
+import json
 
 class Product(db.Model ,model.Model,model.Base):
     __tablename__ = 'products'
@@ -32,3 +33,12 @@ class Product(db.Model ,model.Model,model.Base):
             attribute = value.product_attribute
             values_in_dict[attribute].append((value.id,value.value))
         return values_in_dict
+    
+    @property
+    def product_features(self):
+        if isinstance(self.features, str):
+            try:
+                return json.loads(self.features)
+            except Exception:
+                return {}
+        return self.features

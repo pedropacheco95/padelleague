@@ -68,13 +68,13 @@
                     <p>{{p}}</p>
                     {% endfor%}
                 </div>
-                {% if product.features %}
+                {% if product.product_features %}
                     <div class="product_features">
                         <div class="product_features_title">Características</div>
                         <div class="product_features_info">
                             <table>
                                 <tbody>
-                                    {% for key in product.features.keys() %}
+                                    {% for key in product.product_features.keys() %}
                                         <tr>
                                             <td class="product_feature_key" >{{key}}</td>
                                             <td class="product_feature_value">{{product.features[key]}}</td>
