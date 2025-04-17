@@ -1199,7 +1199,7 @@ body:not(.t-tournaments) {
   background-color: #fff;
   transition: transform 0.2s ease-in-out;
   @include size-query(large) {
-    padding-top: 1rem;
+    padding-top: 2.5rem;
   }
 }
 .l-grid--flex:not(.l-grid--tickets) {
@@ -2748,6 +2748,11 @@ ul {
 
   &__section {
     flex: 1;
+    @include size-query(small) {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
   }
 
   &__title {
@@ -2763,6 +2768,11 @@ ul {
     list-style: none;
     padding: 0;
     margin: 0;
+
+    @include size-query(small) {
+      text-align: center;
+      font-weight: bold;
+    }
 
     li {
 

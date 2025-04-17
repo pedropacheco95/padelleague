@@ -67,3 +67,12 @@ resource "google_compute_instance" "ppl" {
 
   tags = ["http-server", "https-server"]
 }
+
+resource "google_storage_bucket" "general" {
+  name     = "portopadelleague-storage"
+  location = "europe-west1"
+  storage_class = "NEARLINE"
+
+  force_destroy = true
+  uniform_bucket_level_access = true
+}

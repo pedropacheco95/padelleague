@@ -2023,7 +2023,7 @@ html {
 }
 @media (max-width: 75em) {
   .c-global-header {
-    padding-top: 1rem;
+    padding-top: 2.5rem;
   }
 }
 
@@ -3723,6 +3723,13 @@ ul {
 .c-footer__section {
   flex: 1;
 }
+@media (max-width: 47.99em) {
+  .c-footer__section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+}
 .c-footer__title {
   font-size: 2.4rem;
   margin-bottom: 1rem;
@@ -3735,6 +3742,12 @@ ul {
   list-style: none;
   padding: 0;
   margin: 0;
+}
+@media (max-width: 47.99em) {
+  .c-footer__list {
+    text-align: center;
+    font-weight: bold;
+  }
 }
 .c-footer__list li a {
   color: #eef3f4;

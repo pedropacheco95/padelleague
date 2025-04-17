@@ -40,3 +40,24 @@ jobs:
           sudo docker pull pedropachecocontas/porto-padel-league:latest
           sudo docker stop ppl || true && sudo docker rm ppl || true
           sudo docker run -d --name ppl -p 5000:80 pedropachecocontas/porto-padel-league:latest
+
+    - name: Copy backup script to VM
+      uses: appleboy/scp-action@v0.1.4
+      with:
+        host: ${{ secrets.GCE_HOST }}
+        username: ${{ secrets.GCE_USER }}
+        key: ${{ secrets.GCE_SSH_PRIVATE_KEY }}
+        source: "scripts/backup.sh"
+        target: "/home/pedropacheco1/scripts/"
+
+    - name: Setup cron job for backup script
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.GCE_HOST }}
+        username: ${{ secrets.GCE_USER }}
+        key: ${{ secrets.GCE_SSH_PRIVATE_KEY }}
+        script: |
+          chmod +x /home/pedropacheco1/scripts/backup.sh
+
+          (crontab -l 2>/dev/null | grep -v backup.sh; echo "0 3 * * * /home/pedropacheco1/scripts/backup.sh") | crontab -
+
