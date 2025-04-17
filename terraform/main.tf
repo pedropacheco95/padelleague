@@ -20,6 +20,20 @@ resource "google_compute_firewall" "http-https" {
   source_ranges = ["0.0.0.0/0"]
 }
 
+resource "google_compute_firewall" "allow-postgres" {
+  name    = "ppl-allow-postgres"
+  network = data.google_compute_network.default.name
+
+  allow {
+    protocol = "tcp"
+    ports    = ["5432"]
+  }
+
+  #source_ranges = ["2.80.118.223/32"]
+  source_ranges = ["0.0.0.0/0"]
+  description   = "Allow external access to PostgreSQL"
+}
+
 resource "google_compute_address" "static_ip" {
   name = "ppl-static-ip"
 }

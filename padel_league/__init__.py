@@ -14,10 +14,16 @@ from . import mail
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
 
-    database_path = 'sqlite:///%s/database.db' % app.root_path
+    POSTGRES_USER = os.getenv('POSTGRES_USER', 'padel_user')
+    POSTGRES_PW = os.getenv('POSTGRES_PW', 'portopadelleague')
+    POSTGRES_DB = os.getenv('POSTGRES_DB', 'padel_league')
+    POSTGRES_HOST = os.getenv('POSTGRES_HOST', '172.17.0.1')
+    POSTGRES_PORT = os.getenv('POSTGRES_PORT', '5432')
+    
+    db_uri = f"postgresql://{POSTGRES_USER}:{POSTGRES_PW}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
+    app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
 
     app.config['SECRET_KEY'] = 'hjshjhdjah kjshkjdhjs'
-    app.config['SQLALCHEMY_DATABASE_URI'] = database_path
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config["TEMPLATES_AUTO_RELOAD"] = True
 
