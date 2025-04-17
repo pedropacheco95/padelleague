@@ -18,8 +18,9 @@ class Player(db.Model ,model.Model, model.Base):
     ranking_points = Column(Integer, default=0)
     ranking_position = Column(Integer, default=0)
     height = Column(Float,default=1.75)
-    prefered_hand = Column(Enum('Direita','Esquerda'),server_default='Direita')
-    prefered_position = Column(Enum('Lado direito','Lado esquerdo','Tanto faz'),server_default='Tanto faz')
+    prefered_hand = Column(Enum('Direita', 'Esquerda', name='prefered_hand_enum'), server_default='Direita')
+    prefered_position = Column(Enum('Lado direito', 'Lado esquerdo', 'Tanto faz', name='prefered_position_enum'), server_default='Tanto faz')
+
 
     user = relationship('User',back_populates='player', uselist=False)
     matches_relations = relationship('Association_PlayerMatch', back_populates='player')

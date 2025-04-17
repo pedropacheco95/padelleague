@@ -1,6 +1,6 @@
 from padel_league import model 
 from padel_league.sql_db import db
-from sqlalchemy import Column, Integer, ForeignKey, Enum 
+from sqlalchemy import Column, Integer, ForeignKey 
 from sqlalchemy.orm import relationship 
 
 class Association_ProductProductAttributeValue(db.Model ,model.Model, model.Base):
