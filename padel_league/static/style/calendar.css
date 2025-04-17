@@ -27,11 +27,11 @@
 .header {
     height: 50px;
     width: 100%;
-    background: #69dfe2;
+    background: #48A6A7;
     text-align: center;
     position:relative;
     z-index: 100;
-    color: #22356d;
+    color: #006A71;
 }
 
 .header h1 {
@@ -55,13 +55,13 @@
 
 .left {
     border-width: 7.5px 10px 7.5px 0;
-    border-color: transparent #22356d transparent transparent;
+    border-color: transparent #006A71 transparent transparent;
     left: 3%;
 }
 
 .right {
     border-width: 7.5px 0 7.5px 10px;
-    border-color: transparent transparent transparent #22356d;
+    border-color: transparent transparent transparent #006A71;
     right: 3%;
 }
 
@@ -104,7 +104,7 @@
 }
 
 .week {
-    background: #22356d;
+    background: #006A71;
 }
 
 .day {
@@ -114,7 +114,7 @@
     text-align: center;
     vertical-align: top;
     cursor: pointer;
-    background: #22356d;
+    background: #006A71;
     position: relative;
     z-index: 100;
 }
@@ -241,11 +241,15 @@
     letter-spacing: .5px;
     padding: 2px 16px;
     vertical-align: top;
-    width: 35%;
+    width: 45%;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
+    align-items: center;
 }
 
+.event a{
+    margin: 1rem 1rem 1rem 3rem;
+}
 .event.empty {
     color: #eee;
 }

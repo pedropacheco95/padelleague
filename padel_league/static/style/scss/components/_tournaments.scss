@@ -1,0 +1,64 @@
+@use "../mixins" as *;
+@use "../variables" as *;
+
+.c-tournaments--fixed {
+    display: block;
+    width: 57.5rem;
+    height: 100%;
+    margin-bottom: 5rem;
+    .c-tournaments__poster {
+        height: 33.2rem;
+        @include size-query(small) {
+        display: none;
+        }
+    }
+    .c-tournaments__container {
+        display: flex;
+        height: 33.3rem;
+    }
+    .c-tournaments__content {
+        height: 100%;
+        background-image: none;
+        background-color: $color-light;
+    }
+    .c-tournaments__top-card {
+        .c-tournaments__header {
+        position: relative;
+        height: 11.7rem;
+        background-size: cover;
+        }
+    }
+    .c-tournaments__date {
+        margin-bottom: 0;
+        padding-left: 2.5rem;
+        background-color: $color-secondary;
+        color: $color-primary;
+        line-height: 3rem;
+    }
+    .c-tournaments__title {
+        display: block;
+        color: $color-primary;
+        font-size: 2.2rem;
+    }
+    .c-tournaments__cat {
+        font-family: $font-base;
+        font-size: 1.5rem;
+        color: $color-primary;
+    }
+    .c-tournaments__triggers {
+        margin: 0;
+        padding: 1rem 2.6rem;
+        background-image: none;
+    }
+    }
+.c-tournaments {
+    margin-top: auto;
+    box-shadow: 0 0 0.6rem 0.1rem rgba(0, 0, 0, 0.1);
+    z-index: 5;
+    position: relative;
+    .c-tournaments__content {
+        @include size-query(small) {
+        width: 100%;
+        }
+    }
+}

@@ -1,0 +1,21 @@
+<h1>Pedidos Não Entregues</h1>
+
+{% if undelivered_orders %}
+  {% for order in undelivered_orders %}
+    {% include 'shop/_order_card.html' %}
+  {% endfor %}
+{% else %}
+  <p>Nenhum pedido pendente de entrega.</p>
+{% endif %}
+
+<hr>
+
+<h1>Pedidos Entregues</h1>
+
+{% if delivered_orders %}
+  {% for order in delivered_orders %}
+    {% include 'shop/_order_card.html' %}
+  {% endfor %}
+{% else %}
+  <p>Nenhum pedido entregue ainda.</p>
+{% endif %}

@@ -5,8 +5,8 @@ from padel_league import model
 from padel_league.sql_db import db
 from sqlalchemy import Column, Integer , String , Text, ForeignKey
 from sqlalchemy.orm import relationship
-from openai import OpenAI
-client = OpenAI()
+#from openai import OpenAI
+#client = OpenAI()
 import re
 
 class News(db.Model ,model.Model, model.Base):

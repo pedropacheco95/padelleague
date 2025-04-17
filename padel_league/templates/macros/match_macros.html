@@ -292,6 +292,15 @@
     {% set away_players1_name = 'Substituto' %}
 {% endif %}
 <script src="{{ url_for('static', filename='js/matches_edit_match.js')}}" defer></script>
+<div id="confirmModal" class="gpt_modal hidden">
+    <div class="modal-content">
+        <p id="modalText">Tens a certeza que queres tirar o jogador deste jogo??</p>
+        <div class="modal-buttons">
+        <button id="cancelBtn">Cancelar</button>
+        <button id="confirmBtn">Sim, ele não veio</button>
+        </div>
+    </div>
+</div>
 <section class="c-tor-box c-tor-box--m">
     <form action="{{url_for('matches.edit',id=match.id)}}" method="post">
     <input name="players_eliminated" type="text" id="players_eliminated" style="display: none;">
@@ -500,4 +509,29 @@
     </form>
     {{input_macros.select_player(players)}}
 </section>
+{% endmacro %}
+
+{% macro match_line(match) %}
+<div class="match_result">
+    {% set players = match.players_formatted() %}
+    {% for team in players.keys() %}
+        {{team_line(players[team])}}
+    {% endfor %}
+</div>
+{% endmacro %}
+
+{% macro team_line(team_line) %}
+<div class="team_line">
+    <div class="team_line_players">
+        <div class="team_line_player1">
+            <div class="line_player_flag"><img src="/static/images/pt.png"></div>
+            {{team_line['player1']}}
+        </div>
+        <div class="team_line_player1">
+            <div class="line_player_flag"><img src="/static/images/pt.png"></div>
+            {{team_line['player2']}}
+        </div>
+    </div>
+    <div class="team_line_result">{{team_line['result']}}</div>
+</div>
 {% endmacro %}

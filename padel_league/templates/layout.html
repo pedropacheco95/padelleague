@@ -16,7 +16,9 @@
         <!-- Por o icone -->
         <link href="{{ url_for('static', filename='images/favicon.ico')}}" rel="icon">
 
-        <link href="{{ url_for('static', filename='style/styles.css')}}" rel="stylesheet">
+        {% assets "scss" %}
+            <link rel="stylesheet" href="{{ASSET_URL}}">
+        {% endassets %}
 
         <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"></script>
@@ -24,6 +26,12 @@
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
         <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.4.1/croppie.min.js"></script>
+        
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Teko:wght@300..700&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Gemunu+Libre:wght@200..800&family=Teko:wght@300..700&display=swap" rel="stylesheet">
+        
         <script src="{{ url_for('static', filename='js/main.js')}}"></script>
         <script src="{{ url_for('static', filename='js/main_defered.js')}}" defer></script>
 
@@ -89,16 +97,14 @@
                     <li class="c-main-nav__item ">
                         <a class="c-main-nav__link" href="{{url_for('main.calendar')}}" title="calendar">Calendário</a>
                     </li>
-                    {% if session['user'] %}
                     <li class="c-main-nav__item ">
                         <a class="c-main-nav__link" href="{{url_for('shop.index')}}" title="shop">Loja</a>
                     </li>
-                    {% endif %}
                     <li class="c-main-nav__item for_login_logout">
                         {% if not session['user'] %}
                         <a class="c-main-nav__link" href="{{url_for('auth.login')}}">Log in</a><a class="c-main-nav__link" href="{{url_for('auth.register')}}">Registar</a>
                         {% else %}
-                        {% if admin%}
+                        {% if session['user']%}
                         <a class="c-main-nav__link" href="{{url_for('matches.for_edit')}}">Editar jogos</a><a class="c-main-nav__link" href="{{url_for('auth.logout')}}">Log out</a>
                         {% else %}
                         <a class="c-main-nav__link" href="{{url_for('players.edit',id=session['user'].player_id)}}">{{ session['user'].username }}</a><a class="c-main-nav__link" href="{{url_for('auth.logout')}}">Log out</a>
@@ -116,6 +122,42 @@
         <div class="l-site-container" id="site-container">
             {% block main %}{% endblock %}
         </div>
+        <footer class="c-footer">
+            <div class="l-container c-footer__inner">
+                <div class="c-footer__section c-footer__nav">
+                <h4 class="c-footer__title">Navegação</h4>
+                <ul class="c-footer__list u-list-clean">
+                    <li><a href="{{url_for('main.index')}}">Início</a></li>
+                    <li><a href="{{url_for('tournaments.tournaments')}}">Torneios</a></li>
+                    <li><a href="{{url_for('players.players')}}">Jogadores</a></li>
+                    <li><a href="{{url_for('main.calendar')}}">Calendário</a></li>
+                    <li><a href="{{url_for('shop.index')}}">Loja</a></li>
+                </ul>
+                </div>
+
+                <div class="c-footer__section c-footer__sponsors">
+                <h4 class="c-footer__title">Patrocinadores</h4>
+                <div class="c-footer__sponsor-logos">
+                    <div class="c-footer__sponsor-logo"><img src="{{url_for('static',filename='images/sponsors/Quinta_da_Sardinha_BrancoNB.png')}}"></div>
+                </div>
+                </div>
+            
+                <div class="c-footer__section c-footer__info">
+                <h4 class="c-footer__title">Sobre</h4>
+                <p>Se houver alguma nova ideia para o torneio ou organização,</p>
+                <p>se houver qualquer problema com a estrutura, se houver qualquer erro</p>
+                <p>se tiverem um bebé a chorar porque precisa de mudar a fralda</p>
+                <p>qualquer assunto, dia ou noite, a qualquer hora</p>
+                <p>por favor não hesitem em contactar o Dinis Brito e Faro.</p>
+                <p>Estamos aqui para ajudar.</p>
+                <p>Número: <a href="https://www.google.com/search?q=ups+nao+era+isto%2C+eu+queria+era+ligar+ao+Dudas&sca_esv=f9f1a50abb3c6f24&sxsrf=AHTn8zqvgsSpRyPWQI2eaYGmZ3PnxyPmpA%3A1744745426311&ei=0rP-Z-riEuiD7M8PvN72sQw&ved=0ahUKEwjqk--a49qMAxXoAfsDHTyvPcYQ4dUDCBA&uact=5&oq=ups+nao+era+isto%2C+eu+queria+era+ligar+ao+Dudas&gs_lp=Egxnd3Mtd2l6LXNlcnAiLnVwcyBuYW8gZXJhIGlzdG8sIGV1IHF1ZXJpYSBlcmEgbGlnYXIgYW8gRHVkYXMyBxAhGKABGAoyBxAhGKABGAoyBxAhGKABGApI0mpQ9SRY4WhwA3gBkAEAmAGDAaABiiWqAQUxOC4yOLgBA8gBAPgBAZgCLqACuCbCAgoQIxiABBgnGIoFwgIMECMYgAQYExgnGIoFwgIFEAAYgATCAgQQABgDwgILEAAYgAQYsQMYgwHCAg4QLhiABBixAxiDARiKBcICBBAuGAPCAgoQABiABBhDGIoFwgILEC4YgAQYxwEYrwHCAgsQLhiABBixAxiDAcICDRAAGIAEGLEDGEMYigXCAgoQLhjRAxgDGMcBwgIIEAAYgAQYsQPCAhEQLhiABBixAxiDARjHARivAcICCxAAGIAEGMkDGMsBwgILEAAYgAQYkgMYigXCAggQABiABBjLAcICBxAAGIAEGArCAg0QLhiABBjHARgKGK8BwgIGEAAYFhgewgIFEAAY7wXCAggQABiABBiiBMICCBAAGKIEGIkFwgIFECEYoAHCAgUQIRifBZgDAIgGAZIHBTExLjM1oAez3wGyBwUxMS4zNbgHuCY&sclient=gws-wiz-serp">+351 915 603 480</a></p>
+                <br>
+                <br>
+                <p>Se houver algum problema com o site... Contratem um gajo para fazer isto</p>
+                <p>Não sou vosso empregado</p>
+            </div>
+            </div>
+        </footer>
     </body>
 
 </html>

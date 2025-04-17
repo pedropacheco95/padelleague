@@ -17,27 +17,50 @@ for (let element of match_results){
 
 let clicked = '';
 
+let pendingPlayerRemoval = null;
+
+const confirmModal = document.getElementById('confirmModal');
+const modalText = document.getElementById('modalText');
+const cancelBtn = document.getElementById('cancelBtn');
+const confirmBtn = document.getElementById('confirmBtn');
+
 function highlight(button_element){
     remove_class_from_all('selected_player_on_edit')
     remove_class_from_all('edit_player_in_match')
 
     if (button_element.currentTarget.id == 'player_button'){
-        var button_name = button_element.currentTarget.getAttribute('value')
-        if (!clicked | clicked != button_name){
-            var name_box = button_name + '_name';
-            var image_box = button_name + '_image';
+        const button_name = button_element.currentTarget.getAttribute('value');
+        if (!clicked || clicked != button_name){
+            const name_box = button_name + '_name';
+            const image_box = button_name + '_image';
             for (element of document.getElementsByName(name_box)){
                 element.classList.add('selected_player_on_edit');
             }
             document.getElementById(image_box).classList.add('edit_player_in_match');
-            clicked = button_name
-        }
-        else {
-            remove_player(button_name)
-            clicked = ''
+            clicked = button_name;
+        } else {
+            pendingPlayerRemoval = button_name;
+            const nameElement = document.getElementsByName(button_name + '_name')[0];
+            const playerDisplayName = nameElement ? nameElement.textContent.trim() : button_name;
+            modalText.innerHTML = `Tens a certeza que queres tirar o <strong>${playerDisplayName}</strong> deste jogo??`;
+            confirmModal.classList.remove('hidden');
         }
     }
 }
+
+cancelBtn.addEventListener('click', () => {
+    confirmModal.classList.add('hidden');
+    pendingPlayerRemoval = null;
+});
+
+confirmBtn.addEventListener('click', () => {
+    if (pendingPlayerRemoval) {
+        remove_player(pendingPlayerRemoval);
+        clicked = '';
+        pendingPlayerRemoval = null;
+    }
+    confirmModal.classList.add('hidden');
+});
 
 function remove_player(button_name){
     var name_box = button_name + '_name';

@@ -1,0 +1,14 @@
+@use "sass:map";
+@use "variables" as *;
+
+@mixin size-query($bp-name) {
+  $bp: map.get($breakpoints, $bp-name);
+  @if $bp {
+    @media (#{$bp}) {
+      @content;
+    }
+  } @else {
+    @warn "Unknown breakpoint: #{$bp-name}";
+    @content;
+  }
+}

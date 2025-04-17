@@ -69,3 +69,25 @@ class Match(db.Model ,model.Model, model.Base):
             'Result': f"{winner} won {score} against {loser}" if winner else f'{home_players} e {away_players} empataram {score}'
         }
         return dict_line
+    
+    def players_formatted(self):
+        home_players = self.home_players()
+        away_players = self.away_players()
+        home0 = home_players[0].name if home_players else 'Substituto'
+        home1 = home_players[1].name if len(home_players) == 2 else 'Substituto'
+        away0 = away_players[0].name if away_players else 'Substituto'
+        away1 = away_players[1].name if len(away_players) == 2 else 'Substituto'
+        
+        players = {
+            'home': {
+                'player1': home0,
+                'player2': home1,
+                'result': self.games_home_team,
+            },
+            'away': {
+                'player1': away0,
+                'player2': away1,
+                'result': self.games_away_team,
+            },
+        }
+        return players

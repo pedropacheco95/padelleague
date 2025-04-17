@@ -1,4 +1,36 @@
+{% macro news_container(all_news) %}
+    {% if all_news %}
+        <div class="news_container index_item">
+            <div class="main_news_container">
+                {{ main_news_card(all_news[0]) }}
+            </div>
+            <div class="other_news_container">
+                <div class="other_news_title"> Outras notícias </div>
+                {% for news in all_news[1:]%}
+                    {{ news_card(news) }}
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+{% endmacro %}
+
+{% macro main_news_card(news) %}
+    <article class="main_news_article" data-href="{{url_for('news.news',news_id=news.id)}}" onclick="linkToDatasetHref(this)">
+        {% set image_background = news.cover_path %}
+        <div class="dark_overlay"></div>
+        <img src="{{ url_for('static', filename=image_background)}}" alt="">
+        <div class="main_news_article_title">
+            <div class="main_news_article_title_container">
+                <a href="{{url_for('news.news',news_id=news.id)}}">
+                    {{news.title}}
+                </a>
+            </div>
+        </div>
+    </article>
+{% endmacro %}
+
 {% macro news_card(news) %}
+    
     <article class="news_article" data-href="{{url_for('news.news',news_id=news.id)}}" onclick="linkToDatasetHref(this)">
         <div class="news_article_container">
             <div class="news_article_image">
@@ -9,11 +41,14 @@
                     </a> 
                 </div> 
             </div> 
-            <div class="news_article_title">
+            <div class="news_article_main_text">
                 <div class="news_article_title_container">
                     <a href="{{url_for('news.news',news_id=news.id)}}">
                         {{news.title}}
                     </a>
+                </div>
+                <div class="news_article_author_container">
+                    {{news.author}}
                 </div>
             </div>
         </div>
