@@ -5,6 +5,7 @@ import os
 
 
 from flask import url_for , current_app
+import unidecode
 
 #mp_drawing = mp.solutions.drawing_utils
 #mp_selfie_segmentation = mp.solutions.selfie_segmentation
@@ -33,6 +34,13 @@ def save_file(file, filename):
         img_file.close()
     file.save(path)
     return True
+
+def file_handler(file):
+    if file.filename != '':
+        image_name = file.filename.replace(" ", "").lower()
+        image_name = unidecode.unidecode(image_name)
+        return file , image_name
+    return None, None
 
 """ def resize(filename, width, height):
     filename = os.path.join('images',filename)

@@ -43,6 +43,8 @@ resource "google_compute_instance" "ppl" {
   machine_type = "e2-micro"
   zone         = var.zone
 
+  allow_stopping_for_update = true
+  
   boot_disk {
     initialize_params {
       image = "debian-cloud/debian-11"
@@ -55,6 +57,11 @@ resource "google_compute_instance" "ppl" {
     access_config {
       nat_ip = google_compute_address.static_ip.address
     }
+  }
+
+  service_account {
+    email  = google_service_account.vm_sa.email
+    scopes = ["https://www.googleapis.com/auth/cloud-platform"]
   }
 
   metadata_startup_script = <<-EOF
@@ -75,4 +82,15 @@ resource "google_storage_bucket" "general" {
 
   force_destroy = true
   uniform_bucket_level_access = true
+}
+
+resource "google_service_account" "vm_sa" {
+  account_id   = "ppl-vm-sa"
+  display_name = "Porto Padel League VM SA"
+}
+
+resource "google_storage_bucket_iam_member" "allow_instance_uploads" {
+  bucket = google_storage_bucket.general.name
+  role   = "roles/storage.objectCreator"
+  member = "serviceAccount:${google_service_account.vm_sa.email}"
 }

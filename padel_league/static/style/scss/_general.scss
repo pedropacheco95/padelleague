@@ -2173,6 +2173,12 @@ ul {
 }
 .calendar_in_tournament {
   width: 100% !important;
+
+  .event{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
 }
 
 .submit_button {
@@ -2606,6 +2612,10 @@ ul {
 
   .btn-primary{
     border-color: $color-secondary-dark;
+  }
+
+  .btn-primary:hover{
+    background-color: $color-secondary;
   }
 }
 .product_features_info {

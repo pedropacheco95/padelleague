@@ -1,0 +1,18 @@
+{% extends 'editor/layout.html' %}
+
+{% block title %}ligasfrancesinha{% endblock %}
+
+{% block main %}
+<div class="editor_section">
+    <div class="app_container">
+        {% for app in apps %}
+        <div class="app_icon" {{ app['style'] }} data-href="{{app['url']}}" onclick="linkToDatasetHref(this)">
+            <a href="{{app['url']}}">
+                <img class="app_image" src="{{url_for('static', filename=app['image_filename'])}}" alt="{{app['name']}}">
+            </a>
+            <p class="app_name">{{app['name']}}</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

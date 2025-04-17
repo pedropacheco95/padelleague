@@ -9,6 +9,9 @@ from flask import session , url_for
 class Player(db.Model ,model.Model, model.Base):
     __tablename__ = 'players'
     __table_args__ = {'extend_existing': True}
+    page_title = 'Jogadores'
+    model_name = 'Player'
+    
     id = Column(Integer, primary_key=True)
     name = Column(String(80), unique=True, nullable=False)
     full_name =  Column(Text, unique=True)

@@ -6,6 +6,9 @@ from sqlalchemy.orm import relationship
 class Association_PlayerMatch(db.Model ,model.Model, model.Base):
     __tablename__ = 'players_in_match'
     __table_args__ = {'extend_existing': True}
+    page_title = 'Relação de Jogador Jogo'
+    model_name = 'Association_PlayerMatch'
+    
     player_id = Column(Integer, ForeignKey('players.id'), primary_key=True)
     match_id = Column(Integer, ForeignKey('matches.id'), primary_key=True)
     team = Column(Enum('Home','Away',name='teams'), primary_key=True)

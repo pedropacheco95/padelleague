@@ -6,6 +6,9 @@ from sqlalchemy.orm import relationship
 class Association_ProductProductAttribute(db.Model ,model.Model, model.Base):
     __tablename__ = 'product_attributes_in_product'
     __table_args__ = {'extend_existing': True}
+    page_title = 'Relação de Produto e atributo'
+    model_name = 'Association_ProductProductAttribute'
+    
     product_id = Column(Integer, ForeignKey('products.id'), primary_key=True)
     product_attribute_id = Column(Integer, ForeignKey('product_attributes.id'), primary_key=True)
 

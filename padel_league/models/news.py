@@ -12,6 +12,9 @@ import re
 class News(db.Model ,model.Model, model.Base):
     __tablename__ = 'news'
     __table_args__ = {'extend_existing': True}
+    page_title = 'Noticias'
+    model_name = 'News'
+    
     id = Column(Integer, primary_key=True)
     title = Column(String(80), unique=True, nullable=False)
     cover_path = Column(String(80), default='default_news.jpg')

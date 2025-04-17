@@ -6,7 +6,10 @@ from sqlalchemy.orm import relationship
 class OrderLine(db.Model ,model.Model, model.Base):
     __tablename__ = 'order_lines'
     __table_args__ = {'extend_existing': True}
-    id = Column(Integer, primary_key=True)
+    page_title = 'Itens de encomenda'
+    model_name = 'OrderLine'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
     order_id = Column(Integer, ForeignKey('orders.id'))
     product_id = Column(Integer, ForeignKey('products.id'))
     quantity = Column(Integer, nullable=False)

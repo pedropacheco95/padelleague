@@ -1,0 +1,28 @@
+@use "variables_editor" as *;
+
+// styles/mixins.scss
+@mixin media-query($breakpoint) {
+    @if $breakpoint == tablet {
+        @media (max-width: 768px) {
+            @content;
+        }
+    }
+    @else if $breakpoint == mobile {
+        @media (max-width: 576px) {
+            @content;
+        }
+    }
+}
+
+@mixin size-query($breakpoint) {
+    @if $breakpoint == large {
+        @media (min-width: 940px) {
+            @content;
+        }
+    }
+    @else if $breakpoint == small {
+        @media (max-width: 940px) {
+            @content;
+        }
+    }
+}

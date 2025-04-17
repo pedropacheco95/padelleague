@@ -6,6 +6,9 @@ from sqlalchemy.orm import relationship
 class Match(db.Model ,model.Model, model.Base):
     __tablename__ = 'matches'
     __table_args__ = {'extend_existing': True}
+    page_title = 'Jogos'
+    model_name = 'Match'
+    
     id = Column(Integer, primary_key=True)
     games_home_team = Column(Integer)
     games_away_team = Column(Integer)

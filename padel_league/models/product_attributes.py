@@ -8,6 +8,9 @@ from sqlalchemy.orm import relationship
 class ProductAttribute(db.Model ,model.Model,model.Base):
     __tablename__ = 'product_attributes'
     __table_args__ = {'extend_existing': True}
+    page_title = 'Atributos de produto'
+    model_name = 'ProductAttribute'
+    
     id = Column(Integer, primary_key=True)
     name = Column(Text)
     user_input = Column(Boolean, default=False) # Assumed to be a text input; example: Name on shirt: ________ 

@@ -32,7 +32,7 @@ $font-size-lg: 2rem;
 
 $breakpoints: (
   small: "max-width: 47.99em",
-  large: "max-width: 75em",
+  large: "min-width: 940px",
   smallUp: "min-width: 34em",
   mediumUp: "min-width: 48em",
   largeUp: "min-width: 57em",

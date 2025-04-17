@@ -1,0 +1,363 @@
+{% macro general_input(type,label,name,options = None, required = False,value = False, model=False, related_model=False, readonly=False) %}
+
+    {% if type not in ['Text','Integer','Float','Password','Select','Picture','EditablePicture','ManyToMany','ManyToOne','OneToMany', 'Color','Date','DateTime','Boolean','MultiplePictures'] %}
+        THIS INPUT DOES NOT EXIST
+    {% elif type == 'Text' %}
+        {{ text_input(label,name,required,value,readonly) }}
+    {% elif type == 'Integer' %}
+        {{ integer_input(label,name,required,value,readonly) }}
+    {% elif type == 'Float' %}
+        {{ float_input(label,name,required,value,readonly) }}
+    {% elif type == 'Password' %}
+        {{ password_input(label,name,required,value,readonly) }}
+    {% elif type == 'Select' %}
+        {{ select_input(label,name,options,required,value,readonly) }}
+    {% elif type == 'Picture' %}
+        {{ picture_input(label,name,value,readonly) }}
+    {% elif type == 'MultiplePictures' %}
+        {{ multiple_picture_input(label,name,value,readonly) }}
+    {% elif type == 'EditablePicture' %}
+        {{ picture_input_editable(label,name,value,readonly) }}
+    {% elif type == 'ManyToMany' %}
+        {{ manytomany_input(label,name,required,value,model,related_model,readonly) }}
+    {% elif type == 'OneToMany' %}
+        {{ manytomany_input(label,name,required,value,model,related_model,readonly) }}
+    {% elif type == 'ManyToOne' %}
+        {{ manytoone_input(label,name,required,value,model,related_model,readonly) }}
+    {% elif type == 'Color' %}
+        {{ color_input(label,name,required,value,readonly) }}
+    {% elif type == 'Date' %}
+        {{ date_input(label,name,required,value,readonly) }}
+    {% elif type == 'DateTime' %}
+        {{ datetime_input(label,name,required,value,readonly) }}
+    {% elif type == 'Boolean' %}
+        {{ boolean_input(label,name,required,value,readonly) }}
+    {% endif %}
+
+{% endmacro %}
+
+{% macro text_input(label,name,required,value = value, readonly=readonly) %}
+<div class="input-box {% if value is not none %}focus{% endif %}">
+    <label class="input-label">{{label}}</label>
+    <input 
+    type="text" 
+    name="{{name}}" 
+    class="input-1 {{ 'needs-validation' if required }}"
+    onfocus="setFocus(true,this,this.parentNode)" 
+    onblur="setFocus(false,this,this.parentNode)" 
+    autocomplete="username" 
+    {% if value is not none %} value="{{value}}" {% endif %}
+    {% if readonly %} readonly {% endif %}/>
+</div>
+{% endmacro %}
+
+{% macro integer_input(label,name,required,value = value, readonly=readonly) %}
+<div class="input-box {% if value is not none %}focus{% endif %}">
+    <label class="input-label">{{label}}</label>
+    <input 
+    type="number" 
+    inputmode="numeric" 
+    pattern="[0-9]*"  
+    name="{{name}}" 
+    class="input-1 {{ 'needs-validation' if required }}" 
+    onfocus="setFocus(true,this,this.parentNode)"
+    onblur="setFocus(false,this,this.parentNode)"
+    {% if value is not none %} value="{{value}}" {% endif %}
+    {% if readonly %} readonly {% endif %}/>
+</div>
+{% endmacro %}
+
+{% macro float_input(label, name, required, value=value, readonly=readonly) %}
+<div class="input-box {% if value is not none %}focus{% endif %}">
+    <label class="input-label">{{label}}</label>
+    <input 
+    type="number" 
+    inputmode="numeric" 
+    pattern="\d*" 
+    step=".01" 
+    name="{{name}}" 
+    class="input-1 {{ 'needs-validation' if required }}" 
+    onfocus="setFocus(true,this,this.parentNode)"
+    onblur="setFocus(false,this,this.parentNode)"
+    {% if value is not none %} value="{{value}}" {% endif %}
+    {% if readonly %} readonly {% endif %}/>
+</div>
+{% endmacro %}
+
+{% macro password_input(label, name, required, value=value, readonly=readonly) %}
+<div class="input-box {% if value %}focus{% endif %}">
+    <label class="input-label">
+        {{label}}
+    </label>
+    <input 
+    type="password" 
+    name="{{name}}" 
+    class="input-1 {{ 'needs-validation' if required }}" 
+    onfocus="setFocus(true,this,this.parentNode)" 
+    onblur="setFocus(false,this,this.parentNode)" 
+    autocomplete="current-password"
+    {% if value %} value="not_the_real_password" {% endif %}
+    {% if readonly %} readonly {% endif %}/>
+    <div class="toggle" onclick="showHidePassword(this)"><i class="fa fa-eye"></i></div>
+</div>
+{% endmacro %}
+
+{% macro select_input(label, name, options, required, value=value, readonly=readonly) %}
+<div class="input-box {% if value %}focus{% endif %}">
+    <label class="input-label">{{label}}</label>
+    <select class="input-1 {{ 'needs-validation' if required }}" {{disabled if value}} name="{{name}}" onfocus="setFocus(true,this,this.parentNode)" onblur="setFocus(false,this,this.parentNode)">
+        <option value="-1"></option>
+        {% for option in options %}
+        {% set is_value = option==value %}
+        <option value="{{option}}" {{ 'selected' if is_value else '' }}>{{option}}</option>
+        {% endfor %}
+    </select>
+</div>
+{% endmacro %}
+
+{% macro manytomany_input(label, name, required, value=value, model=model, related_model=related_model, readonly=readonly) %}
+<div class="input-box multi_select {% if value %}focus{% endif %}">
+    <label class="input-label">{{label}}</label>
+    <div id="selected_options_{{name}}" class="input-1 selected_options {{ 'readonly_div' if readonly }}" data-name="{{name}}" onclick="showOptions(this),setFocusForManyToMany(this)">
+        {% if value %}
+            {% for option in value %}
+                <div class="option_div not_readonly_div many_to_many_values_inputed" data-model="{{model}}" data-related_model="{{related_model}}" data-value="{{option.id}}" data-name="{{name}}" onclick="removeOption(this)">{{option.name}}<span>×</span></div>
+            {% endfor %}
+        {% endif %}
+    </div>
+    <div id="options_list_{{name}}" class="options_list many_to_many_container" onclick="setFocusForManyToMany(this)" style="display: none;" data-related_model="{{related_model}}" data-filled="false" data-name="{{name}}">
+        <input 
+        type="text" 
+        class="text_input_select manytomany_text_search"
+        id="text_input_select_{{name}}"
+        data-name="{{name}}"
+        onkeyup="searchOptions(this)"
+        {% if readonly %} readonly {% endif %}/>
+        <div class="create_new_option" data-field_name="{{name}}" data-url="{{url_for('api.modal_create_page',model=related_model)}}" data-title="Criar {{label}}" data-modal_id="modal_{{name}}" onclick="loadModal(this)"> Criar ... </div>
+    </div>
+    <select name="{{name}}" id="{{name}}" multiple style="display: none;">
+    </select>
+</div>
+{% endmacro %}
+
+
+{% macro manytoone_input(label, name, required, value=value, model=model, related_model=related_model, readonly=readonly) %}
+<div class="input-box multi_select {% if value %}focus{% endif %}">
+    <label class="input-label">{{label}}</label>
+    <div id="selected_options_{{name}}" class="input-1 selected_options {{ 'readonly_div' if readonly }}" data-name="{{name}}" onclick="showOptions(this),setFocusForManyToMany(this)">
+        {% if value %}
+        <div class="option_div not_readonly_div many_to_many_values_inputed" data-model="{{model}}" data-related_model="{{related_model}}" data-value="{{value.id}}" data-name="{{name}}" onclick="removeOption(this)">{{value.name}}<span>×</span></div>
+        {% endif %}
+    </div>
+    <div id="options_list_{{name}}" class="options_list many_to_many_container" onclick="setFocusForManyToMany(this)" style="display: none;" data-related_model="{{related_model}}" data-filled="false" data-name="{{name}}">
+        <input 
+        type="text" 
+        class="text_input_select manytomany_text_search"
+        id="text_input_select_{{name}}"
+        data-name="{{name}}"
+        onkeyup="searchOptions(this)"
+        {% if readonly %} readonly {% endif %}/>
+        <div class="create_new_option" data-field_name="{{name}}" data-url="{{url_for('api.modal_create_page',model=related_model)}}" data-title="Criar {{label}}" data-modal_id="modal_{{name}}" onclick="loadModal(this)"> Criar ... </div>
+    </div>
+    <select name="{{name}}" id="{{name}}" style="display: none;">
+    </select>
+</div>
+{% endmacro %}
+
+{% macro picture_input(label,picture_name,value = False, readonly=False) %}
+<!-- Too use this macro should import the upload_image.js file -->
+<div class="input-box">
+    <div class="{% if readonly %}readonly_image_input{% endif %} {% if value %}added_image{% else %} dropzone-wrapper {% endif %}" id="imageInputContainer_{{picture_name}}"  {% if not readonly %} ondragover="dragoverDragAndDrop(event,this)" ondragleave="dragleaveDragAndDrop(event,this)" {% endif %}>
+        
+        <div class="dropzone-desc">
+            Escolhe ou arrasta uma imagem para {{label}}.
+        </div>
+
+        <input 
+        id='selectedFileEditable_{{picture_name}}' 
+        type="file" 
+        onchange="inputChangeHandler(this)" 
+        data-picture_name="{{picture_name}}" 
+        class="dropzone">
+
+        <img id="{{picture_name}}" class="final_input_image" {% if value %} src="{{ url_for('static', filename='images/{value}'.format(value = value)) }}" {% endif %}>
+        <img class="rechose_image" src="{{ url_for('static', filename='images/add_image.png') }}" onclick="rechoseImage('selectedFileEditable_{{picture_name}}')">
+        <div class="dropzone-desc-readonly"> {{label}} </div> 
+    </div>
+</div>
+<input id='finalFile_{{picture_name}}' name="{{picture_name}}" class="disp-none" type='file' accept="image/*">
+{% endmacro %}
+
+
+{% macro multiple_picture_input(label,picture_name,value = False, readonly=False) %}
+<!-- Too use this macro should import the upload_image.js file -->
+<div class="input-box">
+    <div class="{% if readonly %}readonly_image_input{% endif %} {% if value %}added_image{% else %} dropzone-wrapper {% endif %}" id="imageInputContainer_{{picture_name}}"  {% if not readonly %} ondragover="dragoverDragAndDrop(event,this)" ondragleave="dragleaveDragAndDrop(event,this)" {% endif %}>
+        
+        <div class="dropzone-desc">
+            Escolhe ou arrasta uma imagem para {{label}}.
+        </div>
+
+        <input 
+        id='selectedFileEditable_{{picture_name}}' 
+        type="file" 
+        onchange="inputMultipleChangeHandler(this)" 
+        data-picture_name="{{picture_name}}" 
+        class="dropzone"
+        name="{{picture_name}}"
+        multiple>
+        
+        {% if value %}
+            {% for image in value.images %}
+                <img id="uploaded_image_{{image.id}}" class="final_input_image {% if loop.index > 1 %} inactive_image {% endif %}" src="{{ url_for('static', filename='images/{value}'.format(value = image.filename)) }}">
+            {% endfor %}
+        {% endif %}
+        <img class="rechose_image" src="{{ url_for('static', filename='images/add_image.png') }}" onclick="rechoseImage('selectedFileEditable_{{picture_name}}')">
+        <div class="dropzone-desc-readonly"> {{label}} </div> 
+        <div class="image_galery" id="galery_{{picture_name}}">
+            {% if value %}
+                {% for image in value.images %}
+                    <div onclick="dotClick(this,'uploaded_image_{{image.id}}');" class="dot_label {% if loop.index == 1 %} active_dot_label {% endif %}"></div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+<input id='finalFile_{{picture_name}}' name="{{picture_name}}" class="disp-none" type='file' accept="image/*">
+{% endmacro %}
+
+{% macro picture_input_editable(label,picture_name,value = False, readonly=False) %}
+<!-- Too use this macro should import the upload_image.js file -->
+<button class="disp-none modalActivation" id="modal_button_{{picture_name}}" data-modal_id="modal_{{picture_name}}" type="button"></button>
+<div class="input-box">
+    <div class="{% if readonly %}readonly_image_input{% endif %} {% if value %}added_image{% else %} dropzone-wrapper {% endif %}"  id="imageInputContainer_{{picture_name}}"  {% if not readonly %} ondragover="dragoverDragAndDrop(event,this)" ondragleave="dragleaveDragAndDrop(event,this)" {% endif %}>
+        
+        <div class="dropzone-desc">
+            Escolhe ou arrasta uma imagem para {{label}}.
+        </div>
+
+        <input 
+        id='selectedFileEditable_{{picture_name}}' 
+        type="file"
+        onchange="inputEditableChangeHandler(this)" 
+        data-picture_name="{{picture_name}}" 
+        class="dropzone">
+
+        <img id="{{picture_name}}" class="final_input_image" {% if value %} src="{{ url_for('static', filename='images/{value}'.format(value = value)) }}" {% endif %}>
+        <img class="rechose_image" src="{{ url_for('static', filename='images/add_image.png') }}" onclick="rechoseImage('selectedFileEditable_{{picture_name}}')">
+        <div class="dropzone-desc-readonly"> {{label}} </div> 
+        <div class="image_galery" id="galery"></div>
+    </div>
+</div>
+<input id='finalFile_{{picture_name}}' name="{{picture_name}}" class="disp-none" type='file' accept="image/*">
+<div class="modal" id="modal_{{picture_name}}">
+    <div class="modal_content input_picture_modal_content">
+        <div class="modal_header">
+            <h4>Acrescenta uma fotografia</h4>
+            <h4 class="closeModal topButton" data-modal_id="modal_{{picture_name}}">&times;</h4>
+        </div>
+        <div class="modal_body input_picture_modal_body">
+            <div class="like_modal">
+                <div class="like_modal_container">
+                    <div class='container-image container-canvas'>
+                        <canvas class="input_image" id='canvas_{{picture_name}}'></canvas>
+                    </div>
+                    <div class='container-image' style="visibility: hidden;display: none;">
+                        <img class="input_image" id='uploaded_image_{{picture_name}}' style="visibility: hidden;display: none;"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal_footer">
+            <div class="input_image_footer">
+                <input type="range" id="picture_scale_{{picture_name}}" class="input_image_footer_slider" name="picture_scale" min="0.5" max="5" step="0.01">
+                <div class="input_image_footer_button">
+                    <div class="btn-secondary btn closeModal" data-modal_id="modal_{{picture_name}}">Cancelar</div>
+                    <div class="btn-success btn" data-modal_id="modal_{{picture_name}}" name={{picture_name}} onclick="confirmEditableInputPicture(this);closeModal(modal=false,element=this)">Confirmar</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro date_input(label,name,required,value = value, readonly=readonly) %}
+<div class="input-box {% if value %}focus{% endif %}">
+    <label class="input-label">{{label}}</label>
+    <input 
+    type="text"
+    name="{{name}}" 
+    class="input-1 {{ 'needs-validation' if required }}" 
+    onfocus="setFocus(true,this,this.parentNode),turnToDateInput(this)"
+    onblur="setFocus(false,this,this.parentNode),turnToTextInput(this)"
+    {% if value %} value="{{value.strftime('%d/%m/%Y')}}" {% endif %}
+    {% if readonly %} readonly {% endif %}/>
+</div>
+{% endmacro %}
+
+{% macro datetime_input(label,name,required,value = value, readonly=readonly) %}
+<div class="input-box {% if value %}focus{% endif %}">
+    <label class="input-label">{{label}}</label>
+    <input 
+    type="text"
+    name="{{name}}" 
+    class="input-1 {{ 'needs-validation' if required }}" 
+    onfocus="setFocus(true,this,this.parentNode),turnToDateTimeInput(this)"
+    onblur="setFocus(false,this,this.parentNode),turnToTextInput(this)"
+    {% if value %} value="{{value.strftime('%d/%m/%Y, %H:%M')}}" {% endif %}
+    {% if readonly %} readonly {% endif %}/>
+</div>
+{% endmacro %}
+
+{% macro boolean_input(label,name,required,value,readonly=readonly) %}
+<div class="input-box for_checkbox">
+    <label for="checkbox_{{name}}" class="checkbox-label">{{label}}</label>
+    <input 
+    id="checkbox_{{name}}"
+    type="checkbox" 
+    name="step_{{name}}" 
+    class="input-3 {{ 'needs-validation' if required }} disabled_input" 
+    onfocus="setFocus(true,this,this.parentNode)" 
+    onblur="setFocus(false,this,this.parentNode)"
+    data-field_name="{{name}}"
+    onchange="setHiddenFieldValue(this)"
+    {% if value %} checked {% endif %}
+    {% if readonly %} disabled {% endif %}/>
+    <input type="hidden" {% if value %}value="true"{% endif %} name="{{name}}" id="hiddenInput_{{name}}">
+</div>
+{% endmacro %}
+
+{% macro color_input(label,name,required,value = value, readonly=readonly) %}
+<div class="input-box for_color">
+    <label class="color-label">{{label}}</label>
+    <input 
+    type="color" 
+    name="step_{{name}}" 
+    class="input-2 {{ 'needs-validation' if required }} disabled_input" 
+    onfocus="setFocus(true,this,this.parentNode)" 
+    onblur="setFocus(false,this,this.parentNode)"
+    data-field_name="{{name}}"
+    onchange="setHiddenFieldValue(this)"
+    {% if value %} value="{{value}}" {% endif %}
+    {% if readonly %} disabled {% endif %}/>
+    <input type="hidden" name="{{name}}" id="hiddenInput_{{name}}">
+</div>
+{% endmacro %}
+
+{% macro submit_button(name) %}
+<div class="submit_button_container">
+    <button type="submit" class="submit_button">
+        {{name}}
+    </button>
+</div>
+{% endmacro %}
+
+{% macro form(action,fields,button_name) %}
+<script src="{{ url_for('static', filename='js/upload_image.js')}}" defer></script>
+<form class="general_form" action="{{action}}" method="post" onsubmit="return validateForm(this);">
+    {% for field in fields %}
+        {{general_input(field['type'],field['label'],field['name'],field['options'],field['required'],field[])}}
+    {% endfor %}
+    {{submit_button(button_name)}}
+</form>
+{% endmacro %}

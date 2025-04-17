@@ -12,6 +12,7 @@ from .product_attributes import ProductAttribute
 from .product_attribute_values import ProductAttributeValue
 from .orders import Order
 from .order_lines import OrderLine
+from .backend_apps import Backend_App
 from .Association_PlayerDivision import Association_PlayerDivision
 from .Association_PlayerMatch import Association_PlayerMatch
 from .Association_ProductProductAttribute import Association_ProductProductAttribute

@@ -4,6 +4,7 @@ from flask import Flask
 from tempfile import mkdtemp
 from flask_session import Session
 from flask_assets import Environment, Bundle
+from flask_login import LoginManager
 
 
 from . import sql_db
@@ -76,8 +77,17 @@ def create_app(test_config=None):
     scss_bundle = Bundle('style/scss/main.scss', filters='pyscss', depends='style/scss/*.scss',output='style/styles.css')
     assets.register('scss', scss_bundle)
     
+    scss_bundle_backend = Bundle('style/scss/main_backend.scss', filters='pyscss', depends='style/scss/*.scss',output='style/styles_backend.css')
+    assets.register('scss_backend', scss_bundle_backend)
+    
+    login_manager = LoginManager(app)
+
+    from .auth import setup_login_manager
+    setup_login_manager(login_manager)
+
+    app.login_manager = login_manager
+    
     with app.app_context():
-        sql_db.db.init_app(app)
-        sql_db.db.create_all()
+        sql_db.init_db(app)
 
     return app

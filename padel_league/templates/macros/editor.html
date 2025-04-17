@@ -1,0 +1,240 @@
+{% import 'macros/inputs.html' as inputs %}
+
+{% macro objects_table(data) %}
+<div class="editor_objects_table_container">
+    <table class="editor_objects_table" id="{{data['title']}}">
+        <thead>
+            {% for column in data['table_columns'] %}
+                <th onclick="sortTable(this,'{{ loop.index }}')">{{column['label']}}<span class="sort-indicator"></span></th>
+            {% endfor %}
+        </thead>
+        <tbody>
+            {% for element in data['objects'] %}
+                <tr class='clickable-row' data-href="{{element.editor_url()}}">
+                    {% for column in data['table_columns'] %}
+                    <td>
+                        {{element[column['field']]}}
+                    </td>
+                    {% endfor %}
+                    <td class="delete_cell" style="display: none;" onclick="event.stopPropagation();callAPI(this,true);" data-href="{{'{delete_url}/{id}'.format(delete_url=data['general_delete_url'],id=element['id'])}}"><img src="{{url_for('static',filename='images/delete.png')}}" class="delete_icon" alt="Delete Image"></td>
+                </tr>
+            {% endfor%}
+            {% if data['objects']|length == 0 %}
+                <tr>
+                    <td colspan="{{data['table_columns']|length}}">Não existem {{data['title']}}.</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+{% endmacro %}
+
+{% macro objects_header(data) %}
+<div class="editor_objects_header">
+    <div class="editor_header_elements">
+        <h2 class="editor_header_title" data-href="{{data['dispalay_all_url']}}" onclick="linkToDatasetHref(this)">{{data['title']}}</h2>
+        <div class="header_buttons">
+            <a href="{{data['create_url']}}" class="editor_header_create_button general_button">Criar</a>
+            <div class="actions_container" onmouseover="showHideElement('editor_actions_dropdown')" onmouseout="showHideElement('editor_actions_dropdown')">
+                <button type="button" class="editor_header_actions general_button"> Ações </button>
+                <div id="editor_actions_dropdown" class="editor_header_actions_dropdown dropdown_box" style="display: none;">
+                    <div class="editor_actions_container">
+                        <div class="editor_header_actions_dropdown_item dropdown_item" onclick="showHideElementByClass('delete_cell')" data-href="">Apagar</div>
+                        <div class="editor_header_actions_dropdown_item dropdown_item" onclick="downloadCSV(this),event.stopPropagation()" data-href="{{data['download_csv_url']}}">Download</div>
+                        <div class="editor_header_actions_dropdown_item dropdown_item" onclick="callAPI(this,true),event.stopPropagation()" data-href="{{data['upload_csv_url']}}">Upload</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="editor_header_elements">
+        <form onsubmit="return false;" class="search_bar_form">
+            <input data-table_id="{{data['title']}}" onkeyup="searchTable(this);" class="editor_search_bar" type="search" placeholder="Procurar por {{data['searchable_column']['label'].lower()}}...">
+            <svg width="20" height="20" viewBox="0 0 20 20" class="search_bar_icon_svg">
+                <circle fill="none" stroke="#000" stroke-width="1.1" cx="9" cy="9" r="7"></circle>
+                <path fill="none" stroke="#000" stroke-width="1.1" d="M14,14 L18,18 L14,14 Z"></path>
+            </svg>
+        </form>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro objects_main(data) %}
+<div class="editor_objects_container">
+    {{objects_header(data)}}
+    {{objects_table(data)}}
+</div>
+{% endmacro%}
+
+{% macro objects_main_kanban(data) %}
+<div class="editor_objects_container">
+    {{objects_header(data)}}
+    {{objects_kanban(data)}}
+</div>
+{% endmacro%}
+
+{% macro objects_kanban(data) %}
+<div class="kanban-board">
+    <div class="kanban-column">
+        <div class="tickets-title">To Do</div>
+        <ul class="ticket-list" id="todo-list">
+            {{kanban_ticket(1,'Ticket 1','This is a long description of the ticket 1 describing the ticket, but also being long while describing said ticket','Pedro Pacheco',10)}}
+            {{kanban_ticket(3,'Ticket 3','This is a description of the ticket','Pedro Pacheco',10)}}
+        </ul>
+    </div>
+    <div class="kanban-column">
+        <div class="tickets-title">In Progress</div>
+        <ul class="ticket-list" id="inprogress-list">
+            {{kanban_ticket(2,'Ticket 2','This is another description of the ticket','Pedro Pacheco',10)}}
+            {{kanban_ticket(4,'Ticket 4','This is not a description','João Couceiro',10)}}
+            {{kanban_ticket(5,'Ticket 5','This is','Pedro Pacheco',10)}}
+        </ul>
+    </div>
+    <div class="kanban-column">
+        <div class="tickets-title">Done</div>
+        <ul class="ticket-list" id="done-list">
+            {{kanban_ticket(6,'Ticket 6','This is a description of the ticket','João Couceiro',1)}}
+        </ul>
+    </div>
+</div>
+{% endmacro%}
+
+{% macro kanban_ticket(id,name,description,creator,priority) %}
+<li class="ticket" draggable="true" data-ticket_id="ticket_{{id}}" data-status="inprogress" data-priority="{{priority}}">
+    <div class="ticket-name">{{name}}</div>
+    <div class="ticket-description">{{description}}</div>
+    <div class="ticket-creator">{{creator}}</div>
+</li>
+{% endmacro%}
+
+
+{% macro create_header(data) %}
+<div class="editor_objects_header">
+    <div class="editor_header_elements">
+        <h2 class="editor_header_title" data-href="{{data['dispalay_all_url']}}" onclick="linkToDatasetHref(this)">{{data['title']}}</h2>
+        <button type="submit" class="editor_header_create_button general_button">Guardar</button>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro create_form(data) %}
+<script src="{{ url_for('static', filename='js/upload_image.js')}}" defer></script>
+<div class="editor_objects_information_container">
+    <div class="editor_objects_main_block">
+        {% for block in data['form']['main'] %}
+            {% if block['name'] == 'picture_block' %}
+                {% set field = block['fields'][0] %}
+                <div class="editor_objects_main_picture">
+                    {{inputs.general_input(type=field['type'],label=field['label'],name=field['name'],options=field['options'],required=field['required'], model=field['model'], related_model=field['related_model'])}}
+                </div>
+            {% elif block['name'] == 'info_block' %}
+                <div class="editor_objects_main_block_info">
+                    {% for field in block['fields'] %}
+                    {{inputs.general_input(type=field['type'],label=field['label'],name=field['name'],options=field['options'],required=field['required'], model=field['model'],related_model=field['related_model'])}}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+    <div class="editor_objects_tabs_block">
+        {% if data['form']['tabs'] %}
+        {% set tabs = data['form']['tabs'] %}
+        <div class="editor_objects_tabs_names">
+            {% for tab in tabs %}
+                <div class="editor_objects_tab {% if loop.first %} active_tab_title {% endif %}" data-active_tab="true" data-tab_id="{{tab['title']}}" onclick="switchTab(this)">
+                    {{tab['title']}}
+                </div>
+            {% endfor %}
+        </div>
+        <div class="editor_objects_tabs_information">
+            {% for tab in tabs %}
+                <div class="editor_objects_information_from_tab {% if not loop.first %} inactive_tab_content {% endif %} {% if tab['orientation'] == 'vertical' %} vertical_tab_content {% else %} horizontal_tab_content {% endif %}" id="{{tab['title']}}">
+                    {% for field in tab['fields'] %}
+                        {{inputs.general_input(type=field['type'],label=field['label'],name=field['name'],options=field['options'],required=field['required'], model=field['model'],related_model=field['related_model'])}}
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endmacro %}
+
+{% macro create_main(data) %}
+<form class="editor_objects_container" action="{{data['post_url']}}" method="post" class="editor_create_form" onsubmit="return validateForm(this);" enctype="multipart/form-data">
+    {{create_header(data)}}
+    {{create_form(data)}}
+</form>
+{% endmacro %}
+
+{% macro edit_header(data,readonly) %}
+<div class="editor_objects_header">
+    <div class="editor_header_elements {% if readonly %} readonly_header {% endif %}">
+        <h2 class="editor_header_title" data-href="{{data['dispalay_all_url']}}" onclick="linkToDatasetHref(this)">{{data['title']}}</h2>
+        <div class="header_buttons">
+            <button type="submit" class="editor_header_create_button general_button" onclick="addReadonlys()">Guardar</button>
+            <button type="button" class="editor_header_edit_button general_button" onclick="removeAllReadonlys()">Editar</button>
+            <div class="actions_container" onmouseover="showHideElement('editor_actions_dropdown')" onmouseout="showHideElement('editor_actions_dropdown')">
+                <button type="button" class="editor_header_actions general_button"> Ações </button>
+                <div id="editor_actions_dropdown" class="editor_header_actions_dropdown dropdown_box" style="display: none;">
+                    <div class="editor_actions_container">
+                        <div class="editor_header_actions_dropdown_item dropdown_item" onclick="callAPI(this,true)" data-href="{{data['delete_url']}}">Apagar</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro edit_form(data,readonly=False) %}
+<script src="{{ url_for('static', filename='js/upload_image.js')}}" defer></script>
+<div class="editor_objects_information_container">
+    <div class="editor_objects_main_block">
+        {% for block in data['form']['main'] %}
+            {% if block['name'] == 'picture_block' %}
+                {% set field = block['fields'][0] %}
+                <div class="editor_objects_main_picture">
+                    {{inputs.general_input(type=field['type'],label=field['label'],name=field['name'],options=field['options'],required=field['required'],value=field['value'], model=field['model'],related_model=field['related_model'],readonly=readonly)}}
+                </div>
+            {% elif block['name'] == 'info_block' %}
+                <div class="editor_objects_main_block_info">
+                    {% for field in block['fields'] %}
+                    {{inputs.general_input(type=field['type'],label=field['label'],name=field['name'],options=field['options'],required=field['required'],value=field['value'], model=field['model'],related_model=field['related_model'],readonly=readonly)}}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+    <div class="editor_objects_tabs_block">
+        {% if data['form']['tabs'] %}
+        {% set tabs = data['form']['tabs'] %}
+        <div class="editor_objects_tabs_names">
+            {% for tab in tabs %}
+                <div class="editor_objects_tab {% if loop.first %} active_tab_title {% endif %}" data-active_tab="true" data-tab_id="{{tab['title']}}" onclick="switchTab(this)">
+                    {{tab['title']}}
+                </div>
+            {% endfor %}
+        </div>
+        <div class="editor_objects_tabs_information">
+            {% for tab in tabs %}
+                <div class="editor_objects_information_from_tab {% if not loop.first %} inactive_tab_content {% endif %} {% if tab['orientation'] == 'vertical' %} vertical_tab_content {% else %} horizontal_tab_content {% endif %}" id="{{tab['title']}}">
+                    {% for field in tab['fields'] %}
+                    {{inputs.general_input(type=field['type'],label=field['label'],name=field['name'],options=field['options'],required=field['required'],value=field['value'], model=field['model'] ,related_model=field['related_model'],readonly=readonly)}}
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endmacro %}
+
+{% macro edit_main(data,readonly=False) %}
+<form class="editor_objects_container show_objects" action="{{data['post_url']}}" method="post" class="editor_create_form" onsubmit="return validateFormWithNoStyles(this);" enctype="multipart/form-data" target="hidden_iframe">
+    {{edit_header(data,readonly)}}
+    {{edit_form(data,readonly)}}
+</form>
+<iframe id="hidden_iframe" name="hidden_iframe" style="display:none;"></iframe>
+{% endmacro %}
+

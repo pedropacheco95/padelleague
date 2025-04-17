@@ -3,10 +3,14 @@ from padel_league.sql_db import db
 from sqlalchemy import Column, Integer , String , Table, ForeignKey , Boolean, DateTime , Date
 from sqlalchemy.orm import relationship
 from padel_league.tools import tools
+from padel_league.tools.input_tools import Field, Block , Form
 
-class Division(db.Model ,model.Model , model.Base):
+class Division(db.Model , model.Model , model.Base):
     __tablename__ = 'divisions'
     __table_args__ = {'extend_existing': True}
+    page_title = 'Divisões'
+    model_name = 'Division'
+    
     id = Column(Integer, primary_key=True)
     name = Column(String(80), unique=True, nullable=False)
     #The first match defines the week day and hour of every other match
@@ -208,3 +212,36 @@ class Division(db.Model ,model.Model , model.Base):
         )[:limit]
 
         return upcoming_matches
+    
+    def display_all_info(self):
+        searchable_column = {'field': 'name','label':'Nome'}
+        table_columns = [
+            {'field': 'rating','label':'Rating'},
+            searchable_column,
+            {'field': 'has_ended','label':'Já acabou?'},
+        ]
+        return searchable_column , table_columns
+
+    def get_create_form(self):
+        def get_field(name,label,type,required=False,related_model=None):
+            return Field(instance_id=self.id,model=self.model_name,name=name,label=label,type=type,required=required,related_model=related_model)
+        form = Form()
+
+        # Create Info block
+        fields = [
+            get_field(name='name',label='Nome',type='Text',required=False),
+            get_field(name='beginning_datetime',label='Data de inicio',type='DateTime',required=False),
+            get_field(name='rating',label='Rating',type='Float',required=False),
+            get_field(name='has_ended',label='Já acabou?',type='Boolean',required=False),
+            get_field(name='end_date',label='Data do final',type='Date',required=False),
+            get_field(name='number_of_teams_made',label='Numero de equipas feitas',type='Integer',required=False),
+            get_field(name='last_team',label='Últimas Equipas',type='Text',required=False),
+            get_field(name='matches',label='Jogos',type='OneToMany',related_model='Match'),
+            get_field(name='edition',label='Edição',type='ManyToOne',related_model='Edition'),
+            get_field(name='players_relations',label='Jogadores (Relações)',type='OneToMany',related_model='Association_PlayerDivision'),
+        ]
+        info_block = Block('info_block',fields)
+        form.add_block(info_block)
+
+        return form
+    

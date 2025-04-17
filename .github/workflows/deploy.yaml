@@ -48,7 +48,7 @@ jobs:
         username: ${{ secrets.GCE_USER }}
         key: ${{ secrets.GCE_SSH_PRIVATE_KEY }}
         source: "scripts/backup.sh"
-        target: "/home/pedropacheco1/"
+        target: "/home/pedropachecocontas/"
 
     - name: Setup cron job for backup script
       uses: appleboy/ssh-action@v1.0.0
@@ -57,7 +57,7 @@ jobs:
         username: ${{ secrets.GCE_USER }}
         key: ${{ secrets.GCE_SSH_PRIVATE_KEY }}
         script: |
-          chmod +x /home/pedropacheco1/scripts/backup.sh
+          chmod +x /home/pedropachecocontas/scripts/backup.sh
 
-          (crontab -l 2>/dev/null | grep -v backup.sh; echo "0 3 * * * /home/pedropacheco1/scripts/backup.sh") | crontab -
+          (crontab -l 2>/dev/null | grep -v backup.sh; echo "0 3 * * * /home/pedropachecocontas/scripts/backup.sh") | crontab -
 

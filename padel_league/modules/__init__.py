@@ -13,6 +13,7 @@ from . import products
 from . import products_attributes
 from . import shop
 from . import editions
+from . import editor
 
 # Register Blueprints
 def register_blueprints(app):
@@ -30,4 +31,5 @@ def register_blueprints(app):
     app.register_blueprint(products_attributes.bp)
     app.register_blueprint(shop.bp)
     app.register_blueprint(editions.bp)
+    app.register_blueprint(editor.bp)
     return True

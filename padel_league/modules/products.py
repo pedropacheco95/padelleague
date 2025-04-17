@@ -88,24 +88,24 @@ def show(id):
                 order.add_to_session()
             else:
                 order = [order for order in orders if not order.closed][-1]
-
-            if order:
-                order_line = OrderLine(product_id=product.id,order_id=order.id,quantity=1,specification=specification)
+            
+            all_order_lines = OrderLine.query.filter_by(order_id=order.id).all()
+            order_line = OrderLine(product_id=product.id,order_id=order.id,quantity=1,specification=specification)
+            
+            if order_line in all_order_lines:
+                order_line = all_order_lines[all_order_lines.index(order_line)]
+                order_line.quantity += 1
+                order.order_lines = all_order_lines
+                order_line.add_to_session()
+                order_line.save()
+            else:
                 all_order_lines = OrderLine.query.filter_by(order_id=order.id).all()
-                if order_line in all_order_lines:
-                    order_line = all_order_lines[all_order_lines.index(order_line)]
-                    order_line.quantity += 1
-                    order.order_lines = all_order_lines
-                    order_line.add_to_session()
-                    order_line.save()
-                else:
-                    all_order_lines = OrderLine.query.filter_by(order_id=order.id).all()
-                    order.order_lines = all_order_lines
-                    order_line.add_to_session()
-                    order_line.save()
-                    
-                order.save()
-                order.refresh()
+                order.order_lines = all_order_lines
+                order_line.add_to_session()
+                order_line.save()
+                
+            order.save()
+            order.refresh()
             return redirect(url_for('shop.cart',order_id = order.id))
         flash(error)
     return render_template('products/product.html',product=product)

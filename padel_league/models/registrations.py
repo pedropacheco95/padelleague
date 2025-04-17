@@ -6,6 +6,9 @@ from sqlalchemy.orm import relationship
 class Registration(db.Model ,model.Model , model.Base):
     __tablename__ = 'registrations'
     __table_args__ = {'extend_existing': True}
+    page_title = 'Registos'
+    model_name = 'Registration'
+    
     player_id = Column(Integer, ForeignKey('players.id'), primary_key=True)
     edition_id = Column(Integer, ForeignKey('editions.id'), primary_key=True)
 

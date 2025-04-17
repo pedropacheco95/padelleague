@@ -1,0 +1,16 @@
+@use "../variables_editor" as *;
+@use "../mixins_editor" as *;
+@use "inputs" as *;
+
+ul li {
+    list-style-type: none;
+}
+
+a, a:hover, a:visited {
+    text-decoration: none;
+    color: inherit;
+}
+
+label {
+    margin: 0;
+}

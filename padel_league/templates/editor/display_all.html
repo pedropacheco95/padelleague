@@ -1,0 +1,8 @@
+{% extends 'editor/layout.html' %}
+{% import 'macros/editor.html' as editor %}
+
+{% block title %}{{data['title']}}{% endblock %}
+
+{% block main %}
+    {{editor.objects_main(data)}}
+{% endblock %}

@@ -6,6 +6,9 @@ from sqlalchemy.orm import relationship
 class Association_PlayerDivision(db.Model ,model.Model, model.Base):
     __tablename__ = 'players_in_division'
     __table_args__ = {'extend_existing': True}
+    page_title = 'Relação de Jogador Divisao'
+    model_name = 'Association_PlayerDivision'
+    
     player_id = Column(Integer, ForeignKey('players.id'), primary_key=True)
     division_id = Column(Integer, ForeignKey('divisions.id'), primary_key=True)
 

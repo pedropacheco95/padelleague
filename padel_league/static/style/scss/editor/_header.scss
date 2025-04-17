@@ -1,0 +1,241 @@
+@use "../variables_editor" as *;
+@use "../mixins_editor" as *;
+@use "inputs" as *;
+
+.global_header{
+    width: 100%;
+    position: fixed;
+    z-index: 1;
+}
+
+.navbar_mobile_header{
+    @include size-query(large) {
+        display: none;
+    }
+}
+
+.navbar_main_header{
+    @include size-query(small) {
+        display: none;
+    }
+}
+
+.navbar_main_header.show{
+    display: block;
+}
+
+.main-logo{
+    height: 100%;
+    vertical-align: middle;
+}
+
+.navbar{
+    height: 100%;
+    width: 100%;
+    padding: 0;
+}
+
+.navbar_main_items{
+    height: 100%;
+    padding: 0;
+    @include size-query(small) {
+        width: 100%;
+    } 
+}
+
+.navbar_line{
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.navbar_mobile_line{
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    height: 5rem;
+    background-color: $primary-color;
+}
+
+.navbar_width{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    max-width: $max-width;
+    @include size-query(large) {
+        min-width: $min-width;
+        width: 70%;
+    }
+    @include size-query(small) {
+        justify-content: space-between;
+        width: 100%;
+    }
+}
+
+.navbar_items_container{
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    margin: 0;
+    @include size-query(large){
+        flex-direction: row;
+    }
+    @include size-query(small) {
+        flex-direction: column;
+        padding: 0;
+    }
+}
+
+.first_line{
+    height: 3rem;
+    background-color: $fourth-color;
+    @include size-query(small) {
+        display: none;
+    }
+}
+
+.second_line{
+    height: 6rem;
+    background-color: $primary-color;
+}
+
+.navbar_item{
+    font-size: 1.5rem;
+    color: $secondary-color;
+    font-weight: bold;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    @include size-query(small) {
+        background-color: $primary-color;
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+.navbar_link{
+    padding-right: 1rem;
+    padding-left: 1rem;
+    @include size-query(small) {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        padding: 0.5rem;
+        border-bottom: 1px solid white;
+    }
+}
+
+.navbar_item:hover{
+    background-color: $primary-color-shade;
+}
+
+.logo{
+    padding: 1rem 0 1rem 0;
+    height: 100%;
+    @include size-query(small) {
+        display: none;
+    }
+}
+
+.logo_mobile{
+    padding: 1rem 0 1rem 0;
+    height: 100%;
+}
+
+.fia_logo{
+    height: 60%;
+    opacity: 0.4;
+}
+
+.auth_buttons_container{
+    color: $fourth-color;
+}
+
+.auth_button{
+    border-radius: 0.5rem;
+    transition: all 0.5s cubic-bezier(0.2, 0, 0.05, 1);
+    letter-spacing: 0.5px;
+    padding: 0.8rem;
+    font-size: 0.8rem;
+    font-family: Helvetica, sans-serif;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin: 0 0.2rem 0 0.2rem;
+}
+
+.login_button{
+    background: $primary-color;
+}
+
+.register_button{
+    background: $fifth-color;
+    box-shadow: 0 0 0 2px $fifth-color inset;
+}
+
+.auth_button:hover{
+    background: $fourth-color;
+    color: $primary-color;
+}
+
+.login_button:hover{
+    box-shadow: 0 0 0 2px $primary-color inset;
+}
+
+.navbar_toggler{
+    margin: 0;
+    padding: 1rem;
+    border: none;
+    background: transparent !important;
+}
+
+.user_button{
+    margin: 1rem;
+    padding: 0rem;
+    border: none;
+    height: 80%;
+    border-radius: 0.2rem;
+    background-color: $tertiary-color;
+}
+
+.user_button_image{
+    height: 3rem;
+    width: 3rem;
+    padding: 0.4rem;
+}
+
+.icon_bar{
+    display: block;
+    height: 0.3rem;
+    background-color: #ffffff;
+    width: 3rem;
+    transition: all 0.2s;
+    transform-origin: 10% 10%;
+    transform: rotate(0);
+    margin: 0.5rem;
+}
+
+.navbar_toggler.collapsed .icon_bar:nth-of-type(1) {
+	transform: rotate(45deg);
+	transform-origin: 10% 10%;
+}
+
+.navbar_toggler.collapsed .icon_bar:nth-of-type(2) {
+	opacity: 0;
+	filter: alpha(opacity=0);
+}
+
+.navbar_toggler.collapsed .icon_bar:nth-of-type(3) {
+	transform: rotate(-45deg);
+	transform-origin: 10% 90%;
+}
+
+.right_chevron{
+    font-weight: 400;
+    font-style: normal;
+    @include size-query(large) {
+        display: none;
+    }
+}
