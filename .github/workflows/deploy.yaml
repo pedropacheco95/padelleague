@@ -27,7 +27,7 @@ jobs:
       with:
         context: .
         push: true
-        tags: pedropachecocontas/porto-padel-league:latest
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/porto-padel-league:latest
         platforms: linux/amd64
 
     - name: Deploy on GCE
@@ -37,9 +37,9 @@ jobs:
         username: ${{ secrets.GCE_USER }}
         key: ${{ secrets.GCE_SSH_PRIVATE_KEY }}
         script: |
-          sudo docker pull pedropachecocontas/porto-padel-league:latest
+          sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/porto-padel-league:latest
           sudo docker stop ppl || true && sudo docker rm ppl || true
-          sudo docker run -d --name ppl -p 5000:80 pedropachecocontas/porto-padel-league:latest
+          sudo docker run -d --name ppl -p 5000:80 ${{ secrets.DOCKERHUB_USERNAME }}/porto-padel-league:latest
 
     - name: Copy backup script to VM
       uses: appleboy/scp-action@v0.1.4
@@ -48,7 +48,9 @@ jobs:
         username: ${{ secrets.GCE_USER }}
         key: ${{ secrets.GCE_SSH_PRIVATE_KEY }}
         source: "scripts/backup.sh"
-        target: "/home/pedropachecocontas/"
+        target: "/home/${{ secrets.GCE_USER }}//backup.sh"
+        strip_components: 1
+        overwrite: true
 
     - name: Setup cron job for backup script
       uses: appleboy/ssh-action@v1.0.0
@@ -57,7 +59,7 @@ jobs:
         username: ${{ secrets.GCE_USER }}
         key: ${{ secrets.GCE_SSH_PRIVATE_KEY }}
         script: |
-          chmod +x /home/pedropachecocontas/scripts/backup.sh
+          chmod +x /home/${{ secrets.GCE_USER }}/backup.sh
 
-          (crontab -l 2>/dev/null | grep -v backup.sh; echo "0 3 * * * /home/pedropachecocontas/scripts/backup.sh") | crontab -
+          (crontab -l 2>/dev/null | grep -v backup.sh; echo "0 3 * * * /home/${{ secrets.GCE_USER }}/backup.sh") | crontab -
 
