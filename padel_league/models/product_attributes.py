@@ -11,7 +11,7 @@ class ProductAttribute(db.Model ,model.Model,model.Base):
     page_title = 'Atributos de produto'
     model_name = 'ProductAttribute'
     
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(Text)
     user_input = Column(Boolean, default=False) # Assumed to be a text input; example: Name on shirt: ________ 
 

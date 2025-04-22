@@ -9,7 +9,7 @@ class ProductImage(db.Model ,model.Model,model.Base):
     page_title = 'Images de Produto'
     model_name = 'ProductImage'
     
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     path = Column(Text)
     product_id = Column(Integer, ForeignKey('products.id'))
 

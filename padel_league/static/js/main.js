@@ -1,6 +1,10 @@
 var isMobile = ('ontouchstart' in document.documentElement);
 let currentDivisionIndex = 0;
 
+window.addEventListener('load', function () {
+    document.getElementById('loading-screen').style.display = 'none';
+});
+
 function duplicateElement(element){
     var newElement = element.cloneNode(true);
     element.parentNode.insertBefore(newElement, element.nextSibling);

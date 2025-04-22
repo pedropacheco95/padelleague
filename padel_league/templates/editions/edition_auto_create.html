@@ -5,7 +5,7 @@
       <h2>Criar Divisões para {{ edition_name }}</h2>
       {% for div in divisions %}
         <section class="create_tournament_form">
-            <form method="POST" action="{{ url_for('tournaments.create') }}" enctype="multipart/form-data">
+            <form method="POST" action="{{ url_for('tournaments.create') }}" enctype="multipart/form-data" target="_blank">
             <input type="hidden" name="edition" value="{{ league_id }}">
             <label>Divisão {{ loop.index }}</label>
             <div class="form-group">

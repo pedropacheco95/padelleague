@@ -1,7 +1,9 @@
 from padel_league import model 
 from padel_league.sql_db import db
 from sqlalchemy import Column, Integer, ForeignKey , Text
-from sqlalchemy.orm import relationship 
+from sqlalchemy.orm import relationship
+from padel_league.tools.input_tools import Field, Block , Form
+
 
 class OrderLine(db.Model ,model.Model, model.Base):
     __tablename__ = 'order_lines'
@@ -25,3 +27,39 @@ class OrderLine(db.Model ,model.Model, model.Base):
 
     def get_specification_list(self):
         return self.specification.split('; ')
+    
+    def display_all_info(self):
+        searchable_column = {'field': 'product', 'label': 'Produto'}
+        table_columns = [
+            {'field': 'order', 'label': 'Encomenda'},
+            searchable_column,
+            {'field': 'quantity', 'label': 'Quantidade'},
+            {'field': 'specification', 'label': 'Especificações'},
+        ]
+        return searchable_column, table_columns
+
+
+    def get_create_form(self):
+        def get_field(name, label, type, required=False, related_model=None):
+            return Field(
+                instance_id=self.id,
+                model=self.model_name,
+                name=name,
+                label=label,
+                type=type,
+                required=required,
+                related_model=related_model
+            )
+
+        form = Form()
+
+        fields = [
+            get_field(name='order', label='Encomenda', type='ManyToOne', required=True, related_model='Order'),
+            get_field(name='product', label='Produto', type='ManyToOne', required=True, related_model='Product'),
+            get_field(name='quantity', label='Quantidade', type='Integer', required=True),
+            get_field(name='specification', label='Especificações', type='Text'),
+        ]
+        info_block = Block('info_block', fields)
+        form.add_block(info_block)
+
+        return form

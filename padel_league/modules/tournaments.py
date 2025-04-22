@@ -34,7 +34,7 @@ def edit(id):
 def create():
     if request.method == 'POST':
         name = request.form['name']
-        rating = int(request.form['rating']) if request.form['rating'] else None
+        rating = int(float(request.form['rating'])) if request.form['rating'] else None
         beggining_date= datetime.datetime.strptime(request.form['beggining_date'], '%Y-%m-%d') if request.form['beggining_date'] else None
         picture = request.files.getlist('picture')
         large_picture = request.files.getlist('large_picture')

@@ -3,6 +3,7 @@ import json
 
 from flask import Blueprint, flash, g, redirect, render_template, request, jsonify, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
+from sqlalchemy.orm import joinedload
 
 from padel_league.models import *
 from padel_league.tools import tools
@@ -15,15 +16,15 @@ def calendar(division_id=None):
     #Eventually this function should take into consideration the month
     #When clicking to change the month on the front end another call to the API would be made
     if division_id:
-        division = Division.query.filter_by(id=division_id).first()
-        matches = division.matches
+        division = Division.query.options(joinedload(Division.matches)).get(division_id)
+        matches = division.matches if division else []
     else:
-        matches = Match.query.all()
+        matches = Match.query.options(joinedload(Match.division)).all()
     
     info = []
     for match in matches:
         info.append(
-            { 'eventName': match.name(),
+            { 'eventName': match.clean_name(),
             'calendar': 'Jogos',
             'color': 'blue' ,
             'date':match.date_hour.strftime("%Y/%m/%d"),
@@ -77,6 +78,7 @@ def edit(model,id):
         form = obj.get_edit_form()
         values = form.set_values(request)
         obj.update_with_dict(values)
+        obj.save()
         return jsonify(sucess=True)
     return jsonify(sucess=False)
 
@@ -94,7 +96,7 @@ def delete(model,id):
 def query(model):
     model = globals()[model]
     instances = model.query.all()
-    instances = [{'value':instance.id,'name':instance.name} for instance in instances]
+    instances = [{'value':instance.id,'name': str(instance.name)} for instance in instances]
     return jsonify(instances)
 
 @bp.route('/remove_relationship', methods=('GET', 'POST'))

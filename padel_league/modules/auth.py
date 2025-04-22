@@ -99,10 +99,15 @@ def login():
         
         if error is None:
             login_user(user)
-        
+            
             next_page = request.args.get('next')
             if not next_page or not auth_tools.is_safe_url(next_page):
                 next_page = url_for('main.index') 
+        
+            session['user'] = user
+            
+            if username == 'admin' or user.is_admin:
+                session['admin_logged'] = True
         
             return redirect(next_page)
 

@@ -28,6 +28,10 @@ class Model():
             ValueError('This model has no defined name, choose another way of representing')
 
     def create(self):
+        if hasattr(self, '_sa_instance_state'):
+            self._sa_instance_state.key = None
+        if inspect(self).key is not None:
+            inspect(self).key = None
         db.session.add(self)
         db.session.commit()
         return True
@@ -81,45 +85,49 @@ class Model():
         return {table.__tablename__: db.session.query(table) for table in db.Model.__subclasses__()}
 
     def update_with_dict(self,values):
-        relationships = class_mapper(type(self)).relationships
-        for key in values.keys():
-            if key in relationships.keys():
-                if values[key]:
-                    relationship = relationships[key]
-                    relationship_type = relationship.direction.name
-                    if key == 'imageable':
-                        if values[key]:
-                            images = getattr(self, 'images')
-                            if images:
-                                images.clear()
-                            for image in values[key]:
-                                images.append(image)
-                    elif relationship_type == 'MANYTOONE':
-                        obj = self.get_related_object(key)
-                        related_instance = obj.query.filter(obj.id.in_(values[key])).first()
-                        #related_instance = self.get_related_object(key).query.filter_by(id=values[key]).first()
-                        if getattr(self,key) != related_instance:
-                            setattr(self,key,related_instance)
-                    elif relationship_type in ['MANYTOMANY','ONETOMANY']:
-                        obj = self.get_related_object(key)
-                        instances = obj.query.filter(obj.id.in_(values[key])).all()
-                        field = getattr(self,key)
-                        for instance in instances:
-                            if instance not in field:
-                                field.append(instance)
+        with db.session.no_autoflush:
+            relationships = class_mapper(type(self)).relationships
+            for key in values.keys():
+                if key in relationships.keys():
+                    if values[key]:
+                        relationship = relationships[key]
+                        relationship_type = relationship.direction.name
+                        if key == 'imageable':
+                            if values[key]:
+                                images = getattr(self, 'images')
+                                if images:
+                                    images.clear()
+                                for image in values[key]:
+                                    images.append(image)
+                        elif relationship_type == 'MANYTOONE':
+                            obj = self.get_related_object(key)
+                            related_id = values[key][0] if isinstance(values[key], list) else values[key]
+                            related_instance = obj.query.filter_by(id=related_id).first()
+                            #related_instance = self.get_related_object(key).query.filter_by(id=values[key]).first()
+                            if getattr(self,key) != related_instance:
+                                setattr(self,key,related_instance)
+                            if getattr(self,f'{key}_id') != related_instance.id:
+                                setattr(self,f'{key}_id',related_instance.id)
+                        elif relationship_type in ['MANYTOMANY','ONETOMANY']:
+                            obj = self.get_related_object(key)
+                            instances = obj.query.filter(obj.id.in_(values[key])).all()
+                            field = getattr(self,key)
+                            for instance in instances:
+                                if instance not in field:
+                                    field.append(instance)
 
-            elif isinstance(getattr(self,key),bool) and values[key] != getattr(self,key) :
-                setattr(self,key,values[key])
-
-            elif values[key] is not None and values[key] != getattr(self,key):
-                setattr(self,key,values[key])
-            else:
-                mapper = inspect(self.__class__)
-                column = mapper.columns.get(key)
-                #Deal with unset boolean values
-                if column is not None and isinstance(column.type, Boolean) and values[key] != getattr(self, key):
+                elif isinstance(getattr(self,key),bool) and values[key] != getattr(self,key) :
                     setattr(self,key,values[key])
-        self.save()
+
+                elif values[key] is not None and values[key] != getattr(self,key):
+                    setattr(self,key,values[key])
+                else:
+                    mapper = inspect(self.__class__)
+                    column = mapper.columns.get(key)
+                    #Deal with unset boolean values
+                    if column is not None and isinstance(column.type, Boolean) and values[key] != getattr(self, key):
+                        setattr(self,key,values[key])
+
         return True
 
     def get_related_object(self,field_name):
@@ -137,15 +145,23 @@ class Model():
         # Define this method in each derived class
         raise NotImplementedError
 
-    def get_display_all_data(self):
+    def get_display_all_data(self, page=1, per_page=100):
+        model_class = type(self)
+        sort_order = getattr(self, 'sort_order', 'oldest')
+        if sort_order == 'newest':
+            ordered_query = self.query.order_by(model_class.id.desc())
+        else:
+            ordered_query = self.query.order_by(model_class.id.asc())
         searchable_column , table_columns = self.display_all_info()
+        pagination = ordered_query.paginate(page=page, per_page=per_page, error_out=False)
         data = {
             'dispalay_all_url': url_for('editor.display_all', model=self.model_name),
             'title': self.page_title,
             'create_url': url_for('editor.create', model=self.model_name),
             'searchable_column': searchable_column,
             'table_columns': table_columns,
-            'objects': self.query.all(),
+            'objects': pagination.items,
+            'pagination': pagination,
             'general_delete_url': url_for('api.delete', model=self.model_name, id=''),
             'download_csv_url': url_for('api.download_csv', model=self.model_name),
             'upload_csv_url': url_for('api.upload_csv_to_db', model=self.model_name),
@@ -200,11 +216,6 @@ class Model():
         return instance_dict
     
     def get_model_names(self):
-        print(':::::::::::::::::::::::::::::::')
-        print(':::::::::::::::::::::::::::::::')
-        print(self.all_tables_object().values())
-        print(':::::::::::::::::::::::::::::::')
-        print(':::::::::::::::::::::::::::::::')
         return [obj.model_name for obj in self.all_tables_object().values() if hasattr(obj, 'model_name')]
 
 class Image(db.Model, Base):

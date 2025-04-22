@@ -5,6 +5,7 @@ from padel_league.sql_db import db
 from sqlalchemy import Column, Integer , String , Text, ForeignKey, Table , Date , Float, Enum
 from sqlalchemy.orm import relationship
 from flask import session , url_for
+from padel_league.tools.input_tools import Field, Block , Form
 
 class Player(db.Model ,model.Model, model.Base):
     __tablename__ = 'players'
@@ -12,7 +13,7 @@ class Player(db.Model ,model.Model, model.Base):
     page_title = 'Jogadores'
     model_name = 'Player'
     
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(80), unique=True, nullable=False)
     full_name =  Column(Text, unique=True)
     birthday = Column(Date)
@@ -131,3 +132,48 @@ class Player(db.Model ,model.Model, model.Base):
         for relation in self.divisions_relations:
             matches += self.matches_played(relation.division)
         return matches
+    
+    def display_all_info(self):
+        searchable_column = {'field': 'name', 'label': 'Nome'}
+        table_columns = [
+            searchable_column,
+            {'field': 'full_name', 'label': 'Nome Completo'},
+            {'field': 'birthday', 'label': 'Data de Nascimento'},
+            {'field': 'ranking_points', 'label': 'Pontos'},
+            {'field': 'ranking_position', 'label': 'Ranking'},
+            {'field': 'prefered_hand', 'label': 'Mão Preferida'},
+            {'field': 'prefered_position', 'label': 'Posição Preferida'},
+        ]
+        return searchable_column, table_columns
+
+
+    def get_create_form(self):
+        def get_field(name, label, type, required=False, related_model=None):
+            return Field(
+                instance_id=self.id,
+                model=self.model_name,
+                name=name,
+                label=label,
+                type=type,
+                required=required,
+                related_model=related_model
+            )
+
+        form = Form()
+
+        fields = [
+            get_field(name='name', label='Nome', type='Text', required=True),
+            get_field(name='full_name', label='Nome Completo', type='Text'),
+            get_field(name='birthday', label='Data de Nascimento', type='Date'),
+            get_field(name='picture_path', label='Foto (pequena)', type='Text'),
+            get_field(name='large_picture_path', label='Foto (grande)', type='Text'),
+            get_field(name='ranking_points', label='Pontos Ranking', type='Integer'),
+            get_field(name='ranking_position', label='Posição Ranking', type='Integer'),
+            get_field(name='height', label='Altura', type='Float'),
+            get_field(name='prefered_hand', label='Mão Preferida', type='Select'),
+            get_field(name='prefered_position', label='Posição Preferida', type='Select'),
+        ]
+        info_block = Block('info_block', fields)
+        form.add_block(info_block)
+
+        return form

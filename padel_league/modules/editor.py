@@ -20,10 +20,14 @@ def index():
 
 @bp.route('/display/<model>', methods=('GET', 'POST'))
 def display_all(model):
+    page_num = request.args.get("page", 1, type=int)
+    per_page = 100
+    
     page = f'editor_{model}_all'
     model = globals()[model]
     empty_instance = model()
-    data = empty_instance.get_display_all_data()
+    data = empty_instance.get_display_all_data(page=page_num, per_page=per_page)
+    
     return render_template('editor/display_all.html', page=page, data=data)
 
 @bp.route('/display/<model>/<id>', methods=('GET', 'POST'))

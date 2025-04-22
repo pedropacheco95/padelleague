@@ -11,7 +11,7 @@ class Division(db.Model , model.Model , model.Base):
     page_title = 'Divisões'
     model_name = 'Division'
     
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(80), unique=True, nullable=False)
     #The first match defines the week day and hour of every other match
     beginning_datetime = Column(DateTime)
@@ -152,10 +152,10 @@ class Division(db.Model , model.Model , model.Base):
         return matchweek, tools.dict_to_table(all_lines)
     
     def get_next_matchweek_games(self,matchweek):
-        return tools.dict_to_table([{'Jogo':match.name()} for match in self.matches if match.matchweek == matchweek])
+        return tools.dict_to_table([{'Jogo':match.clean_name()} for match in self.matches if match.matchweek == matchweek])
     
     def get_next_matchweek_pairs(self,matchweek):
-        games = [match.name() for match in self.matches if match.matchweek == matchweek]
+        games = [match.clean_name() for match in self.matches if match.matchweek == matchweek]
         parelhas = set()
         for game in games:
             parts = game.split(" VS ")

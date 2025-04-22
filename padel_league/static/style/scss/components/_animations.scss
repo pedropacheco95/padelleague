@@ -1,3 +1,5 @@
+@use "../variables" as *;
+
 @keyframes animateContainer {
 	0% {
 		opacity: 0;
@@ -60,4 +62,81 @@
 		height: 15%;
 		opacity: 0.25;
 	}
+}
+
+$loader-size: 6.25rem; // 50px
+$ball-size: 2.5rem; // 20px
+$box-shadow-offset: 3.750rem; // 30px
+$translate-amount: 1.875rem; // 15px
+$margin-bottom: 1.25rem; // 10px
+$margin-top: 2.5rem; // 20px
+
+.loader {
+  animation: rotate 1s infinite;
+  height: $loader-size;
+  width: $loader-size;
+
+  &::before,
+  &::after {
+    border-radius: 50%;
+    content: "";
+    display: block;
+    height: $ball-size;
+    width: $ball-size;
+  }
+
+  &::before {
+    animation: ball1 1s infinite;
+    background-color: $color-primary-dark;
+    box-shadow: $box-shadow-offset 0 0 $color-primary-light;
+    margin-bottom: $margin-bottom;
+  }
+
+  &::after {
+    animation: ball2 1s infinite;
+    background-color: $color-primary-light;
+    box-shadow: $box-shadow-offset 0 0 $color-primary-dark;
+  }
+}
+
+@keyframes rotate {
+  0% {
+    transform: rotate(0deg) scale(0.8);
+  }
+  50% {
+    transform: rotate(360deg) scale(1.2);
+  }
+  100% {
+    transform: rotate(720deg) scale(0.8);
+  }
+}
+
+@keyframes ball1 {
+  0% {
+    box-shadow: $box-shadow-offset 0 0 $color-primary-light;
+  }
+  50% {
+    box-shadow: 0 0 0 $color-primary-light;
+    margin-bottom: 0;
+    transform: translate($translate-amount, $translate-amount);
+  }
+  100% {
+    box-shadow: $box-shadow-offset 0 0 $color-primary-light;
+    margin-bottom: $margin-bottom;
+  }
+}
+
+@keyframes ball2 {
+  0% {
+    box-shadow: $box-shadow-offset 0 0 $color-primary-dark;
+  }
+  50% {
+    box-shadow: 0 0 0 $color-primary-dark;
+    margin-top: -$margin-top;
+    transform: translate($translate-amount, $translate-amount);
+  }
+  100% {
+    box-shadow: $box-shadow-offset 0 0 $color-primary-dark;
+    margin-top: 0;
+  }
 }

@@ -7,7 +7,7 @@
     <div class="l-grid">
         <div class="index_container">
             <h1 class="index_title">Notícias</h1>
-            {{ news_macros.news_container(all_news) }}
+            {{ news_macros.news_container(latest_news, all_news) }}
             {% if tournaments %}
             <h1 class="index_title">Torneios</h1>
             {{ tournaments_macros.index_tournaments(tournaments) }}

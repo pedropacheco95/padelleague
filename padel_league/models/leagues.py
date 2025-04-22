@@ -2,6 +2,7 @@ from padel_league import model
 from padel_league.sql_db import db
 from sqlalchemy import Column, Integer , String , Text, ForeignKey
 from sqlalchemy.orm import relationship
+from padel_league.tools.input_tools import Field, Block , Form
 
 class League(db.Model ,model.Model, model.Base):
     __tablename__ = 'leagues'
@@ -9,7 +10,7 @@ class League(db.Model ,model.Model, model.Base):
     page_title = 'Ligas'
     model_name = 'League'
     
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(80), unique=True, nullable=False)
 
     editions = relationship('Edition', back_populates="league")
@@ -83,3 +84,33 @@ class League(db.Model ,model.Model, model.Base):
             player.save()
         self.players_rankings_position(update_places=True)
         return True """
+        
+    def display_all_info(self):
+        searchable_column = {'field': 'name', 'label': 'Nome'}
+        table_columns = [
+            searchable_column,
+        ]
+        return searchable_column, table_columns
+
+
+    def get_create_form(self):
+        def get_field(name, label, type, required=False, related_model=None):
+            return Field(
+                instance_id=self.id,
+                model=self.model_name,
+                name=name,
+                label=label,
+                type=type,
+                required=required,
+                related_model=related_model
+            )
+
+        form = Form()
+
+        fields = [
+            get_field(name='name', label='Nome', type='Text', required=True),
+        ]
+        info_block = Block('info_block', fields)
+        form.add_block(info_block)
+
+        return form

@@ -1,12 +1,12 @@
-{% macro news_container(all_news) %}
+{% macro news_container(latest_news, all_news) %}
     {% if all_news %}
         <div class="news_container index_item">
             <div class="main_news_container">
-                {{ main_news_card(all_news[0]) }}
+                {{ main_news_card(latest_news) }}
             </div>
             <div class="other_news_container">
                 <div class="other_news_title"> Outras notícias </div>
-                {% for news in all_news[1:]%}
+                {% for news in all_news%}
                     {{ news_card(news) }}
                 {% endfor %}
             </div>

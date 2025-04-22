@@ -3,6 +3,7 @@ from padel_league.sql_db import db
 from sqlalchemy import Column, Integer , String , Text , ForeignKey , Float ,JSON
 from sqlalchemy.orm import relationship
 import json
+from padel_league.tools.input_tools import Field, Block , Form
 
 class Product(db.Model ,model.Model,model.Base):
     __tablename__ = 'products'
@@ -10,7 +11,7 @@ class Product(db.Model ,model.Model,model.Base):
     page_title = 'Produtos'
     model_name = 'Product'
     
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(80), unique=True, nullable=False)
     price = Column(Float, nullable=False)
     small_description = Column(Text, nullable=True)
@@ -45,3 +46,38 @@ class Product(db.Model ,model.Model,model.Base):
             except Exception:
                 return {}
         return self.features
+    
+    def display_all_info(self):
+        searchable_column = {'field': 'name', 'label': 'Nome'}
+        table_columns = [
+            searchable_column,
+            {'field': 'price', 'label': 'Preço'},
+            {'field': 'small_description', 'label': 'Descrição Curta'},
+        ]
+        return searchable_column, table_columns
+
+
+    def get_create_form(self):
+        def get_field(name, label, type, required=False, related_model=None):
+            return Field(
+                instance_id=self.id,
+                model=self.model_name,
+                name=name,
+                label=label,
+                type=type,
+                required=required,
+                related_model=related_model
+            )
+
+        form = Form()
+
+        fields = [
+            get_field(name='name', label='Nome', type='Text', required=True),
+            get_field(name='price', label='Preço', type='Float', required=True),
+            get_field(name='small_description', label='Descrição Curta', type='Text'),
+            get_field(name='big_description', label='Descrição Longa', type='Text'),
+        ]
+        info_block = Block('info_block', fields)
+        form.add_block(info_block)
+
+        return form

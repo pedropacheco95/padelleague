@@ -1194,6 +1194,16 @@ input::-webkit-inner-spin-button {
   display: flex;
   flex-direction: row;
 }
+.editor_header_elements .pagination {
+  display: flex;
+  padding-left: 0;
+  list-style: none;
+  border-radius: 0.25rem;
+  align-items: center;
+}
+.editor_header_elements .pagination a {
+  margin: 0rem 1rem 0rem 1rem;
+}
 
 .editor_search_bar {
   border: none;

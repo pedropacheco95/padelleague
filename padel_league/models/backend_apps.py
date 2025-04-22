@@ -13,7 +13,7 @@ class Backend_App(db.Model ,model.Model,model.Base):
     page_title = 'Aplicações de backend'
     model_name = 'Backend_App'
     
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(80), nullable=False, unique=True)
     app_model_name = Column(String(80), nullable=False, unique=True)
     app_image = Column(String(200))

@@ -9,7 +9,7 @@ class ProductAttributeValue(db.Model ,model.Model,model.Base):
     page_title = 'Valores de atributos de produtos'
     model_name = 'ProductAttributeValue'
     
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     value = Column(Text)
     product_attribute_id = Column(Integer, ForeignKey('product_attributes.id'))
 

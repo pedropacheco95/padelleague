@@ -2,6 +2,8 @@ from padel_league import model
 from padel_league.sql_db import db
 from sqlalchemy import Column, Integer , Boolean , Text, ForeignKey , DateTime
 from sqlalchemy.orm import relationship
+from padel_league.tools.input_tools import Field, Block , Form
+from sqlalchemy.ext.hybrid import hybrid_property
 
 class Match(db.Model ,model.Model, model.Base):
     __tablename__ = 'matches'
@@ -9,7 +11,7 @@ class Match(db.Model ,model.Model, model.Base):
     page_title = 'Jogos'
     model_name = 'Match'
     
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     games_home_team = Column(Integer)
     games_away_team = Column(Integer)
     date_hour = Column(DateTime)
@@ -22,14 +24,18 @@ class Match(db.Model ,model.Model, model.Base):
 
     division = relationship('Division', back_populates="matches")
     players_relations = relationship('Association_PlayerMatch', back_populates="match")
-
+    
+    @hybrid_property
+    def name(self):
+        return f"Match {self.id} from {self.division}"
+    
     def home_players(self):
         return [rel.player for rel in self.players_relations if rel.team=='Home']
     
     def away_players(self):
         return [rel.player for rel in self.players_relations if rel.team=='Away']
 
-    def name(self):
+    def clean_name(self):
         home_players = self.home_players()
         away_players = self.away_players()
         home0 = home_players[0].name if home_players else 'Substituto'
@@ -54,7 +60,7 @@ class Match(db.Model ,model.Model, model.Base):
         return match if match else None
     
     def match_dict_line(self):
-        name = self.name()
+        name = self.clean_name()
         teams = name.split(' VS ')
         home_players = teams[0]
         away_players = teams[1]
@@ -94,3 +100,47 @@ class Match(db.Model ,model.Model, model.Base):
             },
         }
         return players
+    
+    def display_all_info(self):
+        searchable_column = {'field': 'date_hour', 'label': 'Data e Hora'}
+        table_columns = [
+            searchable_column,
+            {'field': 'division', 'label': 'Divisão'},
+            {'field': 'games_home_team', 'label': 'Jogos Equipa Casa'},
+            {'field': 'games_away_team', 'label': 'Jogos Equipa Fora'},
+            {'field': 'winner', 'label': 'Vencedor'},
+            {'field': 'matchweek', 'label': 'Jornada'},
+            {'field': 'field', 'label': 'Campo'},
+            {'field': 'played', 'label': 'Jogado?'},
+        ]
+        return searchable_column, table_columns
+
+
+    def get_create_form(self):
+        def get_field(name, label, type, required=False, related_model=None):
+            return Field(
+                instance_id=self.id,
+                model=self.model_name,
+                name=name,
+                label=label,
+                type=type,
+                required=required,
+                related_model=related_model
+            )
+
+        form = Form()
+
+        fields = [
+            get_field(name='date_hour', label='Data e Hora', type='DateTime', required=True),
+            get_field(name='division', label='Divisão', type='ManyToOne', required=True, related_model='Division'),
+            get_field(name='games_home_team', label='Jogos Equipa Casa', type='Integer'),
+            get_field(name='games_away_team', label='Jogos Equipa Fora', type='Integer'),
+            get_field(name='winner', label='Vencedor', type='Integer'),
+            get_field(name='matchweek', label='Jornada', type='Integer', required=True),
+            get_field(name='field', label='Campo', type='Text'),
+            get_field(name='played', label='Jogado?', type='Boolean', required=True),
+        ]
+        info_block = Block('info_block', fields)
+        form.add_block(info_block)
+
+        return form

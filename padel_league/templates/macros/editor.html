@@ -45,6 +45,17 @@
                     </div>
                 </div>
             </div>
+            {% if data['pagination'].pages > 1 %}
+            <nav class="pagination">
+                {% if data['pagination'].has_prev %}
+                    <a href="{{ data.dispalay_all_url }}?page={{ data['pagination'].prev_num }}">Previous</a>
+                {% endif %}
+                <span>Page {{ data['pagination'].page }} of {{ data['pagination'].pages }}</span>
+                {% if data['pagination'].has_next %}
+                    <a href="{{ data.dispalay_all_url }}?page={{ data['pagination'].next_num }}">Next</a>
+                {% endif %}
+            </nav>
+            {% endif %}
         </div>
     </div>
     <div class="editor_header_elements">

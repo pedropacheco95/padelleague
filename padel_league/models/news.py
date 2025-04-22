@@ -3,23 +3,30 @@ from email.policy import default
 from multiprocessing.heap import Arena
 from padel_league import model 
 from padel_league.sql_db import db
-from sqlalchemy import Column, Integer , String , Text, ForeignKey
+from sqlalchemy import Column, Integer , String , Text, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
+from padel_league.tools.input_tools import Field, Block , Form
+from sqlalchemy.ext.hybrid import hybrid_property
 #from openai import OpenAI
 #client = OpenAI()
 import re
 
-class News(db.Model ,model.Model, model.Base):
+class News(db.Model , model.Model, model.Base):
     __tablename__ = 'news'
     __table_args__ = {'extend_existing': True}
     page_title = 'Noticias'
     model_name = 'News'
     
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     title = Column(String(80), unique=True, nullable=False)
     cover_path = Column(String(80), default='default_news.jpg')
     author = Column(String(80))
     text = Column(Text, nullable=False)
+    latest = Column(Boolean,default=False)
+    
+    @hybrid_property
+    def name(self):
+        return f"{self.title}"
 
     def create_prompt(Division):
         prompt = ''
@@ -308,5 +315,38 @@ class News(db.Model ,model.Model, model.Base):
         general += classifications + last_week_matches + next_week_matches + rankings
         return general
 
+    def display_all_info(self):
+        searchable_column = {'field': 'title', 'label': 'Título'}
+        table_columns = [
+            searchable_column,
+            {'field': 'author', 'label': 'Autor'},
+            {'field': 'cover_path', 'label': 'Imagem de Capa'},
+        ]
+        return searchable_column, table_columns
 
-        
+
+    def get_create_form(self):
+        def get_field(name, label, type, required=False, related_model=None):
+            return Field(
+                instance_id=self.id,
+                model=self.model_name,
+                name=name,
+                label=label,
+                type=type,
+                required=required,
+                related_model=related_model
+            )
+
+        form = Form()
+
+        fields = [
+            get_field(name='title', label='Título', type='Text', required=True),
+            get_field(name='cover_path', label='Imagem de Capa', type='Text'),
+            get_field(name='author', label='Autor', type='Text'),
+            get_field(name='text', label='Texto', type='Text', required=True),
+            get_field(name='latest', label='Latest', type='Boolean'),
+        ]
+        info_block = Block('info_block', fields)
+        form.add_block(info_block)
+
+        return form
