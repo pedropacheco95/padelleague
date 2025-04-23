@@ -115,7 +115,6 @@ class Model():
                             for instance in instances:
                                 if instance not in field:
                                     field.append(instance)
-
                 elif isinstance(getattr(self,key),bool) and values[key] != getattr(self,key) :
                     setattr(self,key,values[key])
 

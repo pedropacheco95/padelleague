@@ -703,11 +703,9 @@ body {
 .c-tournaments--fixed {
   display: block;
   width: 57.5rem;
-  height: 100%;
-  margin-bottom: 5rem;
 }
 .c-tournaments--fixed .c-tournaments__poster {
-  height: 33.2rem;
+  height: 100%;
 }
 @media (max-width: 47.99em) {
   .c-tournaments--fixed .c-tournaments__poster {
@@ -756,6 +754,13 @@ body {
   box-shadow: 0 0 0.6rem 0.1rem rgba(0, 0, 0, 0.1);
   z-index: 5;
   position: relative;
+  border-radius: 1rem;
+  overflow: hidden;
+}
+@media (max-width: 47.99em) {
+  .c-tournaments {
+    width: 90%;
+  }
 }
 @media (max-width: 47.99em) {
   .c-tournaments .c-tournaments__content {
@@ -1091,12 +1096,16 @@ html {
 
 .l-container {
   display: flex;
-  margin: 4.5rem auto 0;
   max-width: 170rem;
+}
+@media (min-width: 57em) {
+  .l-container {
+    margin: 4.5rem auto 0;
+  }
 }
 @media (max-width: 47.99em) {
   .l-container {
-    margin: 7rem 0.78rem 0.78rem !important;
+    margin: 9rem 0.78rem 0.78rem;
   }
 }
 @media (min-width: 48em) {
@@ -1274,7 +1283,6 @@ html {
 }
 
 .c-tournaments__content {
-  margin-left: 0.5rem;
   width: 58%;
   height: 51.5rem;
   display: flex;
@@ -2094,15 +2102,6 @@ html {
 @media (min-width: 940px) {
   .c-global-header {
     padding-top: 2.5rem;
-  }
-}
-
-.l-grid--flex:not(.l-grid--tickets) .c-tournaments--fixed:nth-of-type(even) {
-  margin-left: auto;
-}
-@media (min-width: 940px) {
-  .l-grid--flex:not(.l-grid--tickets) .c-tournaments--fixed:nth-of-type(even) {
-    margin-left: 0 !important;
   }
 }
 
@@ -3085,6 +3084,8 @@ ul {
   color: #fff;
   line-height: 3.4rem;
   text-transform: capitalize;
+  padding: 0.75rem;
+  border-top: 1px solid rgb(255, 255, 255);
 }
 
 .c-tor-header--master .c-tor-header__item {
@@ -3285,7 +3286,7 @@ ul {
 }
 @media (max-width: 47.99em) {
   .news_article_container {
-    height: 10rem;
+    height: 9rem;
   }
 }
 
@@ -3312,16 +3313,26 @@ ul {
 .news_article_image .news_article_image_background img {
   object-fit: cover;
   border-radius: 1rem;
+  height: 100%;
 }
 
 .news_article_main_text {
-  font-size: 1.5rem;
   font-weight: bold;
   width: 60%;
   display: flex;
   align-items: flex-start;
   flex-direction: column;
   padding: 2rem;
+}
+@media (min-width: 57em) {
+  .news_article_main_text {
+    font-size: 1.5rem;
+  }
+}
+@media (max-width: 47.99em) {
+  .news_article_main_text {
+    font-size: 1.1rem;
+  }
 }
 
 .news_article_title_container {
@@ -3336,7 +3347,7 @@ ul {
 }
 @media (max-width: 47.99em) {
   .news_article_title_container {
-    font-size: 1.5rem;
+    font-size: 1.3rem;
   }
 }
 
@@ -3922,6 +3933,37 @@ ul {
 
 .news_news_container {
   margin: 0 0 7rem 0;
+}
+
+.tournaments_grid {
+  display: grid;
+  gap: 3rem;
+  justify-content: center;
+  justify-items: center;
+}
+@media (min-width: 57em) {
+  .tournaments_grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 47.99em) {
+  .tournaments_grid {
+    grid-template-columns: repeat(1, 1fr);
+  }
+}
+
+.show_all_tournaments_container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  margin: 0rem;
+}
+.show_all_tournaments_container button {
+  background: rgba(255, 255, 255, 0);
+  border: none;
+  cursor: pointer;
+  font-size: 1.75rem;
 }
 
 /*# sourceMappingURL=styles.css.map */

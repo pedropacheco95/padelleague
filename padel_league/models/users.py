@@ -54,7 +54,6 @@ class User(db.Model , UserMixin, model.Model, model.Base):
             get_field(name='email', label='Email', type='Text', required=True),
             get_field(name='password', label='Password', type='Password', required=True),
             get_field(name='is_admin', label='Administrador?', type='Boolean'),
-            get_field(name='generated_code', label='Código Gerado', type='Integer'),
             get_field(name='player', label='Jogador Associado', type='ManyToOne', related_model='Player'),
         ]
         info_block = Block('info_block', fields)

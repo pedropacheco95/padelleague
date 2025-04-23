@@ -4,10 +4,8 @@
 .c-tournaments--fixed {
     display: block;
     width: 57.5rem;
-    height: 100%;
-    margin-bottom: 5rem;
     .c-tournaments__poster {
-        height: 33.2rem;
+        height: 100%;
         @include size-query(small) {
         display: none;
         }
@@ -56,6 +54,11 @@
     box-shadow: 0 0 0.6rem 0.1rem rgba(0, 0, 0, 0.1);
     z-index: 5;
     position: relative;
+    border-radius: 1rem;
+    overflow: hidden;
+    @include size-query(small) {
+        width: 90%;
+    }
     .c-tournaments__content {
         @include size-query(small) {
         width: 100%;

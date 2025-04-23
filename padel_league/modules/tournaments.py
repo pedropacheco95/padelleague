@@ -12,9 +12,20 @@ bp = Blueprint('tournaments', __name__,url_prefix='/tournaments')
 
 @bp.route('/', methods=('GET', 'POST'))
 def tournaments():
+    show_all = request.args.get('show_all') == 'true'
+
     divisions_to_play = Division.query.filter_by(has_ended=False).order_by(Division.end_date.desc()).all()
-    divisions_ended = Division.query.filter_by(has_ended=True).order_by(Division.end_date.desc()).all()
-    return render_template('tournaments/tournaments.html',divisions_to_play=divisions_to_play, divisions_ended=divisions_ended)
+    divisions_ended = []
+
+    if show_all:
+        divisions_ended = Division.query.filter_by(has_ended=True).order_by(Division.end_date.desc()).all()
+
+    return render_template(
+        'tournaments/tournaments.html',
+        divisions_to_play=divisions_to_play,
+        divisions_ended=divisions_ended,
+        show_all=show_all
+    )
 
 @bp.route('/<id>', methods=('GET', 'POST'))
 @bp.route('/<id>/<recalculate>', methods=('GET', 'POST'))

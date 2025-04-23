@@ -303,10 +303,12 @@ html {
 
 .l-container {
   display: flex;
-  margin: 4.5rem auto 0;
   max-width: 170rem;
+  @include size-query(largeUp) {
+    margin: 4.5rem auto 0;
+  }
   @include size-query(small) {
-    margin: 7rem 0.78rem 0.78rem !important;
+    margin: 9rem 0.78rem 0.78rem;
   }
   @include size-query(mediumUp) {
     margin-right: 1.7rem;
@@ -446,7 +448,6 @@ html {
   }
 }
 .c-tournaments__content {
-  margin-left: 0.5rem;
   width: 58%;
   height: 51.5rem;
   display: flex;
@@ -1213,14 +1214,7 @@ body:not(.t-tournaments) {
     padding-top: 2.5rem;
   }
 }
-.l-grid--flex:not(.l-grid--tickets) {
-  .c-tournaments--fixed:nth-of-type(even) {
-    margin-left: auto;
-    @include size-query(large) {
-      margin-left: 0 !important;
-    }
-  }
-}
+
 .previous_next_container {
   display: flex;
   justify-content: space-around;
@@ -2114,6 +2108,8 @@ ul {
   color: #fff;
   line-height: 3.4rem;
   text-transform: capitalize;
+  padding: 0.75rem;
+  border-top: 1px solid rgb(255 255 255 / 50)
 }
 .c-tor-header--master {
   .c-tor-header__item {
@@ -2300,7 +2296,7 @@ ul {
   justify-content: space-between;
   width: 100%;
   @include size-query(small) {
-    height: 10rem;
+    height: 9rem;
   }
 }
 .news_article_image {
@@ -2325,18 +2321,24 @@ ul {
     img {
       object-fit: cover;
       border-radius: 1rem;
+      height: 100%;
     }
   }
 }
 
 .news_article_main_text {
-  font-size: 1.5rem;
   font-weight: bold;
   width: 60%;
   display: flex;
   align-items: flex-start;
   flex-direction: column;
   padding: 2rem;
+  @include size-query(largeUp) {
+    font-size: 1.5rem;
+  }
+  @include size-query(small) {
+    font-size: 1.1rem;
+  }
 }
 .news_article_title_container {
   text-align: center;
@@ -2347,7 +2349,7 @@ ul {
     font-size: 2rem;
   }
   @include size-query(small) {
-    font-size: 1.5rem;
+    font-size: 1.3rem;
   }
 }
 .news_article_author_container {
@@ -2905,4 +2907,32 @@ ul {
 
 .news_news_container{
   margin: 0 0 7rem 0;
+}
+
+.tournaments_grid{
+  display: grid;
+  gap: 3rem;
+  justify-content: center;
+  justify-items: center;
+  @include size-query(largeUp) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  @include size-query(small) {
+    grid-template-columns: repeat(1, 1fr);
+  }
+}
+
+.show_all_tournaments_container{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  margin: 0rem;
+
+  button{
+    background: rgba(255, 255, 255, 0);
+    border: none;
+    cursor: pointer;
+    font-size: 1.75rem;
+  }
 }
