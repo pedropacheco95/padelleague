@@ -142,7 +142,13 @@
                 <div class="c-footer__section c-footer__sponsors">
                 <h4 class="c-footer__title">Patrocinadores</h4>
                 <div class="c-footer__sponsor-logos">
-                    <div class="c-footer__sponsor-logo"><img src="{{url_for('static',filename='images/sponsors/Quinta_da_Sardinha_BrancoNB.png')}}"></div>
+                    {% for sponsor in sponsors %}
+                    <a href="{{sponsor.url}}">
+                        <div class="c-footer__sponsor-logo" data-href="{{sponsor.url}}" onclick="linkToDatasetHref(this)">
+                            <img src="{{url_for('static', filename=sponsor.image_filename)}}" alt="{{sponsor.name}}">
+                        </div>
+                    </a>
+                    {% endfor %}
                 </div>
                 </div>
             

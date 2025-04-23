@@ -13,6 +13,8 @@ from .product_attribute_values import ProductAttributeValue
 from .orders import Order
 from .order_lines import OrderLine
 from .backend_apps import Backend_App
+from .sponsor import Sponsor
+from .sponsor_clicks import SponsorClick
 from .Association_PlayerDivision import Association_PlayerDivision
 from .Association_PlayerMatch import Association_PlayerMatch
 from .Association_ProductProductAttribute import Association_ProductProductAttribute

@@ -234,8 +234,6 @@ class Division(db.Model , model.Model , model.Base):
             get_field(name='rating',label='Rating',type='Float',required=False),
             get_field(name='has_ended',label='Já acabou?',type='Boolean',required=False),
             get_field(name='end_date',label='Data do final',type='Date',required=False),
-            get_field(name='number_of_teams_made',label='Numero de equipas feitas',type='Integer',required=False),
-            get_field(name='last_team',label='Últimas Equipas',type='Text',required=False),
             get_field(name='matches',label='Jogos',type='OneToMany',related_model='Match'),
             get_field(name='edition',label='Edição',type='ManyToOne',related_model='Edition'),
             get_field(name='players_relations',label='Jogadores (Relações)',type='OneToMany',related_model='Association_PlayerDivision'),

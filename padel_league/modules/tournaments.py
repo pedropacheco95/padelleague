@@ -14,11 +14,11 @@ bp = Blueprint('tournaments', __name__,url_prefix='/tournaments')
 def tournaments():
     show_all = request.args.get('show_all') == 'true'
 
-    divisions_to_play = Division.query.filter_by(has_ended=False).order_by(Division.end_date.desc()).all()
+    divisions_to_play = Division.query.filter_by(has_ended=False).order_by(Division.id.asc()).all()
     divisions_ended = []
 
     if show_all:
-        divisions_ended = Division.query.filter_by(has_ended=True).order_by(Division.end_date.desc()).all()
+        divisions_to_play = Division.query.filter_by(has_ended=True).order_by(Division.id.asc()).all()
 
     return render_template(
         'tournaments/tournaments.html',
