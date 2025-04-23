@@ -76,6 +76,7 @@ class Product(db.Model ,model.Model,model.Base):
             get_field(name='price', label='Preço', type='Float', required=True),
             get_field(name='small_description', label='Descrição Curta', type='Text'),
             get_field(name='big_description', label='Descrição Longa', type='Text'),
+            get_field(name='images', label='Descrição Longa', type='OneToMany'),
         ]
         info_block = Block('info_block', fields)
         form.add_block(info_block)
