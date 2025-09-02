@@ -16,7 +16,7 @@
                         {{element[column['field']]}}
                     </td>
                     {% endfor %}
-                    <td class="delete_cell" style="display: none;" onclick="event.stopPropagation();callAPI(this,true);" data-href="{{'{delete_url}/{id}'.format(delete_url=data['general_delete_url'],id=element['id'])}}"><img src="{{url_for('static',filename='images/delete.png')}}" class="delete_icon" alt="Delete Image"></td>
+                    <td class="delete_cell" style="display: none;" onclick="event.stopPropagation();callAPI(this,true);" data-href="{{'{delete_url}{id}'.format(delete_url=data['general_delete_url'],id=element['id'])}}"><img src="{{url_for('static',filename='images/delete.png')}}" class="delete_icon" alt="Delete Image"></td>
                 </tr>
             {% endfor%}
             {% if data['objects']|length == 0 %}

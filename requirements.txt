@@ -19,7 +19,7 @@ pyparsing==2.4.7
 pytest==6.2.4
 SQLAlchemy==1.4.20
 toml==0.10.2
-typing-extensions==3.10.0.0
+typing-extensions>=4.6,<5
 Werkzeug==2.0.1
 zipp==3.5.0
 flask_mail
