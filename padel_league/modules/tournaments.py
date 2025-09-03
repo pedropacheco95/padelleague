@@ -18,7 +18,7 @@ def tournaments():
     divisions_ended = []
 
     if show_all:
-        divisions_to_play = Division.query.filter_by(has_ended=True).order_by(Division.id.asc()).all()
+        divisions_to_play = Division.query.filter_by(has_ended=True).order_by(Division.id.desc()).all()
 
     return render_template(
         'tournaments/tournaments.html',

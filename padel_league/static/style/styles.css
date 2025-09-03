@@ -2568,6 +2568,18 @@ a:any-link {
     display: flex;
     justify-content: center;
   }
+  .player_tables_container .c-flex-table {
+    overflow-y: hidden !important;
+    overflow-x: scroll !important;
+    text-align: center;
+  }
+  .player_tables_container .c-flex-table__heading {
+    padding: 0 !important;
+    margin: 2.5rem !important;
+  }
+  .player_tables_container .c-flex-table__item {
+    justify-content: center;
+  }
 }
 
 #l-grid_as_title {
@@ -3961,6 +3973,7 @@ ul {
 }
 .show_all_tournaments_container button {
   background: rgba(255, 255, 255, 0);
+  color: #004F53;
   border: none;
   cursor: pointer;
   font-size: 1.75rem;
