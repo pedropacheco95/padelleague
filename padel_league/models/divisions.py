@@ -17,15 +17,28 @@ class Division(db.Model , model.Model , model.Base):
     beginning_datetime = Column(DateTime)
     rating = Column(Integer)
     end_date = Column(Date)
-    logo_image_path = Column(String(80))
-    large_picture_path = Column(String(80))
     has_ended = Column(Boolean,default=False)
     open_division = Column(Boolean,default=False)
     edition_id = Column(Integer, ForeignKey('editions.id'))
 
+    logo_image_id = Column(Integer, ForeignKey('images.id', ondelete='SET NULL'))
+    logo_image    = relationship('Image', foreign_keys=[logo_image_id])
+
+    large_picture_id = Column(Integer, ForeignKey('images.id', ondelete='SET NULL'))
+    large_picture    = relationship('Image', foreign_keys=[large_picture_id])
+    
     edition = relationship('Edition', back_populates="divisions")
     matches = relationship('Match', back_populates="division")
     players_relations = relationship('Association_PlayerDivision', back_populates="division")
+    
+    @property
+    def logo_image_path(self):
+        return self.logo_image.url() if self.logo_image else None
+    
+    @property
+    def logo_image_path(self):
+        return self.logo_image.url() if self.logo_image else None
+
 
     def create(self,vals=None):
         if vals:

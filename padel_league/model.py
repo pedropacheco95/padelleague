@@ -1,12 +1,17 @@
+import os
 from .sql_db import db
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import class_mapper
 from sqlalchemy.ext.hybrid import hybrid_property
 from flask import url_for
+from datetime import timedelta
+from google.cloud import storage
 
-from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, inspect
+from sqlalchemy import BigInteger, Column, Integer, String, ForeignKey, Boolean, inspect
 from sqlalchemy.orm import relationship
 
+GCS_BUCKET = os.environ.get("GCS_UPLOADS_BUCKET")
+PUBLIC_BASE = f"https://storage.googleapis.com/{GCS_BUCKET}"
 Base = declarative_base()
 
 class Model():
@@ -216,14 +221,19 @@ class Model():
     
     def get_model_names(self):
         return [obj.model_name for obj in self.all_tables_object().values() if hasattr(obj, 'model_name')]
-
+    
 class Image(db.Model, Base):
     __tablename__ = 'images'
-    id = Column(Integer, primary_key=True)
-    filename = Column(String)
-    imageable_id = Column(Integer, ForeignKey('imageables.imageable_id'))
-    imageable = relationship('Imageable', back_populates='images')
+    id           = Column(Integer, primary_key=True)
+    
+    object_key   = Column(String(512), nullable=False, unique=True)
+    content_type = Column(String(128))
+    size_bytes   = Column(BigInteger)
+    is_public    = Column(Boolean, default=True)
 
+    imageable_id = Column(Integer, ForeignKey('imageables.imageable_id', ondelete="CASCADE"))
+    imageable    = relationship('Imageable', back_populates='images', cascade="all")
+    
     def create(self):
         db.session.add(self)
         db.session.commit()
@@ -241,6 +251,20 @@ class Image(db.Model, Base):
     def save(self):
         db.session.commit()
         return True
+
+    def _blob(self):
+        return storage.Client().bucket(GCS_BUCKET).blob(self.object_key)
+
+    def public_url(self):
+        return f"{PUBLIC_BASE}/{self.object_key}"
+
+    def signed_url(self, minutes=5, method="GET"):
+        return self._blob().generate_signed_url(
+            version="v4", expiration=timedelta(minutes=minutes), method=method
+        )
+
+    def url(self):
+        return self.public_url() if self.is_public else self.signed_url()
 
 class Imageable(db.Model, Base):
     __tablename__ = 'imageables'
