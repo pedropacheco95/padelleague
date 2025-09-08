@@ -10,6 +10,9 @@ from flask_login import LoginManager
 from . import sql_db
 from . import modules
 from . import mail
+from . import cli
+from . import context
+
 
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
@@ -93,13 +96,11 @@ def create_app(test_config=None):
 
     app.login_manager = login_manager
     
-    with app.app_context():
-        sql_db.init_db(app)
+    sql_db.init_db(app)
+    cli.register_cli(app)
         
     @app.context_processor
     def inject_sponsors():
-        from padel_league.models import Sponsor
-        sponsors = Sponsor.query.all()
-        return {'sponsors': sponsors}
+        return context.inject_sponsors()
 
     return app
