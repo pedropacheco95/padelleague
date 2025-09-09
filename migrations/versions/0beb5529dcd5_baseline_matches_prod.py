@@ -1,8 +1,8 @@
-"""baseline
+"""baseline (matches prod)
 
-Revision ID: aef31198266a
+Revision ID: 0beb5529dcd5
 Revises: 
-Create Date: 2025-09-04 19:00:06.555017
+Create Date: 2025-09-09 19:10:51.576297
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'aef31198266a'
+revision = '0beb5529dcd5'
 down_revision = None
 branch_labels = None
 depends_on = None
