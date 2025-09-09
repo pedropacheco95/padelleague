@@ -45,8 +45,7 @@ def create_app(test_config=None):
         response.headers["Pragma"] = "no-cache"
         return response
 
-    @app.before_first_request
-    def before_first_request():
+    with app.app_context():
         modules.startup.add_to_session()
 
     # Configure session to use filesystem (instead of signed cookies)
