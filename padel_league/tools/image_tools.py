@@ -4,8 +4,12 @@ import os
 #import numpy as np
 
 
+from google.cloud import storage
 from flask import url_for , current_app
 import unidecode
+
+
+GCS_BUCKET = os.environ["GCS_UPLOADS_BUCKET"]
 
 #mp_drawing = mp.solutions.drawing_utils
 #mp_selfie_segmentation = mp.solutions.selfie_segmentation
@@ -25,14 +29,11 @@ import unidecode
         cv2.imwrite(path, output_image)
     return True """
 
-def save_file(file, filename):
-    filename = os.path.join('images',filename)
-    path = current_app.root_path + url_for('static', filename = filename)
-    file_exists = os.path.exists(path)
-    if not file_exists:
-        img_file = open(path,'wb')
-        img_file.close()
-    file.save(path)
+def save_file(file_storage, object_key) -> bool:
+    client = storage.Client()
+    bucket = client.bucket(GCS_BUCKET)
+    blob = bucket.blob(object_key)
+    blob.upload_from_file(file_storage.stream, content_type=getattr(file_storage, "mimetype", None))
     return True
 
 def file_handler(file):

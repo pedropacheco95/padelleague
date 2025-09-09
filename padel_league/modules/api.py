@@ -70,17 +70,36 @@ def delete_tournament(id):
     division.delete()
     return True
 
-@bp.route('/edit/<model>/<id>', methods=('GET', 'POST'))
-def edit(model,id):
-    if request.method == 'POST':
-        model = globals()[model]
-        obj = model.query.filter_by(id=id).first()
+@bp.route('/edit/<model>/<id>', methods=['POST'])
+def edit(model, id):
+    model_cls = globals().get(model)
+    if not model_cls:
+        return jsonify(success=False, error=f"Model {model} not found"), 404
+
+    obj = model_cls.query.filter_by(id=id).first()
+    if not obj:
+        return jsonify(success=False, error=f"{model} with id {id} not found"), 404
+    
+    methods = []
+    if request.is_json:
+        data = request.get_json() or {}
+        values = data.get("values", {})
+        methods = data.get("methods", [])
+    else:
         form = obj.get_edit_form()
         values = form.set_values(request)
+
+    if values:
         obj.update_with_dict(values)
         obj.save()
-        return jsonify(sucess=True)
-    return jsonify(sucess=False)
+
+    for method_name in methods:
+        if hasattr(obj, method_name):
+            getattr(obj, method_name)()
+        else:
+            return jsonify(success=False, error=f"Method {method_name} not found"), 400
+
+    return jsonify(success=True, id=obj.id)
 
 @bp.route('/delete/<model>/<id>', methods=('GET', 'POST'))
 def delete(model,id):

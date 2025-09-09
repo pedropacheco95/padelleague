@@ -62,36 +62,43 @@ class Field:
         }
     
     def set_picture_value(self, request):
-        now = datetime.now()
-        formatted = now.strftime("%Y%m%d%H%M%S")
-        file , name = image_tools.file_handler(request.files.getlist(self.name)[0]) if request.files.getlist(self.name) else None 
-        name = '{folder}/{added}_{name}'.format(folder=self.model,name=name,added=formatted)
-        if self.mandatory_path:
-            name = self.mandatory_path
-        saved = image_tools.save_file(file,name)
-        if saved:
-            self.value = name
+        fs_list = request.files.getlist(self.name)
+        fs = fs_list[0] if fs_list else None
+        if not fs:
+            return True
+
+        now = datetime.now().strftime("%Y%m%d%H%M%S")
+        file, base = image_tools.file_handler(fs)
+        object_key = self.mandatory_path or f"{self.model}/{now}_{base}"
+
+        if image_tools.save_file(file, object_key):
+            img = Image(
+                object_key=object_key,
+                content_type=getattr(file, "mimetype", None),
+                is_public=True
+            )
+            img.create()
+            self.value = img.id
         return True
-    
+
     def set_multiple_picture_value(self, request):
-        now = datetime.now()
-        formatted = now.strftime("%Y%m%d%H%M%S")
-        files = request.files.getlist(self.name) if request.files.getlist(self.name) else None
-        self.value = []
-        if files:
-            for i, file in enumerate(files):
-                image = Image()
-                file , name = image_tools.file_handler(file)
-                name = '{folder}/{added}_{index}_{name}'.format(folder=self.model,name=name,added=formatted,index=i)
-                if self.mandatory_path:
-                    name = self.mandatory_path
-                saved = image_tools.save_file(file,name)
-                if saved:
-                    image.filename = name
-                    image.create()
-                    self.value.append(image)
+        files = request.files.getlist(self.name) or []
+        now = datetime.now().strftime("%Y%m%d%H%M%S")
+        ids = []
+        for i, fs in enumerate(files):
+            file, base = image_tools.file_handler(fs)
+            object_key = self.mandatory_path or f"{self.model}/{now}_{i}_{base}"
+            if image_tools.save_file(file, object_key):
+                img = Image(
+                    object_key=object_key,
+                    content_type=getattr(file, "mimetype", None),
+                    is_public=True
+                )
+                img.create()
+                ids.append(img.id)
+        self.value = ids
         return True
-    
+        
     def set_relationship_value(self, request):
         self.value = [int(ele) for ele in request.form.getlist(self.name) if request.form.getlist(self.name)]
         return True
