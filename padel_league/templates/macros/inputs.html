@@ -180,7 +180,7 @@
         data-picture_name="{{picture_name}}" 
         class="dropzone">
 
-        <img id="{{picture_name}}" class="final_input_image" {% if value %} src="{{ url_for('static', filename='images/{value}'.format(value = value)) }}" {% endif %}>
+        <img id="{{picture_name}}" class="final_input_image" {% if value %} src="{{ url_for('api.image_by_id', image_id=value) }}" {% endif %}>
         <img class="rechose_image" src="{{ url_for('static', filename='images/add_image.png') }}" onclick="rechoseImage('selectedFileEditable_{{picture_name}}')">
         <div class="dropzone-desc-readonly"> {{label}} </div> 
     </div>
@@ -209,7 +209,7 @@
         
         {% if value %}
             {% for image in value.images %}
-                <img id="uploaded_image_{{image.id}}" class="final_input_image {% if loop.index > 1 %} inactive_image {% endif %}" src="{{ url_for('static', filename='images/{value}'.format(value = image.filename)) }}">
+                <img id="uploaded_image_{{image.id}}" class="final_input_image {% if loop.index > 1 %} inactive_image {% endif %}" src="{{ url_for('api.image_by_id', image_id=value) }}">
             {% endfor %}
         {% endif %}
         <img class="rechose_image" src="{{ url_for('static', filename='images/add_image.png') }}" onclick="rechoseImage('selectedFileEditable_{{picture_name}}')">
@@ -243,7 +243,7 @@
         data-picture_name="{{picture_name}}" 
         class="dropzone">
 
-        <img id="{{picture_name}}" class="final_input_image" {% if value %} src="{{ url_for('static', filename='images/{value}'.format(value = value)) }}" {% endif %}>
+        <img id="{{picture_name}}" class="final_input_image" {% if value %} src="{{ url_for('api.image_by_id', image_id=value) }}" {% endif %}>
         <img class="rechose_image" src="{{ url_for('static', filename='images/add_image.png') }}" onclick="rechoseImage('selectedFileEditable_{{picture_name}}')">
         <div class="dropzone-desc-readonly"> {{label}} </div> 
         <div class="image_galery" id="galery"></div>

@@ -7,6 +7,7 @@ from flask import Blueprint, render_template, request , flash , redirect , url_f
 
 from padel_league.models import Division , Player , Association_PlayerDivision , Match , Association_PlayerMatch , Edition
 from padel_league.tools import image_tools , tools
+from padel_league.model import Image
 
 bp = Blueprint('tournaments', __name__,url_prefix='/tournaments')
 
@@ -18,7 +19,7 @@ def tournaments():
     divisions_ended = []
 
     if show_all:
-        divisions_to_play = Division.query.filter_by(has_ended=True).order_by(Division.id.asc()).all()
+        divisions_to_play = Division.query.filter_by(has_ended=True).order_by(Division.id.desc()).all()
 
     return render_template(
         'tournaments/tournaments.html',
@@ -63,19 +64,32 @@ def create():
         if file.filename != '':
             image_name = name.replace(" ", "").lower()
             image_name = unidecode.unidecode(image_name)
-            image_name = '{image_name}.png'.format(image_name=image_name)
-            image_tools.save_file(file, image_name)
+            image_name = 'Division/{image_name}.png'.format(image_name=image_name)
+
+            if image_tools.save_file(file, image_name):
+                img = Image(
+                    object_key=image_name,
+                    content_type=getattr(file, "mimetype", None),
+                    is_public=True
+                )
+                img.create()
 
         file = large_picture[0]
         if file.filename != '':
             large_image_name = name.replace(" ", "").lower()
-            large_image_name = unidecode.unidecode(image_name)
-            large_image_name = '{image_name}.png'.format(image_name=image_name)
-            image_tools.save_file(file, large_image_name)
+            large_image_name = unidecode.unidecode(large_image_name)
+            large_image_name = 'Division/{image_name}_large_image.png'.format(image_name=image_name)
+            if image_tools.save_file(file, large_image_name):
+                large_img = Image(
+                    object_key=large_image_name,
+                    content_type=getattr(file, "mimetype", None),
+                    is_public=True
+                )
+                large_img.create()
 
         end_datetime = beggining_date + datetime.timedelta(days=7)
         end_date = end_datetime.date()
-        tournament = Division(name=name,beginning_datetime=beggining_date,end_date=end_date,logo_image_path=image_name,large_picture_path=large_image_name,rating = rating,edition_id=edition_id)
+        tournament = Division(name=name,beginning_datetime=beggining_date,end_date=end_date,logo_image_id=img.id,large_picture_id=large_img.id,rating = rating,edition_id=edition_id)
         tournament.create()
 
         for player_id in players_ids:

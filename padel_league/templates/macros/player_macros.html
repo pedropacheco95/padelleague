@@ -1,13 +1,11 @@
 {% macro player_card_cropped(player) %}
-{% set filename = 'images/players/' + player.picture_path %}
-{% set player_image = url_for('static',filename=filename)%}
+{% set player_image = player.picture_url %}
 <div class="c-player-card__img u-img-cropped u-img-cropped--blue" style="background-image: url({{player_image}})">
 </div>
 {% endmacro %}
 
 {% macro tiny_next_and_previous(player) %}
-{% set filename = 'images/players/' + player.picture_path %}
-{% set player_image = url_for('static',filename=filename)%}
+{% set player_image = player.picture_url %}
 <div class="u-img-cropped u-img-cropped--team" style="background-image: url({{player_image}})"></div>
 {% endmacro %}
 
@@ -37,8 +35,7 @@
 
 {% macro choose_player_line(player) %}
 <li class="c-player-card__item choose_player_line_container">
-    {% set filename ='images/players/' + player.picture_path %}
-    {% set player_image = url_for('static', filename=filename) %}
+    {% set player_image = player.picture_url %}
     <div class="c-trigger choose_player_line" data-player_id="{{player.id}}" data-player_name="{{player.name}}" data-player_image="{{player_image}}">
         <div class="c-player-card__header">
             <div class="c-player-card__details">

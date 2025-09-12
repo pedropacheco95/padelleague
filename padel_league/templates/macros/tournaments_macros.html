@@ -10,7 +10,7 @@
 
 {% macro tournament_index_card(tournament) %}
 <div class="tournament-card" onclick="linkToDatasetHref(this)" data-href="{{ url_for('tournaments.tournament', id=tournament.id) }}">
-    {% set tournament_image = url_for('static', filename='images/' + tournament.logo_image_path) %}
+    {% set tournament_image = tournament.logo_image_url %}
     <div class="tournament-card__background" style="background-image: url('{{ tournament_image }}');">
         <div class="tournament-card__content">
             <div class="tournament-card__tour">{{ tournament.edition.name }}</div>

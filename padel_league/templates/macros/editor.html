@@ -16,7 +16,7 @@
                         {{element[column['field']]}}
                     </td>
                     {% endfor %}
-                    <td class="delete_cell" style="display: none;" onclick="event.stopPropagation();callAPI(this,true);" data-href="{{'{delete_url}/{id}'.format(delete_url=data['general_delete_url'],id=element['id'])}}"><img src="{{url_for('static',filename='images/delete.png')}}" class="delete_icon" alt="Delete Image"></td>
+                    <td class="delete_cell" style="display: none;" onclick="event.stopPropagation();callAPI(this,true);" data-href="{{'{delete_url}{id}'.format(delete_url=data['general_delete_url'],id=element['id'])}}"><img src="{{url_for('static',filename='images/delete.png')}}" class="delete_icon" alt="Delete Image"></td>
                 </tr>
             {% endfor%}
             {% if data['objects']|length == 0 %}
@@ -204,9 +204,10 @@
     <div class="editor_objects_main_block">
         {% for block in data['form']['main'] %}
             {% if block['name'] == 'picture_block' %}
-                {% set field = block['fields'][0] %}
                 <div class="editor_objects_main_picture">
+                {% for field in block['fields'] %}
                     {{inputs.general_input(type=field['type'],label=field['label'],name=field['name'],options=field['options'],required=field['required'],value=field['value'], model=field['model'],related_model=field['related_model'],readonly=readonly)}}
+                {% endfor %}
                 </div>
             {% elif block['name'] == 'info_block' %}
                 <div class="editor_objects_main_block_info">

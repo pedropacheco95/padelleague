@@ -7,8 +7,7 @@
 <div class="l-grid">
     <div class="c-player">
         <div class="c-player__content">
-            {% set filename = 'images/' + player.large_picture_path %}
-            {% set player_large_image = url_for('static',filename=filename)%}
+            {% set player_large_image = player.large_picture_url %}
             <img class="c-player__img" src="{{player_large_image}}">
             <div class="c-player__prev">
                 {% set other_players = player.previous_and_next_player() %}
@@ -25,7 +24,7 @@
                     <div class="l-container_player l-container--data">
                         <div class="c-ranking-header__data-box">
                             <p class="c-ranking-header__data-title">Ranking</p>
-                            <p class="c-ranking-header__data">{{ player.ranking_position }}</p> 
+                            <p class="c-ranking-header__data">{{ player.ranking_position }}</p>
                         </div>
                         <div class="c-ranking-header__data-box">
                             <p class="c-ranking-header__data-title">Pontos</p>
@@ -53,15 +52,15 @@
         </div>
         <div class="c-player__footer">
             <div class="c-player__img-container">
-                {% set filename = 'images/players/' + player.picture_path %}
-                {% set player_image = url_for('static',filename=filename)%}
+                {% set player_image = player.picture_url %}
                 <div class="u-img-cropped" id="player_image_top" style="background-image: url({{player_image}});"></div>
             </div>
             <div class="l-container">
                 <ul class="c-player__data-list u-list-clean c-player__data-list--is-visible" id="personal_data_tab">
                     <li class="c-player__data-item">
                         <h3>Data de nascimento</h3>
-                        <p>{% if player.birthday %}{{player.birthday.strftime('%d/%m/%Y')}}{% else %}Não definido{% endif %}</p>
+                        <p>{% if player.birthday %}{{player.birthday.strftime('%d/%m/%Y')}}{% else %}Não definido{%
+                            endif %}</p>
                     </li>
                     <li class="c-player__data-item">
                         <h3>Altura</h3>
@@ -95,23 +94,29 @@
             {% set n_matches_drawn = player.matches_drawn()|length %}
             <div class="c-ranking-header__data-box">
                 <p class="c-ranking-header__data-title">Encontros jogados</p>
-                <p class="c-ranking-header__data"><a href="{{url_for('matches.player',player_id=player.id,type='played')}}">{{n_matches_played}}</a></p>
+                <p class="c-ranking-header__data"><a
+                        href="{{url_for('matches.player',player_id=player.id,type='played')}}">{{n_matches_played}}</a>
+                </p>
             </div>
             <div class="c-ranking-header__data-box">
                 <p class="c-ranking-header__data-title">Encontros ganhos</p>
-                <p class="c-ranking-header__data"><a href="{{url_for('matches.player',player_id=player.id,type='won')}}">{{n_matches_won}}</a></p>
+                <p class="c-ranking-header__data"><a
+                        href="{{url_for('matches.player',player_id=player.id,type='won')}}">{{n_matches_won}}</a></p>
             </div>
             <div class="c-ranking-header__data-box">
                 <p class="c-ranking-header__data-title">Encontros perdidos</p>
-                <p class="c-ranking-header__data"><a href="{{url_for('matches.player',player_id=player.id,type='lost')}}">{{n_matches_lost}}</a></p>
-            </div> 
+                <p class="c-ranking-header__data"><a
+                        href="{{url_for('matches.player',player_id=player.id,type='lost')}}">{{n_matches_lost}}</a></p>
+            </div>
             <div class="c-ranking-header__data-box">
                 <p class="c-ranking-header__data-title">Encontros empatados</p>
-                <p class="c-ranking-header__data"><a href="{{url_for('matches.player',player_id=player.id,type='drawn')}}">{{n_matches_drawn}}</a></p>
-            </div> 
+                <p class="c-ranking-header__data"><a
+                        href="{{url_for('matches.player',player_id=player.id,type='drawn')}}">{{n_matches_drawn}}</a>
+                </p>
+            </div>
             <div class="c-ranking-header__data-box">
                 <p class="c-ranking-header__data-title">Eficácia</p>
-                {% if n_league_matches_played %}
+                {% if n_matches_played %}
                 <p class="c-ranking-header__data">{{(n_matches_won / n_matches_played * 100)|round(2) }}%</p>
                 {% else %}
                 <p class="c-ranking-header__data">0%</p>
@@ -127,7 +132,7 @@
             <div class="c-ranking-header__data-box">
                 <p class="c-ranking-header__data-title">Torneios jogados</p>
                 <p class="c-ranking-header__data">{{n_tournaments_played}}</p>
-            </div> 
+            </div>
             <div class="c-ranking-header__data-box">
                 <p class="c-ranking-header__data-title">Jornadas jogadas</p>
                 {% if n_matches_played %}
@@ -135,7 +140,7 @@
                 {% else %}
                 <p class="c-ranking-header__data">0</p>
                 {% endif %}
-            </div> 
+            </div>
             <div class="c-ranking-header__data-box">
                 <p class="c-ranking-header__data-title">Jornadas Faltadas</p>
                 {% if n_matches_played and n_tournaments_played %}
@@ -143,7 +148,7 @@
                 {% else %}
                 <p class="c-ranking-header__data">0</p>
                 {% endif %}
-            </div> 
+            </div>
             <div class="c-ranking-header__data-box">
                 <p class="c-ranking-header__data-title">Jornadas por torneio</p>
                 {% if n_matches_played and n_tournaments_played %}
@@ -151,11 +156,12 @@
                 {% else %}
                 <p class="c-ranking-header__data">0</p>
                 {% endif %}
-            </div> 
+            </div>
             <div class="c-ranking-header__data-box">
                 <p class="c-ranking-header__data-title">Assiduidade</p>
                 {% if n_matches_played and n_tournaments_played %}
-                <p class="c-ranking-header__data">{{(n_matches_played/ (n_tournaments_played*3*7) * 100)|round(2) }}%</p>
+                <p class="c-ranking-header__data">{{(n_matches_played/ (n_tournaments_played*3*7) * 100)|round(2) }}%
+                </p>
                 {% else %}
                 <p class="c-ranking-header__data">0%</p>
                 {% endif %}
@@ -164,77 +170,100 @@
     </div>
 </div>
 <div class="l-grid player_tables_container">
+    {% set rels = player.divisions_relations | list %}
+    {% set ns = namespace(rows=[]) %}
+    {% for relation in rels %}
+    {% set d = relation.division %}
+    {% set last_game = d.end_date and d.end_date.strftime('%d/%m/%Y') or 'Não definido' %}
+    {% set won = player.matches_won(d) | length %}
+    {% set played = player.matches_played(d) | length %}
+    {% set place = relation.place or 'Por jogar' %}
+    {% set points = relation.compute_ranking_points() %}
+    {% set _ = ns.rows.append({
+    'division': d,
+    'last_game': last_game,
+    'won': won,
+    'played': played,
+    'place': place,
+    'points': points
+    }) %}
+    {% endfor %}
     <div class="c-flex-table c-flex-table--ranking c-flex-table--blue is-visible">
         <div class="c-flex-table__column">
             <div class="c-flex-table__heading">
                 <h3>Torneio</h3>
             </div>
             <ul class="c-flex-table__list u-list-clean">
-                {% for relation in player.divisions_relations %}
+                {% for row in ns.rows %}
                 <li class="c-flex-table__item">
-                    <a href="{{ url_for('tournaments.tournament',id=relation.division.id) }}">
-                        <span class="c-flex-table__item-title">{{relation.division.tournament_name()}}</span>
+                    <a href="{{ url_for('tournaments.tournament', id=row.division.id) }}">
+                        <span class="c-flex-table__item-title">{{ row.division.name }}</span>
                     </a>
                 </li>
                 {% endfor %}
             </ul>
         </div>
+
         <div class="c-flex-table__column">
             <div class="c-flex-table__heading">
                 <h3>Último jogo</h3>
             </div>
             <ul class="c-flex-table__list u-list-clean">
-                {% for relation in player.divisions_relations %}
+                {% for row in ns.rows %}
                 <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">{% if relation.division.end_date %}{{relation.division.end_date.strftime('%d/%m/%Y')}}{% else %}Não definido{% endif %}</span>
+                    <span class="c-flex-table__item-title">{{ row.last_game }}</span>
                 </li>
                 {% endfor %}
             </ul>
         </div>
+
         <div class="c-flex-table__column">
             <div class="c-flex-table__heading">
                 <h3>Encontros ganhos</h3>
             </div>
             <ul class="c-flex-table__list u-list-clean">
-                {% for relation in player.divisions_relations %}
+                {% for row in ns.rows %}
                 <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">{{player.matches_won(relation.division)|length}}</span>
+                    <span class="c-flex-table__item-title">{{ row.won }}</span>
                 </li>
                 {% endfor %}
             </ul>
         </div>
+
         <div class="c-flex-table__column">
             <div class="c-flex-table__heading">
                 <h3>Encontros jogados</h3>
             </div>
             <ul class="c-flex-table__list u-list-clean">
-                {% for relation in player.divisions_relations %}
+                {% for row in ns.rows %}
                 <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">{{player.matches_played(relation.division)|length}}</span>
+                    <span class="c-flex-table__item-title">{{ row.played }}</span>
                 </li>
                 {% endfor %}
             </ul>
         </div>
+
         <div class="c-flex-table__column">
             <div class="c-flex-table__heading">
                 <h3>Posição</h3>
             </div>
             <ul class="c-flex-table__list u-list-clean">
-                {% for relation in player.divisions_relations %}
+                {% for row in ns.rows %}
                 <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">{% if relation.place %}{{relation.place}}{% else %}Por jogar{% endif %}</span>
+                    <span class="c-flex-table__item-title">{{ row.place }}</span>
                 </li>
                 {% endfor %}
             </ul>
         </div>
+
         <div class="c-flex-table__column">
             <div class="c-flex-table__heading">
                 <h3>Pontos de Ranking</h3>
             </div>
             <ul class="c-flex-table__list u-list-clean">
-                {% for relation in player.divisions_relations %}
+                {% for row in ns.rows %}
                 <li class="c-flex-table__item">
-                    <span class="c-flex-table__item-title">{{relation.compute_ranking_points()}}</span>
+                    <span class="c-flex-table__item-title">{{ row.points }}</span>
                 </li>
                 {% endfor %}
             </ul>

@@ -10,6 +10,9 @@ from flask_login import LoginManager
 from . import sql_db
 from . import modules
 from . import mail
+from . import cli
+from . import context
+
 
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
@@ -17,9 +20,15 @@ def create_app(test_config=None):
     POSTGRES_USER = os.getenv('POSTGRES_USER', 'padel_user')
     POSTGRES_PW = os.getenv('POSTGRES_PW', 'portopadelleague')
     POSTGRES_DB = os.getenv('POSTGRES_DB', 'padel_league')
-    POSTGRES_HOST = os.getenv('POSTGRES_HOST', '172.17.0.1')
-    #POSTGRES_HOST = os.getenv('POSTGRES_HOST', '35.205.246.86')
     POSTGRES_PORT = os.getenv('POSTGRES_PORT', '5432')
+    
+    #Internal env to quickly connect (only for google instance to use)
+    POSTGRES_HOST = os.getenv('POSTGRES_HOST', '172.17.0.1')
+    #Public env (to connect locally)
+    #POSTGRES_HOST = os.getenv('POSTGRES_HOST', '35.205.246.86')
+    #Local host to connect to the local db
+    #POSTGRES_HOST = os.getenv('POSTGRES_HOST', 'localhost')
+    
     
     db_uri = f"postgresql://{POSTGRES_USER}:{POSTGRES_PW}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
     app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
@@ -36,8 +45,7 @@ def create_app(test_config=None):
         response.headers["Pragma"] = "no-cache"
         return response
 
-    @app.before_first_request
-    def before_first_request():
+    with app.app_context():
         modules.startup.add_to_session()
 
     # Configure session to use filesystem (instead of signed cookies)
@@ -87,13 +95,15 @@ def create_app(test_config=None):
 
     app.login_manager = login_manager
     
-    with app.app_context():
-        sql_db.init_db(app)
+    sql_db.init_db(app)
+    cli.register_cli(app)
         
     @app.context_processor
     def inject_sponsors():
-        from padel_league.models import Sponsor
-        sponsors = Sponsor.query.all()
-        return {'sponsors': sponsors}
+        return context.inject_sponsors()
+    
+    @app.teardown_appcontext
+    def shutdown_session(exception=None):
+        sql_db.db.session.remove()
 
     return app

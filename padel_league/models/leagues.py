@@ -4,7 +4,7 @@ from sqlalchemy import Column, Integer , String , Text, ForeignKey
 from sqlalchemy.orm import relationship
 from padel_league.tools.input_tools import Field, Block , Form
 
-class League(db.Model ,model.Model, model.Base):
+class League(db.Model ,model.Model):
     __tablename__ = 'leagues'
     __table_args__ = {'extend_existing': True}
     page_title = 'Ligas'

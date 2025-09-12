@@ -5,7 +5,7 @@ from sqlalchemy import Column, Integer, ForeignKey, String , Boolean
 from sqlalchemy.orm import relationship
 from padel_league.tools.input_tools import Field, Block , Form
 
-class Order(db.Model ,model.Model, model.Base):
+class Order(db.Model ,model.Model):
     __tablename__ = 'orders'
     __table_args__ = {'extend_existing': True}
     page_title = 'Encomendas'

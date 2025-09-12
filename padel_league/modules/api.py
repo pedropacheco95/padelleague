@@ -1,12 +1,14 @@
 import functools
 import json
 
-from flask import Blueprint, flash, g, redirect, render_template, request, jsonify, url_for
+from flask import Blueprint, flash, g, redirect, render_template, request, jsonify, url_for, abort
 from werkzeug.security import check_password_hash, generate_password_hash
 from sqlalchemy.orm import joinedload
 
 from padel_league.models import *
 from padel_league.tools import tools
+
+from padel_league.model import Image
 
 bp = Blueprint('api', __name__, url_prefix='/api')
 
@@ -70,17 +72,36 @@ def delete_tournament(id):
     division.delete()
     return True
 
-@bp.route('/edit/<model>/<id>', methods=('GET', 'POST'))
-def edit(model,id):
-    if request.method == 'POST':
-        model = globals()[model]
-        obj = model.query.filter_by(id=id).first()
+@bp.route('/edit/<model>/<id>', methods=['POST'])
+def edit(model, id):
+    model_cls = globals().get(model)
+    if not model_cls:
+        return jsonify(success=False, error=f"Model {model} not found"), 404
+
+    obj = model_cls.query.filter_by(id=id).first()
+    if not obj:
+        return jsonify(success=False, error=f"{model} with id {id} not found"), 404
+    
+    methods = []
+    if request.is_json:
+        data = request.get_json() or {}
+        values = data.get("values", {})
+        methods = data.get("methods", [])
+    else:
         form = obj.get_edit_form()
         values = form.set_values(request)
+
+    if values:
         obj.update_with_dict(values)
         obj.save()
-        return jsonify(sucess=True)
-    return jsonify(sucess=False)
+
+    for method_name in methods:
+        if hasattr(obj, method_name):
+            getattr(obj, method_name)()
+        else:
+            return jsonify(success=False, error=f"Method {method_name} not found"), 400
+
+    return jsonify(success=True, id=obj.id)
 
 @bp.route('/delete/<model>/<id>', methods=('GET', 'POST'))
 def delete(model,id):
@@ -154,3 +175,11 @@ def upload_csv_to_db(model):
     else:
         return jsonify(sucess=False)
 
+@bp.get("/image/<int:image_id>")
+def image_by_id(image_id):
+    img = Image.query.get(image_id)
+    if not img:
+        abort(404)
+    resp = redirect(img.url(), code=302)
+    resp.headers["Cache-Control"] = "public, max-age=86400"
+    return resp

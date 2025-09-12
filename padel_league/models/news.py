@@ -11,7 +11,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 #client = OpenAI()
 import re
 
-class News(db.Model , model.Model, model.Base):
+class News(db.Model , model.Model):
     __tablename__ = 'news'
     __table_args__ = {'extend_existing': True}
     page_title = 'Noticias'
@@ -19,11 +19,17 @@ class News(db.Model , model.Model, model.Base):
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     title = Column(String(80), unique=True, nullable=False)
-    cover_path = Column(String(80), default='default_news.jpg')
     author = Column(String(80))
     text = Column(Text, nullable=False)
     latest = Column(Boolean,default=False)
     
+    cover_image_id = Column(Integer, ForeignKey('images.id', ondelete='SET NULL'))
+    cover_image    = relationship('Image', foreign_keys=[cover_image_id])
+
+    @property
+    def cover_image_url(self):
+        return self.cover_image.url() if self.cover_image else None
+
     @hybrid_property
     def name(self):
         return f"{self.title}"
@@ -320,7 +326,7 @@ class News(db.Model , model.Model, model.Base):
         table_columns = [
             searchable_column,
             {'field': 'author', 'label': 'Autor'},
-            {'field': 'cover_path', 'label': 'Imagem de Capa'},
+            {'field': 'cover_image_id', 'label': 'Imagem de Capa'},
         ]
         return searchable_column, table_columns
 
@@ -338,10 +344,16 @@ class News(db.Model , model.Model, model.Base):
             )
 
         form = Form()
+        
+        # Create Image block
+        fields = [
+            get_field(name='cover_image_id',label='Imagem de Capa',type='Picture',required=False)
+        ]
+        picture_block = Block('picture_block',fields)
+        form.add_block(picture_block)
 
         fields = [
             get_field(name='title', label='Título', type='Text', required=True),
-            get_field(name='cover_path', label='Imagem de Capa', type='Text'),
             get_field(name='author', label='Autor', type='Text'),
             get_field(name='text', label='Texto', type='Text', required=True),
             get_field(name='latest', label='Latest', type='Boolean'),

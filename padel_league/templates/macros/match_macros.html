@@ -7,13 +7,13 @@
 
 {% if home_players[0] %}
     {% set home_players0_link = url_for('players.player',id=home_players[0].id) %}
-    {% set home_players0_picture_path = home_players[0].picture_path %}
+    {% set home_players0_picture_path = home_players[0].picture_url %}
     {% set home_players0_ranking_points = home_players[0].ranking_points|round|int %}
     {% set home_players0_full_name = home_players[0].full_name %}
     {% set home_players0_name = home_players[0].name %}
 {% else %}
     {% set home_players0_link = '#' %}
-    {% set home_players0_picture_path = 'player_black_background.png' %}
+    {% set home_players0_picture_path = url_for('static',filename='player_black_background.png') %}
     {% set home_players0_ranking_points = 0 %}
     {% set home_players0_full_name = 'Jogador substituto' %}
     {% set home_players0_name = 'Substituto' %}
@@ -21,13 +21,13 @@
 
 {% if home_players[1] %}
     {% set home_players1_link = url_for('players.player',id=home_players[1].id) %}
-    {% set home_players1_picture_path = home_players[1].picture_path %}
+    {% set home_players1_picture_path = home_players[1].picture_url %}
     {% set home_players1_ranking_points = home_players[1].ranking_points|round|int %}
     {% set home_players1_full_name = home_players[1].full_name %}
     {% set home_players1_name = home_players[1].name %}
 {% else %}
     {% set home_players1_link = '#' %}
-    {% set home_players1_picture_path = 'player_black_background.png' %}
+    {% set home_players1_picture_path = url_for('static',filename='player_black_background.png') %}
     {% set home_players1_ranking_points = 0 %}
     {% set home_players1_full_name = 'Jogador substituto' %}
     {% set home_players1_name = 'Substituto' %}
@@ -35,13 +35,13 @@
 
 {% if away_players[0] %}
     {% set away_players0_link = url_for('players.player',id=away_players[0].id) %}
-    {% set away_players0_picture_path = away_players[0].picture_path %}
+    {% set away_players0_picture_path = away_players[0].picture_url %}
     {% set away_players0_ranking_points = away_players[0].ranking_points|round|int %}
     {% set away_players0_full_name = away_players[0].full_name %}
     {% set away_players0_name = away_players[0].name %}
 {% else %}
     {% set away_players0_link = '#' %}
-    {% set away_players0_picture_path = 'player_black_background.png' %}
+    {% set away_players0_picture_path = url_for('static',filename='player_black_background.png') %}
     {% set away_players0_ranking_points = 0 %}
     {% set away_players0_full_name = 'Jogador substituto' %}
     {% set away_players0_name = 'Substituto' %}
@@ -49,13 +49,13 @@
 
 {% if away_players[1] %}
     {% set away_players1_link = url_for('players.player',id=away_players[1].id) %}
-    {% set away_players1_picture_path = away_players[1].picture_path %}
+    {% set away_players1_picture_path = away_players[1].picture_url %}
     {% set away_players1_ranking_points = away_players[1].ranking_points|round|int %}
     {% set away_players1_full_name = away_players[1].full_name %}
     {% set away_players1_name = away_players[1].name %}
 {% else %}
     {% set away_players1_link = '#' %}
-    {% set away_players1_picture_path = 'player_black_background.png' %}
+    {% set away_players1_picture_path = url_for('static',filename='player_black_background.png') %}
     {% set away_players1_ranking_points = 0 %}
     {% set away_players1_full_name = 'Jogador substituto' %}
     {% set away_players1_name = 'Substituto' %}
@@ -101,8 +101,7 @@
                     <div class="c-teams__container">
                         <div class="l-wrapper">
                             <a class="c-trigger" href="{{ home_players0_link }}">
-                                {% set filename = 'images/players/' + home_players0_picture_path %}
-                                {% set player_image = url_for('static',filename=filename)%}
+                                {% set player_image = home_players0_picture_path %}
                                 <div class="c-teams__img u-img-cropped u-img-cropped--team" style="background-image: url({{player_image}})"></div>
                             </a>
                         </div>
@@ -119,8 +118,7 @@
                         </div>
                         <div class="l-wrapper">
                             <a class="c-trigger" href="{{ home_players1_link }}">
-                                {% set filename = 'images/players/' + home_players1_picture_path %}
-                                {% set player_image = url_for('static',filename=filename)%}
+                                {% set player_image = home_players1_picture_path%}
                                 <div class="c-teams__img u-img-cropped u-img-cropped--team" style="background-image: url({{player_image}})"></div>
                             </a>
                         </div>
@@ -135,8 +133,7 @@
                     <div class="c-teams__container">
                         <div class="l-wrapper">
                             <a class="c-trigger" href="{{ away_players0_link }}">
-                                {% set filename = 'images/players/' + away_players0_picture_path %}
-                                {% set player_image = url_for('static',filename=filename)%}
+                                {% set player_image = away_players0_picture_path %}
                                 <div class="c-teams__img u-img-cropped u-img-cropped--team" style="background-image: url({{player_image}})"></div>
                             </a>
                         </div>
@@ -153,8 +150,7 @@
                         </div>
                         <div class="l-wrapper">
                             <a class="c-trigger" href="{{ away_players1_link }}">
-                                {% set filename = 'images/players/' + away_players1_picture_path %}
-                                {% set player_image = url_for('static',filename=filename)%}
+                                {% set player_image = away_players1_picture_path %}
                                 <div class="c-teams__img u-img-cropped u-img-cropped--team" style="background-image: url({{player_image}})"></div>
                             </a>
                         </div>
@@ -238,13 +234,13 @@
 
 {% if home_players[0] %}
     {% set home_players0_link = url_for('players.player',id=home_players[0].id) %}
-    {% set home_players0_picture_path = home_players[0].picture_path %}
+    {% set home_players0_picture_path = home_players[0].picture_url %}
     {% set home_players0_ranking_points = home_players[0].ranking_points|round|int %}
     {% set home_players0_full_name = home_players[0].full_name %}
     {% set home_players0_name = home_players[0].name %}
 {% else %}
     {% set home_players0_link = '#' %}
-    {% set home_players0_picture_path = 'player_black_background.png' %}
+    {% set home_players0_picture_path = url_for('static',filename='player_black_background.png') %}
     {% set home_players0_ranking_points = 0 %}
     {% set home_players0_full_name = 'Jogador substituto' %}
     {% set home_players0_name = 'Substituto' %}
@@ -252,13 +248,13 @@
 
 {% if home_players[1] %}
     {% set home_players1_link = url_for('players.player',id=home_players[1].id) %}
-    {% set home_players1_picture_path = home_players[1].picture_path %}
+    {% set home_players1_picture_path = home_players[1].picture_url %}
     {% set home_players1_ranking_points = home_players[1].ranking_points|round|int %}
     {% set home_players1_full_name = home_players[1].full_name %}
     {% set home_players1_name = home_players[1].name %}
 {% else %}
     {% set home_players1_link = '#' %}
-    {% set home_players1_picture_path = 'player_black_background.png' %}
+    {% set home_players1_picture_path = url_for('static',filename='player_black_background.png') %}
     {% set home_players1_ranking_points = 0 %}
     {% set home_players1_full_name = 'Jogador substituto' %}
     {% set home_players1_name = 'Substituto' %}
@@ -266,13 +262,13 @@
 
 {% if away_players[0] %}
     {% set away_players0_link = url_for('players.player',id=away_players[0].id) %}
-    {% set away_players0_picture_path = away_players[0].picture_path %}
+    {% set away_players0_picture_path = away_players[0].picture_url %}
     {% set away_players0_ranking_points = away_players[0].ranking_points|round|int %}
     {% set away_players0_full_name = away_players[0].full_name %}
     {% set away_players0_name = away_players[0].name %}
 {% else %}
     {% set away_players0_link = '#' %}
-    {% set away_players0_picture_path = 'player_black_background.png' %}
+    {% set away_players0_picture_path = url_for('static',filename='player_black_background.png') %}
     {% set away_players0_ranking_points = 0 %}
     {% set away_players0_full_name = 'Jogador substituto' %}
     {% set away_players0_name = 'Substituto' %}
@@ -280,13 +276,13 @@
 
 {% if away_players[1] %}
     {% set away_players1_link = url_for('players.player',id=away_players[1].id) %}
-    {% set away_players1_picture_path = away_players[1].picture_path %}
+    {% set away_players1_picture_path = away_players[1].picture_url %}
     {% set away_players1_ranking_points = away_players[1].ranking_points|round|int %}
     {% set away_players1_full_name = away_players[1].full_name %}
     {% set away_players1_name = away_players[1].name %}
 {% else %}
     {% set away_players1_link = '#' %}
-    {% set away_players1_picture_path = 'player_black_background.png' %}
+    {% set away_players1_picture_path = url_for('static',filename='player_black_background.png') %}
     {% set away_players1_ranking_points = 0 %}
     {% set away_players1_full_name = 'Jogador substituto' %}
     {% set away_players1_name = 'Substituto' %}
@@ -348,8 +344,7 @@
                     <div class="c-teams__container_for_edit">
                         <div class="l-wrapper">
                             <div class="eliminate_player" value="homeplayer0" id="player_button" onclick = "void(0)">
-                                {% set filename = 'images/players/' + home_players0_picture_path %}
-                                {% set player_image = url_for('static',filename=filename)%}
+                                {% set player_image = home_players0_picture_path %}
                                 <div class="c-teams__img u-img-cropped u-img-cropped--team" id="homeplayer0_image" style="background-image: url({{player_image}});"></div>
                             </div>
                         </div>
@@ -366,8 +361,7 @@
                         </div>
                         <div class="l-wrapper">
                             <div class="eliminate_player" value="homeplayer1" id="player_button" onclick = "void(0)">
-                                {% set filename = 'images/players/' + home_players1_picture_path %}
-                                {% set player_image = url_for('static',filename=filename)%}
+                                {% set player_image = home_players1_picture_path %}
                                 <div class="c-teams__img u-img-cropped u-img-cropped--team" id="homeplayer1_image" style="background-image: url({{player_image}});"></div>
                             </div>
                         </div>
@@ -382,8 +376,7 @@
                     <div class="c-teams__container_for_edit">
                         <div class="l-wrapper">
                             <div class="eliminate_player" value="awayplayer0" id="player_button" onclick = "void(0)">
-                                {% set filename = 'images/players/' + away_players0_picture_path %}
-                                {% set player_image = url_for('static',filename=filename)%}
+                                {% set player_image = away_players0_picture_path %}
                                 <div class="c-teams__img u-img-cropped u-img-cropped--team" id="awayplayer0_image" style="background-image: url({{player_image}});"></div>
                             </div>
                         </div>
@@ -400,8 +393,7 @@
                         </div>
                         <div class="l-wrapper">
                             <div class="eliminate_player" value="awayplayer1" id="player_button" onclick = "void(0)">
-                                {% set filename = 'images/players/' + away_players1_picture_path %}
-                                {% set player_image = url_for('static',filename=filename)%}
+                                {% set player_image = away_players1_picture_path %}
                                 <div class="c-teams__img u-img-cropped u-img-cropped--team" id="awayplayer1_image" style="background-image: url({{player_image}});"></div>
                             </div>
                         </div>
@@ -418,7 +410,7 @@
 
 {% macro create_match_card(division_id,players) %}
 
-{% set unknown_image = url_for('static',filename='images/players/default_player.jpg')%}
+{% set unknown_image = url_for('static',filename='images/Player/default_player.jpg')%}
 
 <script src="{{ url_for('static', filename='js/matches_create_match.js')}}" defer></script>
 <section class="c-tor-box c-tor-box--m">

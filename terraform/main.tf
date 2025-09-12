@@ -69,7 +69,7 @@ resource "google_compute_instance" "ppl" {
     apt update
     apt install -y docker.io
     systemctl start docker
-    docker run -d -p 80:80 your-dockerhub-user/porto-padel-league
+    docker run -d -p 80:80 pedropacheco95/porto-padel-league
   EOF
 
   tags = ["http-server", "https-server"]

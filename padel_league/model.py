@@ -1,15 +1,19 @@
+import os
 from .sql_db import db
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import class_mapper
 from sqlalchemy.ext.hybrid import hybrid_property
 from flask import url_for
+from datetime import timedelta
+from google.cloud import storage
 
-from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, inspect
+from sqlalchemy import BigInteger, Column, Integer, String, ForeignKey, Boolean, inspect
 from sqlalchemy.orm import relationship
 
-Base = declarative_base()
+GCS_BUCKET = os.environ.get("GCS_UPLOADS_BUCKET")
+PUBLIC_BASE = f"https://storage.googleapis.com/{GCS_BUCKET}"
 
-class Model():
+class Model:
 
     _name = None
     _description = None
@@ -84,50 +88,94 @@ class Model():
     def get_all_tables(self):
         return {table.__tablename__: db.session.query(table) for table in db.Model.__subclasses__()}
 
-    def update_with_dict(self,values):
+    def update_with_dict(self, values: dict, *, _replace_collections: set[str] = frozenset()) -> bool:
+        """
+        Update this instance from a values dict.
+
+        - Relationships are only updated when the incoming value is *truthy* (preserves your old semantics).
+        - MANYTOONE accepts an id, [id], or an instance.
+        - Collection rels (MANYTOMANY / ONETOMANY) append missing items (no removals).
+        Pass names in `_replace_collections` to replace instead of append.
+        - Columns: booleans set when changed; other columns set when non-None and changed.
+        """
         with db.session.no_autoflush:
-            relationships = class_mapper(type(self)).relationships
-            for key in values.keys():
-                if key in relationships.keys():
-                    if values[key]:
-                        relationship = relationships[key]
-                        relationship_type = relationship.direction.name
-                        if key == 'imageable':
-                            if values[key]:
-                                images = getattr(self, 'images')
-                                if images:
-                                    images.clear()
-                                for image in values[key]:
-                                    images.append(image)
-                        elif relationship_type == 'MANYTOONE':
-                            obj = self.get_related_object(key)
-                            related_id = values[key][0] if isinstance(values[key], list) else values[key]
-                            related_instance = obj.query.filter_by(id=related_id).first()
-                            #related_instance = self.get_related_object(key).query.filter_by(id=values[key]).first()
-                            if getattr(self,key) != related_instance:
-                                setattr(self,key,related_instance)
-                            if getattr(self,f'{key}_id') != related_instance.id:
-                                setattr(self,f'{key}_id',related_instance.id)
-                        elif relationship_type in ['MANYTOMANY','ONETOMANY']:
-                            obj = self.get_related_object(key)
-                            instances = obj.query.filter(obj.id.in_(values[key])).all()
-                            field = getattr(self,key)
-                            for instance in instances:
-                                if instance not in field:
-                                    field.append(instance)
-                elif isinstance(getattr(self,key),bool) and values[key] != getattr(self,key) :
-                    setattr(self,key,values[key])
+            mapper = inspect(self.__class__)
+            rel_map = {rel.key: rel for rel in class_mapper(type(self)).relationships}
 
-                elif values[key] is not None and values[key] != getattr(self,key):
-                    setattr(self,key,values[key])
+            for key, incoming in values.items():
+                if key in rel_map:
+                    if not incoming:
+                        continue
+                    self._apply_relationship(key, incoming, rel_map[key], mapper,
+                                            replace=(key in _replace_collections))
                 else:
-                    mapper = inspect(self.__class__)
-                    column = mapper.columns.get(key)
-                    #Deal with unset boolean values
-                    if column is not None and isinstance(column.type, Boolean) and values[key] != getattr(self, key):
-                        setattr(self,key,values[key])
-
+                    self._apply_column(key, incoming, mapper)
         return True
+
+    # ---------- helpers ----------
+
+    def _apply_relationship(self, key, incoming, relationship, mapper, *, replace: bool) -> None:
+        direction = relationship.direction.name  # 'MANYTOONE' | 'ONETOMANY' | 'MANYTOMANY'
+        if direction == 'MANYTOONE':
+            self._apply_many_to_one(key, incoming, relationship, mapper)
+        elif direction in ('MANYTOMANY', 'ONETOMANY'):
+            self._apply_collection(key, incoming, relationship, replace=replace)
+
+    def _resolve_instance(self, relationship, incoming):
+        """Return ORM instance from id/[id]/instance; None if not found."""
+        if hasattr(incoming, '__mapper__'):
+            return incoming
+        if isinstance(incoming, (list, tuple)):
+            incoming = incoming[0] if incoming else None
+        if incoming is None:
+            return None
+        cls = relationship.mapper.class_
+        return cls.query.filter_by(id=incoming).first()
+
+    def _apply_many_to_one(self, key, incoming, relationship, mapper) -> None:
+        inst = self._resolve_instance(relationship, incoming)
+        if inst is None:
+            return
+        if getattr(self, key) is not inst:
+            setattr(self, key, inst)
+
+        fk_attr = f"{key}_id"
+        if mapper.columns.get(fk_attr) is not None:
+            if getattr(self, fk_attr, None) != getattr(inst, 'id', None):
+                setattr(self, fk_attr, getattr(inst, 'id', None))
+
+    def _apply_collection(self, key, incoming, relationship, *, replace: bool) -> None:
+        cls = relationship.mapper.class_
+        if incoming and hasattr(incoming[0], '__mapper__'):
+            instances = list(incoming)
+        else:
+            ids = list(incoming) if isinstance(incoming, (list, tuple)) else [incoming]
+            instances = cls.query.filter(cls.id.in_(ids)).all()
+
+        coll = getattr(self, key)
+        if replace:
+            coll.clear()
+            coll.extend(instances)
+            return
+
+        existing = set(coll)
+        for inst in instances:
+            if inst not in existing:
+                coll.append(inst)
+
+    def _apply_column(self, key, incoming, mapper) -> None:
+        column = mapper.columns.get(key)
+        if column is None:
+            return
+
+        current = getattr(self, key)
+        if isinstance(column.type, Boolean):
+            if incoming != current:
+                setattr(self, key, incoming)
+            return
+
+        if incoming is not None and incoming != current:
+            setattr(self, key, incoming)
 
     def get_related_object(self,field_name):
         return getattr(self.__class__, field_name).property.mapper.entity
@@ -216,14 +264,19 @@ class Model():
     
     def get_model_names(self):
         return [obj.model_name for obj in self.all_tables_object().values() if hasattr(obj, 'model_name')]
-
-class Image(db.Model, Base):
+    
+class Image(db.Model):
     __tablename__ = 'images'
-    id = Column(Integer, primary_key=True)
-    filename = Column(String)
-    imageable_id = Column(Integer, ForeignKey('imageables.imageable_id'))
-    imageable = relationship('Imageable', back_populates='images')
+    id           = Column(Integer, primary_key=True)
+    
+    object_key   = Column(String(512), nullable=False, unique=True)
+    content_type = Column(String(128))
+    size_bytes   = Column(BigInteger)
+    is_public    = Column(Boolean, nullable=False, default=True)
 
+    imageable_id = Column(Integer, ForeignKey('imageables.imageable_id', ondelete="CASCADE"))
+    imageable    = relationship('Imageable', back_populates='images', cascade="all")
+    
     def create(self):
         db.session.add(self)
         db.session.commit()
@@ -242,7 +295,21 @@ class Image(db.Model, Base):
         db.session.commit()
         return True
 
-class Imageable(db.Model, Base):
+    def _blob(self):
+        return storage.Client().bucket(GCS_BUCKET).blob(self.object_key)
+
+    def public_url(self):
+        return f"{PUBLIC_BASE}/{self.object_key}"
+
+    def signed_url(self, minutes=5, method="GET"):
+        return self._blob().generate_signed_url(
+            version="v4", expiration=timedelta(minutes=minutes), method=method
+        )
+
+    def url(self):
+        return self.public_url() if self.is_public else self.signed_url()
+
+class Imageable(db.Model):
     __tablename__ = 'imageables'
     imageable_id = Column(Integer, primary_key=True)
     type = Column(String(50))

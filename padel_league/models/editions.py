@@ -5,7 +5,7 @@ from sqlalchemy.orm import relationship
 from padel_league.tools.input_tools import Field, Block , Form
 
 
-class Edition(db.Model ,model.Model , model.Base):
+class Edition(db.Model ,model.Model ):
     __tablename__ = 'editions'
     __table_args__ = {'extend_existing': True}
     page_title = 'Edições'

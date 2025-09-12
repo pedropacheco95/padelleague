@@ -16,9 +16,8 @@
 
 {% macro main_news_card(news) %}
     <article class="main_news_article" data-href="{{url_for('news.news',news_id=news.id)}}" onclick="linkToDatasetHref(this)">
-        {% set image_background = news.cover_path %}
         <div class="dark_overlay"></div>
-        <img src="{{ url_for('static', filename=image_background)}}" alt="">
+        <img src="{{ news.cover_image_url }}" alt="">
         <div class="main_news_article_title">
             <div class="main_news_article_title_container">
                 <a href="{{url_for('news.news',news_id=news.id)}}">
@@ -34,10 +33,9 @@
     <article class="news_article" data-href="{{url_for('news.news',news_id=news.id)}}" onclick="linkToDatasetHref(this)">
         <div class="news_article_container">
             <div class="news_article_image">
-                {% set image_background = news.cover_path %}
                 <div class="news_article_image_background">
                     <a href="{{url_for('news.news',news_id=news.id)}}">
-                        <img src="{{ url_for('static', filename=image_background)}}" alt="">
+                        <img src="{{ news.cover_image_url }}" alt="">
                     </a> 
                 </div> 
             </div> 
