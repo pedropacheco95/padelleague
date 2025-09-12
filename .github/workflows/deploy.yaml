@@ -43,7 +43,7 @@ jobs:
         username: ${{ secrets.GCE_USER }}
         key: ${{ secrets.GCE_SSH_PRIVATE_KEY }}
         source: ".env.prod"
-        target: "/home/${{ secrets.GCE_USER }}/.env.prod"
+        target: "/home/${{ secrets.GCE_USER }}/"
 
     - name: Deploy on GCE
       uses: appleboy/ssh-action@v1.0.0
