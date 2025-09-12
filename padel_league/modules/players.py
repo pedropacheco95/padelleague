@@ -7,6 +7,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from padel_league.models import League , Player
 from padel_league.tools import image_tools
+from padel_league.model import Image
 
 bp = Blueprint('players', __name__,url_prefix='/players')
 
@@ -61,13 +62,18 @@ def edit(id):
                     image_name = str(player.name).replace(" ", "").lower()
                     image_name = unidecode.unidecode(image_name)
                     image_name = '{image_name}_{player_id}.png'.format(image_name=image_name,player_id=player.id)
-
-                    filename = os.path.join('players',image_name)
-
-                    image_tools.save_file(file, filename)
+                    
+                    filename = os.path.join('Player',image_name)
+                    
+                    if image_tools.save_file(file, filename):
+                        img = Image(
+                            object_key=filename,
+                            content_type=getattr(file, "mimetype", None),
+                            is_public=True
+                        )
+                        img.create()
+                        player.picture_id = img.id
                     #image_tools.remove_background(filename)
-
-                    player.picture_path = image_name
                     player.save()
         return redirect(url_for('players.player',id = player.id))
 

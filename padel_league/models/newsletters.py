@@ -6,7 +6,7 @@ from padel_league.tools.input_tools import Field, Block , Form
 from sqlalchemy.ext.hybrid import hybrid_property
 
 
-class Newsletter(db.Model, model.Model, model.Base):
+class Newsletter(db.Model, model.Model):
     __tablename__ = 'newsletters'
     __table_args__ = {'extend_existing': True}
     page_title = 'Newsletters'
@@ -15,7 +15,13 @@ class Newsletter(db.Model, model.Model, model.Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     title = Column(String(120), unique=True, nullable=False)
     date = Column(Date, nullable=False)
-    image_path = Column(String(120), default='Newsletters/default_newsletter.jpg')
+    
+    image_id = Column(Integer, ForeignKey('images.id', ondelete='SET NULL'))
+    image    = relationship('Image', foreign_keys=[image_id])
+
+    @property
+    def image_url(self):
+        return self.image.url() if self.image else None
     
     @hybrid_property
     def name(self):

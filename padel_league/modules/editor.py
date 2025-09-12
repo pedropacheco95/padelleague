@@ -15,7 +15,7 @@ def before_request():
 @bp.route('/', methods=('GET', 'POST'))
 def index():
     apps = Backend_App.query.all()
-    apps = [app.get_dict() for app in apps] 
+    #apps = [app.get_dict() for app in apps] 
     return render_template('editor/index.html',page='editor_index',apps=apps)
 
 @bp.route('/display/<model>', methods=('GET', 'POST'))

@@ -12,13 +12,13 @@
             <div class="c-tournaments c-tournaments--new c-tournaments--fixed tournament__container" onclick="linkToDatasetHref(this)" data-href="{{ url_for('tournaments.tournament',id=tournament.id) }}">
                 <div class="c-tournaments__container"> 
                     <div class="c-tournaments__poster">
-                        {% set tournament_image = url_for('static',filename='images/' + tournament.logo_image_path) %}
+                        {% set tournament_image = tournament.logo_image_url %}
                         <div class="c-tournaments__img c-tournaments__img--bg" style="background-image: url({{tournament_image}});"> 
                         </div> 
                     </div> 
                     <div class="c-tournaments__content"> 
                         <header class="c-tournaments__top-card"> 
-                            {% set city_image = url_for('static',filename='images/' + tournament.large_picture_path) %}
+                            {% set city_image = tournament.large_picture_url %}
                             <div class="c-tournaments__header" style="background:url({{city_image}});"> 
                             </div> 
                             <p class="c-tournaments__date">
@@ -50,13 +50,13 @@
             <div class="c-tournaments c-tournaments--new c-tournaments--fixed tournament__container" onclick="linkToDatasetHref(this)" data-href="{{ url_for('tournaments.tournament',id=tournament.id) }}"> 
                 <div class="c-tournaments__container"> 
                     <div class="c-tournaments__poster">
-                        {% set tournament_image = url_for('static',filename='images/' + tournament.logo_image_path) %}
+                        {% set tournament_image = tournament.logo_image_url %}
                         <div class="c-tournaments__img c-tournaments__img--bg" style="background-image: url({{tournament_image}});"> 
                         </div> 
                     </div> 
                     <div class="c-tournaments__content"> 
                         <header class="c-tournaments__top-card"> 
-                            {% set city_image = url_for('static',filename='images/' + tournament.large_picture_path) %}
+                            {% set city_image = tournament.large_picture_url %}
                             <div class="c-tournaments__header" style="background:url({{city_image}});"> 
                             </div> 
                             <p class="c-tournaments__date">

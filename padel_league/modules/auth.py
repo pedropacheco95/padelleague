@@ -11,6 +11,7 @@ from flask_login import login_user, logout_user, login_required
 
 from padel_league.models import User , Player , Order , Association_PlayerDivision , Division
 from padel_league.tools import image_tools , email_tools, auth_tools
+from padel_league.model import Image
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -66,12 +67,17 @@ def register():
                     image_name = unidecode.unidecode(image_name)
                     image_name = '{image_name}_{player_id}.png'.format(image_name=image_name,player_id=player.id)
 
-                    filename = os.path.join('players',image_name)
-
-                    image_tools.save_file(file, filename)
+                    filename = os.path.join('Player',image_name)
+                    
+                    if image_tools.save_file(file, filename):
+                        img = Image(
+                            object_key=filename,
+                            content_type=getattr(file, "mimetype", None),
+                            is_public=True
+                        )
+                        img.create()
+                        player.picture_id = img.id
                     #image_tools.remove_background(filename)
-
-                    player.picture_path = image_name
                     player.save()
             user = User(username=username, email=email , password= password, player_id=player.id)
             user.create()

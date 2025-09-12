@@ -5,7 +5,7 @@ from sqlalchemy.orm import relationship
 import json
 from padel_league.tools.input_tools import Field, Block , Form
 
-class Product(db.Model ,model.Model,model.Base):
+class Product(db.Model ,model.Model):
     __tablename__ = 'products'
     __table_args__ = {'extend_existing': True}
     page_title = 'Produtos'

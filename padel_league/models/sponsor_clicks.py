@@ -4,7 +4,7 @@ from sqlalchemy import Column, Integer, ForeignKey, DateTime, String, Text
 from sqlalchemy.orm import relationship
 from datetime import datetime
 
-class SponsorClick(db.Model, model.Model, model.Base):
+class SponsorClick(db.Model, model.Model):
     __tablename__ = 'sponsor_clicks'
     __table_args__ = {'extend_existing': True}
 

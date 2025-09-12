@@ -18,12 +18,11 @@ def register_cli(app):
                     password=generate_password_hash(admin_password),
                     is_admin=True,
                 )
-                db.session.add(admin)
+                admin.create()
 
             apps_app = Backend_App.query.filter_by(name='Aplicações').first()
             if not apps_app:
                 apps_app = Backend_App(name='Aplicações', app_model_name='Backend_App')
-                db.session.add(apps_app)
+                apps_app.create()
 
-            db.session.commit()
             click.echo("Seeding done.")

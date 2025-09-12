@@ -7,7 +7,7 @@ from sqlalchemy.orm import relationship
 from flask import session , url_for
 from padel_league.tools.input_tools import Field, Block , Form
 
-class Player(db.Model ,model.Model, model.Base):
+class Player(db.Model ,model.Model):
     __tablename__ = 'players'
     __table_args__ = {'extend_existing': True}
     page_title = 'Jogadores'
@@ -17,13 +17,25 @@ class Player(db.Model ,model.Model, model.Base):
     name = Column(String(80), unique=True, nullable=False)
     full_name =  Column(Text, unique=True)
     birthday = Column(Date)
-    picture_path = Column(String(80), default='default_player.jpg')
-    large_picture_path = Column(String(80), default='large_pic_default.jpg')
     ranking_points = Column(Integer, default=0)
     ranking_position = Column(Integer, default=0)
     height = Column(Float,default=1.75)
     prefered_hand = Column(Enum('Direita', 'Esquerda', name='prefered_hand_enum'), server_default='Direita')
     prefered_position = Column(Enum('Lado direito', 'Lado esquerdo', 'Tanto faz', name='prefered_position_enum'), server_default='Tanto faz')
+    
+    picture_id = Column(Integer, ForeignKey('images.id', ondelete='SET NULL'))
+    picture    = relationship('Image', foreign_keys=[picture_id])
+
+    large_picture_id = Column(Integer, ForeignKey('images.id', ondelete='SET NULL'))
+    large_picture    = relationship('Image', foreign_keys=[large_picture_id])
+    
+    @property
+    def picture_url(self):
+        return self.picture.url() if self.picture else None
+    
+    @property
+    def large_picture_url(self):
+        return self.large_picture.url() if self.logo_image else None
 
 
     user = relationship('User',back_populates='player', uselist=False)
@@ -148,7 +160,7 @@ class Player(db.Model ,model.Model, model.Base):
 
 
     def get_create_form(self):
-        def get_field(name, label, type, required=False, related_model=None):
+        def get_field(name, label, type, required=False, related_model=None, options=None):
             return Field(
                 instance_id=self.id,
                 model=self.model_name,
@@ -156,23 +168,30 @@ class Player(db.Model ,model.Model, model.Base):
                 label=label,
                 type=type,
                 required=required,
-                related_model=related_model
+                related_model=related_model,
+                options=options
             )
 
         form = Form()
+        
+        # Create Image block
+        fields = [
+            get_field(name='picture_id',label='Imagem',type='Picture',required=False)
+        ]
+        picture_block = Block('picture_block',fields)
+        form.add_block(picture_block)
 
         fields = [
             get_field(name='name', label='Nome', type='Text', required=True),
             get_field(name='full_name', label='Nome Completo', type='Text'),
             get_field(name='birthday', label='Data de Nascimento', type='Date'),
-            get_field(name='picture_path', label='Foto (pequena)', type='Text'),
-            get_field(name='large_picture_path', label='Foto (grande)', type='Text'),
             get_field(name='ranking_points', label='Pontos Ranking', type='Integer'),
             get_field(name='ranking_position', label='Posição Ranking', type='Integer'),
             get_field(name='height', label='Altura', type='Float'),
-            get_field(name='prefered_hand', label='Mão Preferida', type='Select'),
-            get_field(name='prefered_position', label='Posição Preferida', type='Select'),
+            get_field(name='prefered_hand', label='Mão Preferida', type='Select', options=['Direita', 'Esquerda']),
+            get_field(name='prefered_position', label='Posição Preferida', type='Select', options=['Lado direito', 'Lado esquerdo', 'Tanto faz']),
         ]
+    
         info_block = Block('info_block', fields)
         form.add_block(info_block)
 

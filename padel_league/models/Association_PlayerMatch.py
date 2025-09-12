@@ -5,7 +5,7 @@ from sqlalchemy.orm import relationship
 from padel_league.tools.input_tools import Field, Block , Form
 from sqlalchemy.ext.hybrid import hybrid_property
 
-class Association_PlayerMatch(db.Model ,model.Model, model.Base):
+class Association_PlayerMatch(db.Model ,model.Model):
     __tablename__ = 'players_in_match'
     __table_args__ = {'extend_existing': True}
     page_title = 'Relação de Jogador Jogo'

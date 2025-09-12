@@ -3,7 +3,7 @@ from padel_league.sql_db import db
 from sqlalchemy import Column, Integer, ForeignKey, Float
 from sqlalchemy.orm import relationship 
 
-class Registration(db.Model ,model.Model , model.Base):
+class Registration(db.Model ,model.Model ):
     __tablename__ = 'registrations'
     __table_args__ = {'extend_existing': True}
     page_title = 'Registos'

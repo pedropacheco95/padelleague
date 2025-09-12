@@ -4,7 +4,7 @@ from sqlalchemy import Column, Integer , Text ,ForeignKey
 from sqlalchemy.orm import relationship
 from padel_league.tools.input_tools import Field, Block , Form
 
-class ProductImage(db.Model ,model.Model,model.Base):
+class ProductImage(db.Model ,model.Model):
     __tablename__ = 'product_images'
     __table_args__ = {'extend_existing': True}
     page_title = 'Images de Produto'

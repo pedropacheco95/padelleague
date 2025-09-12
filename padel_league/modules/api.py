@@ -1,12 +1,14 @@
 import functools
 import json
 
-from flask import Blueprint, flash, g, redirect, render_template, request, jsonify, url_for
+from flask import Blueprint, flash, g, redirect, render_template, request, jsonify, url_for, abort
 from werkzeug.security import check_password_hash, generate_password_hash
 from sqlalchemy.orm import joinedload
 
 from padel_league.models import *
 from padel_league.tools import tools
+
+from padel_league.model import Image
 
 bp = Blueprint('api', __name__, url_prefix='/api')
 
@@ -173,3 +175,11 @@ def upload_csv_to_db(model):
     else:
         return jsonify(sucess=False)
 
+@bp.get("/image/<int:image_id>")
+def image_by_id(image_id):
+    img = Image.query.get(image_id)
+    if not img:
+        abort(404)
+    resp = redirect(img.url(), code=302)
+    resp.headers["Cache-Control"] = "public, max-age=86400"
+    return resp

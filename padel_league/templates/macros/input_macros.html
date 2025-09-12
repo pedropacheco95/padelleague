@@ -3,12 +3,7 @@
 <script src="{{ url_for('static', filename='js/modal.js')}}" defer></script>
 <script src="{{ url_for('static', filename='js/upload_image.js')}}" defer></script>
 <button class="disp-none" id="modalActivation" type="button"></button>
-{% if player %}
-{% set filename = 'images/players/' + player.picture_path %}
-{% set picture = url_for('static',filename=filename)%}
-{% else %}
-{% set picture = url_for('static',filename='images/players/default_player.jpg') %}
-{% endif %}
+{% set picture = player.picture_url %}
 <div class='container-form'>
     <input id='selectedFile' class="disp-none" type='file'>
     <img class="u-img-cropped-input u-img-cropped--blue" src="{{picture}}" id="upload-aphoto">

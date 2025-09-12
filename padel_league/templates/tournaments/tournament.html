@@ -34,7 +34,7 @@
 <div class="c-tor-header c-tor-header--master">
     <div class="c-tor-header__img-container">
         <div class="c-trigger">
-            <img class="c-tor-header__poster" src="{{url_for('static',filename='images/' + tournament.logo_image_path)}}" alt="Tournament">
+            <img class="c-tor-header__poster" src="{{ tournament.logo_image_url }}" alt="Tournament">
         </div>
     </div>
     <div class="c-tor-header__content">
@@ -87,8 +87,7 @@
                     <td name="position">{{tournament.player_position(player)}}</td>
                     <td name="image">
                         <a class="c-trigger" href="{{ url_for('players.player',id=player.id) }}">
-                            {% set filename = 'images/players/' + player.picture_path %}
-                            {% set player_image = url_for('static',filename=filename)%}
+                            {% set player_image = player.picture_url %}
                             <div class="c-teams__img u-img-cropped u-img-cropped--classification" style="background-image: url({{player_image}})"></div>
                         </a>
                     </td>

@@ -109,7 +109,7 @@ class Field:
             'DateTime': tools.str_to_datetime,
         }
 
-        if self.name in request.form:
+        if self.name in request.form and request.form[self.name]:
             input_value = request.form[self.name]
             self.value = format[self.type](input_value)
             return True

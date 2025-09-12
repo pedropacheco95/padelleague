@@ -6,7 +6,7 @@ from padel_league.tools.input_tools import Field, Block , Form
 
 from flask_login import UserMixin
 
-class User(db.Model , UserMixin, model.Model, model.Base):
+class User(db.Model , UserMixin, model.Model):
     __tablename__ = 'users'
     __table_args__ = {'extend_existing': True}
     page_title = 'Users'

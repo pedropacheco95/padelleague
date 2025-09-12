@@ -12,9 +12,8 @@ from sqlalchemy.orm import relationship
 
 GCS_BUCKET = os.environ.get("GCS_UPLOADS_BUCKET")
 PUBLIC_BASE = f"https://storage.googleapis.com/{GCS_BUCKET}"
-Base = declarative_base()
 
-class Model():
+class Model:
 
     _name = None
     _description = None
@@ -266,14 +265,14 @@ class Model():
     def get_model_names(self):
         return [obj.model_name for obj in self.all_tables_object().values() if hasattr(obj, 'model_name')]
     
-class Image(db.Model, Base):
+class Image(db.Model):
     __tablename__ = 'images'
     id           = Column(Integer, primary_key=True)
     
     object_key   = Column(String(512), nullable=False, unique=True)
     content_type = Column(String(128))
     size_bytes   = Column(BigInteger)
-    is_public    = Column(Boolean, default=True)
+    is_public    = Column(Boolean, nullable=False, default=True)
 
     imageable_id = Column(Integer, ForeignKey('imageables.imageable_id', ondelete="CASCADE"))
     imageable    = relationship('Imageable', back_populates='images', cascade="all")
@@ -310,7 +309,7 @@ class Image(db.Model, Base):
     def url(self):
         return self.public_url() if self.is_public else self.signed_url()
 
-class Imageable(db.Model, Base):
+class Imageable(db.Model):
     __tablename__ = 'imageables'
     imageable_id = Column(Integer, primary_key=True)
     type = Column(String(50))

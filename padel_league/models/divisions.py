@@ -5,7 +5,7 @@ from sqlalchemy.orm import relationship
 from padel_league.tools import tools
 from padel_league.tools.input_tools import Field, Block , Form
 
-class Division(db.Model , model.Model , model.Base):
+class Division(db.Model , model.Model ):
     __tablename__ = 'divisions'
     __table_args__ = {'extend_existing': True}
     page_title = 'Divisões'
@@ -17,8 +17,6 @@ class Division(db.Model , model.Model , model.Base):
     beginning_datetime = Column(DateTime)
     rating = Column(Integer)
     end_date = Column(Date)
-    logo_image_path = Column(String(80))
-    large_picture_path = Column(String(80))
     has_ended = Column(Boolean,default=False)
     open_division = Column(Boolean,default=False)
     edition_id = Column(Integer, ForeignKey('editions.id'))
@@ -33,13 +31,13 @@ class Division(db.Model , model.Model , model.Base):
     matches = relationship('Match', back_populates="division")
     players_relations = relationship('Association_PlayerDivision', back_populates="division")
     
-    #@property
-    #def logo_image_path(self):
-    #    return self.logo_image.url() if self.logo_image else None
+    @property
+    def logo_image_url(self):
+        return self.logo_image.url() if self.logo_image else None
     
-    #@property
-    #def logo_image_path(self):
-    #    return self.logo_image.url() if self.logo_image else None
+    @property
+    def large_picture_url(self):
+        return self.large_picture.url() if self.logo_image else None
 
 
     def create(self,vals=None):
@@ -48,8 +46,8 @@ class Division(db.Model , model.Model , model.Base):
             self.beginning_datetime = vals['beginning_datetime']
             self.rating = vals['rating']
             self.end_date = vals['end_date']
-            self.logo_image_path = vals['logo_image_path']
-            self.large_picture_path = vals['large_picture_path']
+            self.logo_image_id = vals['logo_image_id']
+            self.large_picture_id = vals['large_picture_id']
             self.rating = vals['rating']
             self.edition_id = vals['edition_id']
         super().create()
@@ -241,6 +239,14 @@ class Division(db.Model , model.Model , model.Base):
         def get_field(name,label,type,required=False,related_model=None):
             return Field(instance_id=self.id,model=self.model_name,name=name,label=label,type=type,required=required,related_model=related_model)
         form = Form()
+        
+        # Create Image block
+        fields = [
+            get_field(name='logo_image_id',label='Poster',type='Picture',required=False),
+            get_field(name='large_picture_id',label='Icone da cidade',type='Picture',required=False)
+        ]
+        picture_block = Block('picture_block',fields)
+        form.add_block(picture_block)
 
         # Create Info block
         fields = [

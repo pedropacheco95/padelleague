@@ -7,8 +7,7 @@
 <div class="l-grid">
     <div class="c-player">
         <div class="c-player__content">
-            {% set filename = 'images/' + player.large_picture_path %}
-            {% set player_large_image = url_for('static',filename=filename)%}
+            {% set player_large_image = player.large_picture_url %}
             <img class="c-player__img" src="{{player_large_image}}">
             <div class="c-player__prev">
                 {% set other_players = player.previous_and_next_player() %}
@@ -53,8 +52,7 @@
         </div>
         <div class="c-player__footer">
             <div class="c-player__img-container">
-                {% set filename = 'images/players/' + player.picture_path %}
-                {% set player_image = url_for('static',filename=filename)%}
+                {% set player_image = player.picture_url %}
                 <div class="u-img-cropped" id="player_image_top" style="background-image: url({{player_image}});"></div>
             </div>
             <div class="l-container">
