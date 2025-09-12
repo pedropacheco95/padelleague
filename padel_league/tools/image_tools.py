@@ -9,7 +9,7 @@ from flask import url_for , current_app
 import unidecode
 
 
-GCS_BUCKET = os.environ["GCS_UPLOADS_BUCKET"]
+GCS_BUCKET = os.environ.get("GCS_UPLOADS_BUCKET")
 
 #mp_drawing = mp.solutions.drawing_utils
 #mp_selfie_segmentation = mp.solutions.selfie_segmentation
