@@ -1,8 +1,6 @@
 import click
 from werkzeug.security import generate_password_hash
 
-from padel_league.models import Backend_App, User
-
 
 def register_cli(app):
     @app.cli.command("seed")
@@ -16,6 +14,8 @@ def register_cli(app):
         confirmation_prompt=True,
     )
     def seed(admin_user, admin_email, admin_password):
+        from padel_league.models import Backend_App, User
+
         with app.app_context():
             admin = User.query.filter_by(username=admin_user).first()
             if not admin:
