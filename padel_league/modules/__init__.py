@@ -15,6 +15,7 @@ from . import (
     tournaments,
     uploads,
     users,
+    startup,
 )
 
 
@@ -37,3 +38,24 @@ def register_blueprints(app):
     app.register_blueprint(editor.bp)
     app.register_blueprint(sponsors.bp)
     return True
+
+
+__all__ = [
+    "api",
+    "auth",
+    "editions",
+    "editor",
+    "main",
+    "matches",
+    "news",
+    "players",
+    "products",
+    "products_attributes",
+    "registrations",
+    "shop",
+    "sponsors",
+    "tournaments",
+    "uploads",
+    "users",
+    "startup",
+]
