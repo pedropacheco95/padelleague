@@ -1,18 +1,17 @@
-#import cv2
+# import cv2
 import os
-#import mediapipe as mp
-#import numpy as np
 
-
-from google.cloud import storage
-from flask import url_for , current_app
 import unidecode
+from google.cloud import storage
+
+# import mediapipe as mp
+# import numpy as np
 
 
 GCS_BUCKET = os.environ.get("GCS_UPLOADS_BUCKET")
 
-#mp_drawing = mp.solutions.drawing_utils
-#mp_selfie_segmentation = mp.solutions.selfie_segmentation
+# mp_drawing = mp.solutions.drawing_utils
+# mp_selfie_segmentation = mp.solutions.selfie_segmentation
 
 """ def remove_background(filename):
     BG_COLOR = (255, 255, 255)
@@ -29,19 +28,24 @@ GCS_BUCKET = os.environ.get("GCS_UPLOADS_BUCKET")
         cv2.imwrite(path, output_image)
     return True """
 
+
 def save_file(file_storage, object_key) -> bool:
     client = storage.Client()
     bucket = client.bucket(GCS_BUCKET)
     blob = bucket.blob(object_key)
-    blob.upload_from_file(file_storage.stream, content_type=getattr(file_storage, "mimetype", None))
+    blob.upload_from_file(
+        file_storage.stream, content_type=getattr(file_storage, "mimetype", None)
+    )
     return True
 
+
 def file_handler(file):
-    if file.filename != '':
+    if file.filename != "":
         image_name = file.filename.replace(" ", "").lower()
         image_name = unidecode.unidecode(image_name)
-        return file , image_name
+        return file, image_name
     return None, None
+
 
 """ def resize(filename, width, height):
     filename = os.path.join('images',filename)

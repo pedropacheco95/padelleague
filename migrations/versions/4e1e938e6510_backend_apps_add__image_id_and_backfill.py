@@ -5,15 +5,16 @@ Revises: cc9319961067
 Create Date: 2025-09-12 10:13:24.240343
 
 """
-from alembic import op
-import sqlalchemy as sa
 
+import sqlalchemy as sa
+from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = '4e1e938e6510'
-down_revision = 'cc9319961067'
+revision = "4e1e938e6510"
+down_revision = "cc9319961067"
 branch_labels = None
 depends_on = None
+
 
 def upgrade():
     # 1) Add FK column
@@ -27,7 +28,8 @@ def upgrade():
 
     # 2) Backfill: create images from existing app_image values
     # Normalize to live under images/Backend_App/
-    op.execute("""
+    op.execute(
+        """
         WITH candidates AS (
             SELECT DISTINCT
                 CASE
@@ -46,10 +48,12 @@ def upgrade():
         )
         INSERT INTO images (object_key, is_public)
         SELECT object_key, TRUE FROM to_insert;
-    """)
+    """
+    )
 
     # 3) Link backend_app.image_id to the new/existing images
-    op.execute("""
+    op.execute(
+        """
         UPDATE backend_app ba
         SET image_id = i.id
         FROM images i
@@ -59,10 +63,13 @@ def upgrade():
             WHEN ba.app_image LIKE '%/%' THEN 'images/' || ba.app_image
             ELSE 'images/Backend_App/' || ba.app_image
         END;
-    """)
+    """
+    )
 
     # 4) Ensure all images are public (defensive, won’t hurt)
-    op.execute("UPDATE images SET is_public = TRUE WHERE is_public IS DISTINCT FROM TRUE;")
+    op.execute(
+        "UPDATE images SET is_public = TRUE WHERE is_public IS DISTINCT FROM TRUE;"
+    )
 
     # 5) Optionally drop old column once app is updated
     op.drop_column("backend_app", "app_image")
@@ -70,10 +77,13 @@ def upgrade():
 
 def downgrade():
     # Re-create old column
-    op.add_column("backend_app", sa.Column("app_image", sa.String(length=200), nullable=True))
+    op.add_column(
+        "backend_app", sa.Column("app_image", sa.String(length=200), nullable=True)
+    )
 
     # Best-effort restore filename from object_key
-    op.execute("""
+    op.execute(
+        """
         UPDATE backend_app ba
         SET app_image = CASE
             WHEN i.object_key LIKE 'images/Backend_App/%'
@@ -84,7 +94,10 @@ def downgrade():
         END
         FROM images i
         WHERE ba.image_id = i.id;
-    """)
+    """
+    )
 
-    op.drop_constraint(constraint_name=None, table_name="backend_app", type_="foreignkey")
+    op.drop_constraint(
+        constraint_name=None, table_name="backend_app", type_="foreignkey"
+    )
     op.drop_column("backend_app", "image_id")

@@ -1,78 +1,78 @@
 {% extends 'layout.html' %}
 
 {% block main %}
-    <section class="c-section"> 
-        <div class="c-section__bg"></div> 
-        <div class="l-grid"> 
-            <span class="c-section__line"></span> 
-            <h2 class="c-section__title">Próximos torneios</h2> 
-        </div> 
+    <section class="c-section">
+        <div class="c-section__bg"></div>
+        <div class="l-grid">
+            <span class="c-section__line"></span>
+            <h2 class="c-section__title">Próximos torneios</h2>
+        </div>
         <div class="l-grid l-grid--flex l-grid--flex-centered tournaments_grid">
             {% for tournament in divisions_to_play%}
             <div class="c-tournaments c-tournaments--new c-tournaments--fixed tournament__container" onclick="linkToDatasetHref(this)" data-href="{{ url_for('tournaments.tournament',id=tournament.id) }}">
-                <div class="c-tournaments__container"> 
+                <div class="c-tournaments__container">
                     <div class="c-tournaments__poster">
                         {% set tournament_image = tournament.logo_image_url %}
-                        <div class="c-tournaments__img c-tournaments__img--bg" style="background-image: url({{tournament_image}});"> 
-                        </div> 
-                    </div> 
-                    <div class="c-tournaments__content"> 
-                        <header class="c-tournaments__top-card"> 
+                        <div class="c-tournaments__img c-tournaments__img--bg" style="background-image: url({{tournament_image}});">
+                        </div>
+                    </div>
+                    <div class="c-tournaments__content">
+                        <header class="c-tournaments__top-card">
                             {% set city_image = tournament.large_picture_url %}
-                            <div class="c-tournaments__header" style="background:url({{city_image}});"> 
-                            </div> 
+                            <div class="c-tournaments__header" style="background:url({{city_image}});">
+                            </div>
                             <p class="c-tournaments__date">
-                                De {% if tournament.beginning_datetime %}{{tournament.beginning_datetime.strftime('%d/%m/%Y')}}{% else %}Não definido{% endif %} a {% if tournament.end_date %}{{tournament.end_date.strftime('%d/%m/%Y')}}{% else %}Não definido{% endif %}</p> 
-                        </header> 
-                        <footer class="c-tournaments__bottom-card"> 
-                            <div class="c-tournaments__header"> 
-                                <h3 class="c-tournaments__title">{{tournament.tournament_name()}}</h3> 
-                                <p class="c-tournaments__cat">Rating: {{tournament.rating}}</p> 
-                            </div> 
-                        </footer> 
-                        <div class="c-tournaments__triggers"> 
-                            <a class="c-btn c-btn--secondary" href="{{ url_for('tournaments.tournament',id=tournament.id) }}">+ INFO</a> 
-                        </div> 
-                    </div> 
-                </div> 
+                                De {% if tournament.beginning_datetime %}{{tournament.beginning_datetime.strftime('%d/%m/%Y')}}{% else %}Não definido{% endif %} a {% if tournament.end_date %}{{tournament.end_date.strftime('%d/%m/%Y')}}{% else %}Não definido{% endif %}</p>
+                        </header>
+                        <footer class="c-tournaments__bottom-card">
+                            <div class="c-tournaments__header">
+                                <h3 class="c-tournaments__title">{{tournament.tournament_name()}}</h3>
+                                <p class="c-tournaments__cat">Rating: {{tournament.rating}}</p>
+                            </div>
+                        </footer>
+                        <div class="c-tournaments__triggers">
+                            <a class="c-btn c-btn--secondary" href="{{ url_for('tournaments.tournament',id=tournament.id) }}">+ INFO</a>
+                        </div>
+                    </div>
+                </div>
             </div>
             {% endfor %}
         </div>
     </section>
-    <section class="c-section"> 
-        <div class="c-section__bg"></div> 
-        <div class="l-grid"> 
-            <span class="c-section__line"></span> 
-            <h2 class="c-section__title">Torneios já realizados</h2> 
-        </div> 
+    <section class="c-section">
+        <div class="c-section__bg"></div>
+        <div class="l-grid">
+            <span class="c-section__line"></span>
+            <h2 class="c-section__title">Torneios já realizados</h2>
+        </div>
         <div class="l-grid l-grid--flex l-grid--flex-centered tournaments_grid">
             {% for tournament in divisions_ended%}
-            <div class="c-tournaments c-tournaments--new c-tournaments--fixed tournament__container" onclick="linkToDatasetHref(this)" data-href="{{ url_for('tournaments.tournament',id=tournament.id) }}"> 
-                <div class="c-tournaments__container"> 
+            <div class="c-tournaments c-tournaments--new c-tournaments--fixed tournament__container" onclick="linkToDatasetHref(this)" data-href="{{ url_for('tournaments.tournament',id=tournament.id) }}">
+                <div class="c-tournaments__container">
                     <div class="c-tournaments__poster">
                         {% set tournament_image = tournament.logo_image_url %}
-                        <div class="c-tournaments__img c-tournaments__img--bg" style="background-image: url({{tournament_image}});"> 
-                        </div> 
-                    </div> 
-                    <div class="c-tournaments__content"> 
-                        <header class="c-tournaments__top-card"> 
+                        <div class="c-tournaments__img c-tournaments__img--bg" style="background-image: url({{tournament_image}});">
+                        </div>
+                    </div>
+                    <div class="c-tournaments__content">
+                        <header class="c-tournaments__top-card">
                             {% set city_image = tournament.large_picture_url %}
-                            <div class="c-tournaments__header" style="background:url({{city_image}});"> 
-                            </div> 
+                            <div class="c-tournaments__header" style="background:url({{city_image}});">
+                            </div>
                             <p class="c-tournaments__date">
-                                De {% if tournament.beginning_datetime %}{{tournament.beginning_datetime.strftime('%d/%m/%Y')}}{% else %}Não definido{% endif %} a {% if tournament.end_date %}{{tournament.end_date.strftime('%d/%m/%Y')}}{% else %}Não definido{% endif %}</p> 
-                        </header> 
-                        <footer class="c-tournaments__bottom-card"> 
-                            <div class="c-tournaments__header"> 
-                                <h3 class="c-tournaments__title">{{tournament.tournament_name()}}</h3> 
-                                <p class="c-tournaments__cat">Rating: {{tournament.rating}}</p> 
-                            </div> 
-                        </footer> 
-                        <div class="c-tournaments__triggers"> 
-                            <a class="c-btn c-btn--secondary" href="{{ url_for('tournaments.tournament',id=tournament.id) }}">+ INFO</a> 
-                        </div> 
-                    </div> 
-                </div> 
+                                De {% if tournament.beginning_datetime %}{{tournament.beginning_datetime.strftime('%d/%m/%Y')}}{% else %}Não definido{% endif %} a {% if tournament.end_date %}{{tournament.end_date.strftime('%d/%m/%Y')}}{% else %}Não definido{% endif %}</p>
+                        </header>
+                        <footer class="c-tournaments__bottom-card">
+                            <div class="c-tournaments__header">
+                                <h3 class="c-tournaments__title">{{tournament.tournament_name()}}</h3>
+                                <p class="c-tournaments__cat">Rating: {{tournament.rating}}</p>
+                            </div>
+                        </footer>
+                        <div class="c-tournaments__triggers">
+                            <a class="c-btn c-btn--secondary" href="{{ url_for('tournaments.tournament',id=tournament.id) }}">+ INFO</a>
+                        </div>
+                    </div>
+                </div>
             </div>
             {% endfor %}
         </div>

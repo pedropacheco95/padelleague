@@ -112,7 +112,7 @@ function mouseMoveHandler(e){
 function draw(){
     //Clear the canvas
     context.clearRect(drawing_point.x, drawing_point.y , imageWidth*scaleFactor,  imageHeight*scaleFactor);
-    
+
     //Zoom
     scaleFactor = scale.value/lastScale;
 
@@ -209,7 +209,7 @@ function inputMultipleChangeHandler(element){
             if ( i > 0){
                 active = false;
                 new_image_div.classList.add('inactive_image');
-            } 
+            }
             createDotLink(new_image_div.id,element,active);
             element.parentNode.insertBefore(new_image_div, element);
         }, false);
@@ -245,18 +245,18 @@ function confirmInputPicture(image,ele){
     let picture_name = ele.dataset.picture_name;
     let final_image = document.getElementById(picture_name);
     final_image.src = image;
-    
+
     let imageInputContainer = document.getElementById('imageInputContainer_' + picture_name);
     imageInputContainer.classList.remove('dropzone-wrapper');
     imageInputContainer.classList.add('added_image');
-    
+
     for (let child of imageInputContainer.children){
         child.classList.add('disp-none');
     }
-    
+
     final_image.classList.remove('disp-none');
     final_image.classList.add('final_input_image');
-    
+
     let filename = picture_name + '.png';
     var file = dataURLtoFile(image,filename);
     let finalFile = document.getElementById('finalFile_' + picture_name);
@@ -274,7 +274,7 @@ function createDotLink(image_id,ele,active){
         dotLabel.classList.add('active_dot_label');
     }
     gallery.appendChild(dotLabel);
-    
+
     dotLabel.addEventListener('click',function(){
         dotClick(dotLabel,image_id);
     });
@@ -298,7 +298,7 @@ function dotClick(dotLabel,image_id){
     let image = document.getElementById(image_id);
     if (image.classList.contains("inactive_image")) {
         image.classList.remove("inactive_image");
-    }    
+    }
 }
 
 function rechoseImage(element_id){
@@ -336,14 +336,14 @@ function confirmEditableInputPicture(ele){
 function dataURLtoFile(dataurl, filename) {
     var arr = dataurl.split(','),
         mime = arr[0].match(/:(.*?);/)[1],
-        bstr = atob(arr[1]), 
-        n = bstr.length, 
+        bstr = atob(arr[1]),
+        n = bstr.length,
         u8arr = new Uint8Array(n);
-        
+
     while(n--){
         u8arr[n] = bstr.charCodeAt(n);
     }
-    
+
     return new File([u8arr], filename, {type:mime});
 }
 
@@ -361,7 +361,7 @@ function addEventListenersToCanvas(canvas){
     let isPhone = ( window.innerWidth <= 500 ) && ( window.innerHeight <= 900 )
     let modal_content = document.getElementsByClassName("modal_content")[0];
     if (isPhone){
-        modal_content.style.width = "90.5vw"; 
+        modal_content.style.width = "90.5vw";
         image_div.style.height = "90vw";
     } else {
         modal_content.style.width = "50.1vh";

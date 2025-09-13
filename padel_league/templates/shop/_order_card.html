@@ -2,7 +2,7 @@
     <h3>Pedido ID: {{ order.id }}</h3>
     <p>Utilizador: {{ order.user.name if order.user else order.name or 'Convidado' }}</p>
     <p>Fechado: {{ 'Sim' if order.closed else 'Não' }}</p>
-  
+
     <form method="post" style="margin-top: 10px;">
       <input type="hidden" name="order_id" value="{{ order.id }}">
       <label for="delivered_{{ order.id }}">Entregue:</label>
@@ -11,7 +11,7 @@
         <option value="false" {% if not order.delivered %}selected{% endif %}>Não</option>
       </select>
     </form>
-  
+
     <h4>Linhas do Pedido:</h4>
     <ul>
       {% for line in order.order_lines %}
@@ -23,4 +23,3 @@
       {% endfor %}
     </ul>
   </div>
-  

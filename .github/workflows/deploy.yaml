@@ -84,4 +84,3 @@ jobs:
           chmod +x /home/${{ secrets.GCE_USER }}/backup.sh
 
           (crontab -l 2>/dev/null | grep -v backup.sh; echo "0 3 * * * /home/${{ secrets.GCE_USER }}/backup.sh") | crontab -
-

@@ -21,7 +21,7 @@ tickets.forEach(ticket => {
 
     ticket.addEventListener('mouseup', handleMouseUpTicket);
     ticket.addEventListener('touchend', handleTouchEndTicket);
-    
+
     ticket.addEventListener('mousemove', handleMouseMoveTicket);
     ticket.addEventListener('touchmove', handleTouchMoveTicket);
 
@@ -41,7 +41,7 @@ kanbanColumns.forEach(kanbnaColumn => {
 
 //Handle start dragging ticket both on desktop and mobile
 function selectTicket(ele,e){
-    ele.style.opacity = '0.4'; 
+    ele.style.opacity = '0.4';
     selectedTicket = ele;
     isTicketSelected = true;
 }
@@ -80,11 +80,11 @@ function handleTouchEndTicket(e) {
 
 function moveTicket(e,touchLocation,ticket){
     e.preventDefault(); // Prevent scrolling when moving the ticket
-    
+
     if (ticket) {
         const xOffset = touchLocation.clientX - ticket.offsetWidth / 2;
         const yOffset = touchLocation.clientY - ticket.offsetHeight / 2;
-        
+
         ticket.style.position = 'fixed';
         ticket.style.left = `${xOffset}px`;
         ticket.style.top = `${yOffset}px`;
@@ -146,7 +146,7 @@ function handleTouchOnColumn(){
     selectColumn(this);
 }
 
-//Handle ticket leaving the column 
+//Handle ticket leaving the column
 
 function unselectColumn(ele){
     selectedKanbanColumn = undefined;
@@ -156,7 +156,7 @@ function unselectColumn(ele){
 function handleColumns(e){
     kanbanColumns.forEach(kanbanColumn => {
         let rect = kanbanColumn.getBoundingClientRect();
-        if (e.clientX >= rect.left && e.clientX <= rect.right && 
+        if (e.clientX >= rect.left && e.clientX <= rect.right &&
             e.clientY >= rect.top && e.clientY <= rect.bottom) {
                 selectColumn(kanbanColumn)
         } else if (kanbanColumn == selectedKanbanColumn) {

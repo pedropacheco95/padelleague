@@ -4,8 +4,8 @@ Revision ID: a1e2b3c4d5f6
 Revises: 63c524cb947d
 Create Date: 2025-09-12 12:00:00.000000
 """
-from alembic import op
 
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "a1e2b3c4d5f6"
@@ -16,7 +16,8 @@ depends_on = None
 
 def upgrade():
     # Normalize cover_path to canonical "images/News/<filename>"
-    op.execute("""
+    op.execute(
+        """
         WITH src AS (
             SELECT id, trim(cover_path) AS path
             FROM news
@@ -57,7 +58,8 @@ def upgrade():
         FROM norm x
         WHERE n.id = x.id
           AND n.cover_path IS DISTINCT FROM x.new_path;
-    """)
+    """
+    )
 
 
 def downgrade():

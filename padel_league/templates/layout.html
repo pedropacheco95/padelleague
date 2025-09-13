@@ -26,17 +26,17 @@
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
         <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.4.1/croppie.min.js"></script>
-        
+
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Teko:wght@300..700&display=swap" rel="stylesheet">
         <link href="https://fonts.googleapis.com/css2?family=Gemunu+Libre:wght@200..800&family=Teko:wght@300..700&display=swap" rel="stylesheet">
-        
+
         <script src="{{ url_for('static', filename='js/main.js')}}"></script>
         <script src="{{ url_for('static', filename='js/main_defered.js')}}" defer></script>
 
         {% block head %}{% endblock %}
-        
+
     </head>
 
     <body>
@@ -78,7 +78,7 @@
                     {% endif %}
                 </div>
             </div>
-            
+
             <div class="c-header-line__container">
                 <div class="c-header-line__item"></div>
                 <div class="c-global-header__logo-container">
@@ -89,7 +89,7 @@
                 <div class="c-header-line__item"></div>
             </div>
 
-            <nav class="c-main-nav" id="main-nav"> 
+            <nav class="c-main-nav" id="main-nav">
                 <ul class="c-main-nav__block u-list-clean">
                     <li class="c-main-nav__item ">
                         <a class="c-main-nav__link" href="{{url_for('tournaments.tournaments')}}" title="tournaments">Torneios</a>
@@ -151,7 +151,7 @@
                     {% endfor %}
                 </div>
                 </div>
-            
+
                 <div class="c-footer__section c-footer__info">
                 <h4 class="c-footer__title">Sobre</h4>
                 <p>Se houver alguma nova ideia para o torneio ou organização,</p>

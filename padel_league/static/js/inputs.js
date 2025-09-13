@@ -28,7 +28,7 @@ function addOption(option) {
     const select_input = document.getElementById(select_input_id);
     const optionsList = document.getElementById('options_list_' + select_input_id);
     const input = document.getElementById('text_input_select_' + select_input_id);
-    
+
     optionButton.innerText = option.innerText;
     optionButton.classList.add('option_div');
     optionButton.classList.add('was_not_readonly_div');
@@ -37,7 +37,7 @@ function addOption(option) {
     const closeSymbol = document.createElement('span');
     closeSymbol.innerHTML = '&times;';
     optionButton.appendChild(closeSymbol);
-    
+
     optionButton.addEventListener('click', () => {
         optionButtonBox.removeChild(optionButton);
         setSelectOption(select_input, option_value, false);
@@ -113,7 +113,7 @@ function searchOptions(input) {
     let shown = 0;
     for (let option of allOptions) {
         // Only show 3 options at a time
-        if (shown < 3 && option.classList.contains('selectable')) {       
+        if (shown < 3 && option.classList.contains('selectable')) {
             if (option.innerText.toUpperCase().indexOf(filter) > -1 ) {
                 option.style.display = "inherit";
                 shown++;
@@ -150,7 +150,7 @@ function fillAllManyToManyOptions(){
         }
         container.dataset.filled = 'true';
     }
-}   
+}
 
 function createManyToManyOption(field_name,option_text,option_value,show){
     var div = document.createElement("div");
@@ -209,7 +209,7 @@ async function confirmBasicCreate(form,modal_id,field_name){
     let option_div = createManyToManyOption(field_name,response.name,response.value,true);
     options_list.insertBefore(option_div, options_list.lastElementChild);
     addOption(option_div);
-    
+
     setFocusForManyToMany(optionButtonBox);
     let modal = document.getElementById(modal_id);
     modal.style.display = "none";
@@ -260,11 +260,10 @@ function turnToDateTimeInput(element){
     if (!element.hasAttribute('readonly')){
         element.type = 'datetime-local';
     }
-} 
+}
 
 function turnToTextInput(element){
     if (element.value === '') {
         element.type = 'text';
     }
 }
-

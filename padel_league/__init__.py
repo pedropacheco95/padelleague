@@ -1,11 +1,13 @@
-from flask import Flask
-from dotenv import load_dotenv
-from . import modules, sql_db, cli, context, mail
-from flask_session import Session
-from tempfile import mkdtemp
-from flask_assets import Environment, Bundle
-from flask_login import LoginManager
 import os
+from tempfile import mkdtemp
+
+from flask import Flask
+from flask_assets import Bundle, Environment
+from flask_login import LoginManager
+from flask_session import Session
+
+from . import cli, context, mail, modules, sql_db
+
 
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
@@ -17,9 +19,11 @@ def create_app(test_config=None):
         app.config.from_mapping(test_config)
     elif env == "production":
         from .config import ProdConfig
+
         app.config.from_object(ProdConfig)
     else:
         from .config import DevConfig
+
         app.config.from_object(DevConfig)
 
     # Ensure responses aren't cached
@@ -66,6 +70,7 @@ def create_app(test_config=None):
     # Login manager
     login_manager = LoginManager(app)
     from .auth import setup_login_manager
+
     setup_login_manager(login_manager)
     app.login_manager = login_manager
 

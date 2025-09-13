@@ -1,20 +1,22 @@
-from . import main
-from . import players
-from . import matches
-from . import tournaments
-from . import auth
-from . import api
-from . import startup
-from . import uploads
-from . import users
-from . import news
-from . import registrations
-from . import products
-from . import products_attributes
-from . import shop
-from . import editions
-from . import editor
-from . import sponsors
+from . import (
+    api,
+    auth,
+    editions,
+    editor,
+    main,
+    matches,
+    news,
+    players,
+    products,
+    products_attributes,
+    registrations,
+    shop,
+    sponsors,
+    tournaments,
+    uploads,
+    users,
+)
+
 
 # Register Blueprints
 def register_blueprints(app):

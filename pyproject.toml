@@ -46,11 +46,26 @@ dependencies = [
 ]
 
 [tool.poetry.group.dev.dependencies]
+pre-commit = "^3.8.0"
 pytest = "*"
-black = "*"
-flake8 = "*"
+black = "^24.0.0"
+flake8 = "^7.0.0"
+autoflake = "^2.3.1"
 isort = "*"
 mypy = "*"
+
+[tool.black]
+line-length = 88
+target-version = ["py310"]
+include = '\.pyi?$'
+exclude = '''
+/(
+    migrations
+  | \.venv
+  | build
+  | dist
+)/
+'''
 
 [tool.setuptools]
 packages = ["padel_league"]

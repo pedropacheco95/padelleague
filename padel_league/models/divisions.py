@@ -1,55 +1,58 @@
-from padel_league import model 
-from padel_league.sql_db import db
-from sqlalchemy import Column, Integer , String , Table, ForeignKey , Boolean, DateTime , Date
+from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
-from padel_league.tools import tools
-from padel_league.tools.input_tools import Field, Block , Form
 
-class Division(db.Model , model.Model ):
-    __tablename__ = 'divisions'
-    __table_args__ = {'extend_existing': True}
-    page_title = 'Divisões'
-    model_name = 'Division'
-    
+from padel_league import model
+from padel_league.sql_db import db
+from padel_league.tools import tools
+from padel_league.tools.input_tools import Block, Field, Form
+
+
+class Division(db.Model, model.Model):
+    __tablename__ = "divisions"
+    __table_args__ = {"extend_existing": True}
+    page_title = "Divisões"
+    model_name = "Division"
+
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(80), unique=True, nullable=False)
-    #The first match defines the week day and hour of every other match
+    # The first match defines the week day and hour of every other match
     beginning_datetime = Column(DateTime)
     rating = Column(Integer)
     end_date = Column(Date)
-    has_ended = Column(Boolean,default=False)
-    open_division = Column(Boolean,default=False)
-    edition_id = Column(Integer, ForeignKey('editions.id'))
+    has_ended = Column(Boolean, default=False)
+    open_division = Column(Boolean, default=False)
+    edition_id = Column(Integer, ForeignKey("editions.id"))
 
-    logo_image_id = Column(Integer, ForeignKey('images.id', ondelete='SET NULL'))
-    logo_image    = relationship('Image', foreign_keys=[logo_image_id])
+    logo_image_id = Column(Integer, ForeignKey("images.id", ondelete="SET NULL"))
+    logo_image = relationship("Image", foreign_keys=[logo_image_id])
 
-    large_picture_id = Column(Integer, ForeignKey('images.id', ondelete='SET NULL'))
-    large_picture    = relationship('Image', foreign_keys=[large_picture_id])
-    
-    edition = relationship('Edition', back_populates="divisions")
-    matches = relationship('Match', back_populates="division")
-    players_relations = relationship('Association_PlayerDivision', back_populates="division")
-    
+    large_picture_id = Column(Integer, ForeignKey("images.id", ondelete="SET NULL"))
+    large_picture = relationship("Image", foreign_keys=[large_picture_id])
+
+    edition = relationship("Edition", back_populates="divisions")
+    matches = relationship("Match", back_populates="division")
+    players_relations = relationship(
+        "Association_PlayerDivision", back_populates="division"
+    )
+
     @property
     def logo_image_url(self):
         return self.logo_image.url() if self.logo_image else None
-    
+
     @property
     def large_picture_url(self):
         return self.large_picture.url() if self.logo_image else None
 
-
-    def create(self,vals=None):
+    def create(self, vals=None):
         if vals:
-            self.name = vals['name']
-            self.beginning_datetime = vals['beginning_datetime']
-            self.rating = vals['rating']
-            self.end_date = vals['end_date']
-            self.logo_image_id = vals['logo_image_id']
-            self.large_picture_id = vals['large_picture_id']
-            self.rating = vals['rating']
-            self.edition_id = vals['edition_id']
+            self.name = vals["name"]
+            self.beginning_datetime = vals["beginning_datetime"]
+            self.rating = vals["rating"]
+            self.end_date = vals["end_date"]
+            self.logo_image_id = vals["logo_image_id"]
+            self.large_picture_id = vals["large_picture_id"]
+            self.rating = vals["rating"]
+            self.edition_id = vals["edition_id"]
         super().create()
         return True
 
@@ -65,39 +68,49 @@ class Division(db.Model , model.Model ):
         matches_played = self.get_matches_played()
         matches_played.sort(key=lambda x: x.matchweek)
         return matches_played
-    
+
     def get_last_matchweek_and_matches(self):
         matches = self.get_ordered_matches_played()
         matchweek = matches[-1].matchweek
         return matchweek, [match for match in matches if match.matchweek == matchweek]
 
     def tournament_name(self):
-        return '{league_name}: {edition_name} {division_name}'.format(league_name=self.edition.league.name, edition_name=self.edition.name,division_name=self.name)
+        return "{league_name}: {edition_name} {division_name}".format(
+            league_name=self.edition.league.name,
+            edition_name=self.edition.name,
+            division_name=self.name,
+        )
 
-    def players_classification(self,update_places=None):
-        return [rel.player for rel in self.players_relations_classification(update_places)]
+    def players_classification(self, update_places=None):
+        return [
+            rel.player for rel in self.players_relations_classification(update_places)
+        ]
 
-    def players_relations_classification(self,update_places=None):
+    def players_relations_classification(self, update_places=None):
         sorted_by_points = self.players_relations
         sorted_by_points.sort(key=lambda x: x.points, reverse=True)
         if update_places:
-            for index,rel in enumerate(sorted_by_points):
+            for index, rel in enumerate(sorted_by_points):
                 rel.place = index + 1
                 rel.save()
         return sorted_by_points
 
-    def player_position(self,player):
+    def player_position(self, player):
         return self.players_classification().index(player) + 1
-    
+
     def player_in_position(self, position):
-        return self.players_classification()[position-1]
+        return self.players_classification()[position - 1]
 
     def last_updated_matchweek(self):
         return self.players_relations[0].matchweek
 
-    def update_table(self,force_update=False):
+    def update_table(self, force_update=False):
         last_upadted_matchweek = self.last_updated_matchweek()
-        matchweek = self.get_ordered_matches_played()[-1].matchweek if self.get_ordered_matches_played() else 0
+        matchweek = (
+            self.get_ordered_matches_played()[-1].matchweek
+            if self.get_ordered_matches_played()
+            else 0
+        )
         if last_upadted_matchweek != matchweek or force_update:
             for relation in self.players_relations:
                 player = relation.player
@@ -109,7 +122,9 @@ class Division(db.Model , model.Model ):
 
                 points = wins * 3 + draws * 1
                 appearances = len(player.matches_played(self))
-                percentage_of_appearances = round((appearances / (matchweek+1)*3)*100,2)
+                percentage_of_appearances = round(
+                    (appearances / (matchweek + 1) * 3) * 100, 2
+                )
 
                 relation.points = points
                 relation.appearances = appearances
@@ -127,26 +142,52 @@ class Division(db.Model , model.Model ):
             if not self.has_ended:
                 self.edition.league.update_rankings()
                 self.has_ended = True
-            sorted_matches = sorted(self.matches, key=lambda match: match.date_hour, reverse=True)
-            last_played_date = sorted_matches[0].date_hour.date() if sorted_matches else None
+            sorted_matches = sorted(
+                self.matches, key=lambda match: match.date_hour, reverse=True
+            )
+            last_played_date = (
+                sorted_matches[0].date_hour.date() if sorted_matches else None
+            )
             self.end_date = last_played_date
             self.save()
         return True
 
-    def add_match_to_table(self,match):
+    def add_match_to_table(self, match):
         for match_relation in match.players_relations:
-            win = 1 if (match.winner == 1 and match_relation.team == 'Home') or  (match.winner == -1 and match_relation.team == 'Away') else 0
+            win = (
+                1
+                if (match.winner == 1 and match_relation.team == "Home")
+                or (match.winner == -1 and match_relation.team == "Away")
+                else 0
+            )
             draw = 1 if match.winner == 0 else 0
-            lost = 1 if (match.winner == -1 and match_relation.team == 'Home') or  (match.winner == 1 and match_relation.team == 'Away') else 0
+            lost = (
+                1
+                if (match.winner == -1 and match_relation.team == "Home")
+                or (match.winner == 1 and match_relation.team == "Away")
+                else 0
+            )
             games_won = match.games_home_team
             games_lost = match.games_away_team
 
-            points = win*3 + draw*1
+            points = win * 3 + draw * 1
 
-            division_relation = [relation for relation in match_relation.player.divisions_relations if relation.division == self][0]
+            division_relation = [
+                relation
+                for relation in match_relation.player.divisions_relations
+                if relation.division == self
+            ][0]
             division_relation.points += points
             division_relation.appearances += 1
-            division_relation.percentage_of_appearances = round((division_relation.appearances / len(self.get_matches_played()))*100,2) if len(self.get_matches_played()) else 0
+            division_relation.percentage_of_appearances = (
+                round(
+                    (division_relation.appearances / len(self.get_matches_played()))
+                    * 100,
+                    2,
+                )
+                if len(self.get_matches_played())
+                else 0
+            )
             division_relation.wins += win
             division_relation.draws += draw
             division_relation.losts += lost
@@ -154,21 +195,29 @@ class Division(db.Model , model.Model ):
             division_relation.games_lost += games_lost
             division_relation.matchweek = match.matchweek
             division_relation.save()
-        self.players_classification(update_places=True) 
+        self.players_classification(update_places=True)
         return True
-    
+
     def last_week_results_string(self):
         matchweek, matches = self.get_last_matchweek_and_matches()
 
         all_lines = [match.match_dict_line() for match in matches]
 
         return matchweek, tools.dict_to_table(all_lines)
-    
-    def get_next_matchweek_games(self,matchweek):
-        return tools.dict_to_table([{'Jogo':match.clean_name()} for match in self.matches if match.matchweek == matchweek])
-    
-    def get_next_matchweek_pairs(self,matchweek):
-        games = [match.clean_name() for match in self.matches if match.matchweek == matchweek]
+
+    def get_next_matchweek_games(self, matchweek):
+        return tools.dict_to_table(
+            [
+                {"Jogo": match.clean_name()}
+                for match in self.matches
+                if match.matchweek == matchweek
+            ]
+        )
+
+    def get_next_matchweek_pairs(self, matchweek):
+        games = [
+            match.clean_name() for match in self.matches if match.matchweek == matchweek
+        ]
         parelhas = set()
         for game in games:
             parts = game.split(" VS ")
@@ -176,91 +225,129 @@ class Division(db.Model , model.Model ):
             second_pair = parts[1].strip()
             parelhas.add(first_pair)
             parelhas.add(second_pair)
-        
+
         return list(parelhas)
 
-    
     def get_classications_string(self):
 
-        so = self.players_relations
+        self.players_relations
         player_relations = self.players_relations_classification()
 
         dict_line = []
         for player_relation in player_relations:
             games = player_relation.wins + player_relation.draws + player_relation.losts
-            dict_line.append({
-                'Jogador': player_relation.player.name,
-                'Lugar': player_relation.place,
-                'Pontos': player_relation.points,
-                'Pontos por jornada': 3 * (player_relation.points/games) if games else 0,
-            })
+            dict_line.append(
+                {
+                    "Jogador": player_relation.player.name,
+                    "Lugar": player_relation.place,
+                    "Pontos": player_relation.points,
+                    "Pontos por jornada": (
+                        3 * (player_relation.points / games) if games else 0
+                    ),
+                }
+            )
         return tools.dict_to_table(dict_line)
-    
+
     def get_last_matchweek_points(self):
         matchweek, matches = self.get_last_matchweek_and_matches()
-        players = {rel.player.name:0 for rel in self.players_relations}
+        players = {rel.player.name: 0 for rel in self.players_relations}
         for match in matches:
-            home_points = 1.5*(match.winner)**2 + 0.5*match.winner + 1
-            away_points = 1.5*(match.winner)**2 - 0.5*match.winner + 1
+            home_points = 1.5 * (match.winner) ** 2 + 0.5 * match.winner + 1
+            away_points = 1.5 * (match.winner) ** 2 - 0.5 * match.winner + 1
             for player in match.home_players():
                 players[player.name] += home_points
             for player in match.away_players():
                 players[player.name] += away_points
 
         return players
-    
+
     def last_played_matches(self, limit=4):
         played_matches = sorted(
             [m for m in self.matches if m.played],
             key=lambda m: m.date_hour,
-            reverse=True
+            reverse=True,
         )[:limit]
 
         if played_matches:
             return played_matches
 
         upcoming_matches = sorted(
-            [m for m in self.matches if not m.played],
-            key=lambda m: m.date_hour
+            [m for m in self.matches if not m.played], key=lambda m: m.date_hour
         )[:limit]
 
         return upcoming_matches
-    
+
     def display_all_info(self):
-        searchable_column = {'field': 'name','label':'Nome'}
+        searchable_column = {"field": "name", "label": "Nome"}
         table_columns = [
-            {'field': 'rating','label':'Rating'},
+            {"field": "rating", "label": "Rating"},
             searchable_column,
-            {'field': 'has_ended','label':'Já acabou?'},
+            {"field": "has_ended", "label": "Já acabou?"},
         ]
-        return searchable_column , table_columns
+        return searchable_column, table_columns
 
     def get_create_form(self):
-        def get_field(name,label,type,required=False,related_model=None):
-            return Field(instance_id=self.id,model=self.model_name,name=name,label=label,type=type,required=required,related_model=related_model)
+        def get_field(name, label, type, required=False, related_model=None):
+            return Field(
+                instance_id=self.id,
+                model=self.model_name,
+                name=name,
+                label=label,
+                type=type,
+                required=required,
+                related_model=related_model,
+            )
+
         form = Form()
-        
+
         # Create Image block
         fields = [
-            get_field(name='logo_image_id',label='Poster',type='Picture',required=False),
-            get_field(name='large_picture_id',label='Icone da cidade',type='Picture',required=False)
+            get_field(
+                name="logo_image_id", label="Poster", type="Picture", required=False
+            ),
+            get_field(
+                name="large_picture_id",
+                label="Icone da cidade",
+                type="Picture",
+                required=False,
+            ),
         ]
-        picture_block = Block('picture_block',fields)
+        picture_block = Block("picture_block", fields)
         form.add_block(picture_block)
 
         # Create Info block
         fields = [
-            get_field(name='name',label='Nome',type='Text',required=False),
-            get_field(name='beginning_datetime',label='Data de inicio',type='DateTime',required=False),
-            get_field(name='rating',label='Rating',type='Float',required=False),
-            get_field(name='has_ended',label='Já acabou?',type='Boolean',required=False),
-            get_field(name='end_date',label='Data do final',type='Date',required=False),
-            get_field(name='matches',label='Jogos',type='OneToMany',related_model='Match'),
-            get_field(name='edition',label='Edição',type='ManyToOne',related_model='Edition'),
-            get_field(name='players_relations',label='Jogadores (Relações)',type='OneToMany',related_model='Association_PlayerDivision'),
+            get_field(name="name", label="Nome", type="Text", required=False),
+            get_field(
+                name="beginning_datetime",
+                label="Data de inicio",
+                type="DateTime",
+                required=False,
+            ),
+            get_field(name="rating", label="Rating", type="Float", required=False),
+            get_field(
+                name="has_ended", label="Já acabou?", type="Boolean", required=False
+            ),
+            get_field(
+                name="end_date", label="Data do final", type="Date", required=False
+            ),
+            get_field(
+                name="matches", label="Jogos", type="OneToMany", related_model="Match"
+            ),
+            get_field(
+                name="edition",
+                label="Edição",
+                type="ManyToOne",
+                related_model="Edition",
+            ),
+            get_field(
+                name="players_relations",
+                label="Jogadores (Relações)",
+                type="OneToMany",
+                related_model="Association_PlayerDivision",
+            ),
         ]
-        info_block = Block('info_block',fields)
+        info_block = Block("info_block", fields)
         form.add_block(info_block)
 
         return form
-    

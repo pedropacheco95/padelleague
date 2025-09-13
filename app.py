@@ -1,5 +1,7 @@
-from dotenv import load_dotenv
 import os
+
+from dotenv import load_dotenv
+
 import padel_league as app
 
 if os.getenv("FLASK_ENV") != "production":
@@ -14,9 +16,8 @@ if __name__ == "__main__":
 """
 
 Se for preciso correr sem 'flask run' talvez seja necessario ter isto:
-run_app.run(debug=True) 
+run_app.run(debug=True)
 
 (Talvez dentro dum if __name__="__main__")
 
 """
-
