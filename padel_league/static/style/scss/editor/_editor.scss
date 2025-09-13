@@ -287,7 +287,7 @@
     display: inline-block;
     vertical-align: middle;
     border: 4px solid transparent;
-    
+
 }
 
 .indicator-up {
@@ -344,7 +344,7 @@
             width: 20vh!important
         }
     }
-    
+
     .dropzone-desc{
         width: 70%!important;
     }
@@ -433,7 +433,7 @@
             background: rgb(255, 255, 255);
             transform: scale(1.1);
         }
-        
+
         .dot_label.active_dot_label{
             background: rgb(255, 255, 255);
         }
@@ -469,7 +469,7 @@
 .editor_objects_tabs_names{
     display: flex;
     justify-content: flex-start;
-    
+
     @include size-query(large) {
         height: 2.5rem;
         flex-direction: row;
@@ -536,7 +536,7 @@
     }
 
     .input-box{
-        
+
         .input-label {
             font-size: 0.8rem;
             font-weight: 300;
@@ -625,8 +625,8 @@
         @include size-query(large) {
             flex: 1;
         }
-        
-    
+
+
         .tickets-title{
             font-weight: bold;
             height: 2rem;
@@ -639,7 +639,7 @@
             background: #e0ebfa!important;
             transition: 250ms;
         }
-        
+
         .ticket-list {
             list-style: none;
             padding: 0.4rem;
@@ -656,7 +656,7 @@
                 min-height: 5rem;
             }
 
-            
+
             .ticket {
                 background-color: #f9f9f9;
                 border: 1px solid #ccc;
@@ -683,7 +683,7 @@
                     text-transform: uppercase;
                 }
             }
-            
+
             .ticket.dragging {
                 opacity: 0.5;
             }

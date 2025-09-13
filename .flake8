@@ -1,0 +1,18 @@
+[flake8]
+max-line-length = 88
+
+# Ignore rules:
+# - E501: line too long, let Black handle it
+# - E203: whitespace before ':', conflicts with Black
+# - W503: line break before binary operator, conflicts with Black
+extend-ignore =
+    E501
+    E203
+    W503
+
+exclude =
+    .venv
+    migrations
+    __pycache__
+    build
+    dist

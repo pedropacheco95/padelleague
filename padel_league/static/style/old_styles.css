@@ -52,7 +52,7 @@ html{
     .c-teams__box {
         flex-direction: column;
     }
-    
+
     .c-tor-box--m{
         width: 80%;
     }
@@ -64,7 +64,7 @@ html{
     .small_field{
         display: none;
     }
-    
+
     .small_watch{
         display: none;
     }
@@ -316,7 +316,7 @@ html{
         height: 90vw!important;
         width: 90vw!important;
     }
-    
+
     .container-image{
         height: 90vw!important;
         width: 90vw!important;
@@ -437,7 +437,7 @@ html{
     .l-grid--flex:not(.l-grid--tickets) .c-tournaments--fixed:nth-of-type(even) {
         margin-left: 0!important;
     }
-    
+
     .previous_next_container{
         width: 80%!important;
         margin: 0 auto;
@@ -499,7 +499,7 @@ html{
         clear: both;
         padding-left: 30rem;
     }
-    
+
     .c-player__item {
         height: 4.3rem;
         margin-right: .5rem;
@@ -1825,7 +1825,7 @@ blockquote, body, dd, dl, fieldset, figure, h1, h3, h4, h5, h6, hr, legend, ol, 
 }
 
 .classification_table{
-    width:100%; 
+    width:100%;
     background-color: rgba(255, 255, 255, 1);
     text-align: center;
     color: #006A71;
@@ -3080,7 +3080,7 @@ blockquote, body, dd, dl, fieldset, figure, h1, h3, h4, h5, h6, hr, legend, ol, 
 .arrow_button:hover::after {
     color: #032045;
 }
-    
+
 .next_button::after {
     content: "\203A";
     font-weight: bold;
@@ -3119,4 +3119,3 @@ blockquote, body, dd, dl, fieldset, figure, h1, h3, h4, h5, h6, hr, legend, ol, 
     text-align: justify;
     font-size: 1.5rem;
 }
-

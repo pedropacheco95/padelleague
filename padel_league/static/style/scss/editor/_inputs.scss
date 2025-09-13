@@ -120,7 +120,7 @@ input {
     .label-invalid{
         color: #dc3545!important;
     }
-    
+
     .label-valid{
         color: #28a745!important;
     }
@@ -423,11 +423,11 @@ input::-webkit-inner-spin-button {
             display: none;
         }
 
-        
+
         .options:nth-child(-n+4) {
             display: inherit;
         }
-        
+
         .options:hover{
             background-color: #4d84fe;
             color: #343434;
@@ -531,4 +531,3 @@ input::-webkit-inner-spin-button {
     }
 
 }
-

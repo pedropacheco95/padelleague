@@ -46,7 +46,7 @@ function addGraph(player_id){
 
     var player_row = document.getElementById(player_id);
     var table = document.getElementById('classification_table');
-    
+
     var row = document.createElement('tr');
     row.style.backgroundColor= 'rgba(217,226,228,.6)';
     row.setAttribute('id','graph_row');
@@ -58,12 +58,12 @@ function addGraph(player_id){
     canvas.id = 'myChart';
     canvas.style.width = table.width;
     canvas.style.height = 0.5*window.innerHeight
-    
+
     column.appendChild(title)
     column.appendChild(canvas)
     row.appendChild(column)
     insertAfter(row,player_row)
-    
+
     new Chart("myChart", {
         type: "line",
         data: {

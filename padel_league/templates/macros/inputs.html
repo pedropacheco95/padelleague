@@ -39,13 +39,13 @@
 {% macro text_input(label,name,required,value = value, readonly=readonly) %}
 <div class="input-box {% if value is not none %}focus{% endif %}">
     <label class="input-label">{{label}}</label>
-    <input 
-    type="text" 
-    name="{{name}}" 
+    <input
+    type="text"
+    name="{{name}}"
     class="input-1 {{ 'needs-validation' if required }}"
-    onfocus="setFocus(true,this,this.parentNode)" 
-    onblur="setFocus(false,this,this.parentNode)" 
-    autocomplete="username" 
+    onfocus="setFocus(true,this,this.parentNode)"
+    onblur="setFocus(false,this,this.parentNode)"
+    autocomplete="username"
     {% if value is not none %} value="{{value}}" {% endif %}
     {% if readonly %} readonly {% endif %}/>
 </div>
@@ -54,12 +54,12 @@
 {% macro integer_input(label,name,required,value = value, readonly=readonly) %}
 <div class="input-box {% if value is not none %}focus{% endif %}">
     <label class="input-label">{{label}}</label>
-    <input 
-    type="number" 
-    inputmode="numeric" 
-    pattern="[0-9]*"  
-    name="{{name}}" 
-    class="input-1 {{ 'needs-validation' if required }}" 
+    <input
+    type="number"
+    inputmode="numeric"
+    pattern="[0-9]*"
+    name="{{name}}"
+    class="input-1 {{ 'needs-validation' if required }}"
     onfocus="setFocus(true,this,this.parentNode)"
     onblur="setFocus(false,this,this.parentNode)"
     {% if value is not none %} value="{{value}}" {% endif %}
@@ -70,13 +70,13 @@
 {% macro float_input(label, name, required, value=value, readonly=readonly) %}
 <div class="input-box {% if value is not none %}focus{% endif %}">
     <label class="input-label">{{label}}</label>
-    <input 
-    type="number" 
-    inputmode="numeric" 
-    pattern="\d*" 
-    step=".01" 
-    name="{{name}}" 
-    class="input-1 {{ 'needs-validation' if required }}" 
+    <input
+    type="number"
+    inputmode="numeric"
+    pattern="\d*"
+    step=".01"
+    name="{{name}}"
+    class="input-1 {{ 'needs-validation' if required }}"
     onfocus="setFocus(true,this,this.parentNode)"
     onblur="setFocus(false,this,this.parentNode)"
     {% if value is not none %} value="{{value}}" {% endif %}
@@ -89,12 +89,12 @@
     <label class="input-label">
         {{label}}
     </label>
-    <input 
-    type="password" 
-    name="{{name}}" 
-    class="input-1 {{ 'needs-validation' if required }}" 
-    onfocus="setFocus(true,this,this.parentNode)" 
-    onblur="setFocus(false,this,this.parentNode)" 
+    <input
+    type="password"
+    name="{{name}}"
+    class="input-1 {{ 'needs-validation' if required }}"
+    onfocus="setFocus(true,this,this.parentNode)"
+    onblur="setFocus(false,this,this.parentNode)"
     autocomplete="current-password"
     {% if value %} value="not_the_real_password" {% endif %}
     {% if readonly %} readonly {% endif %}/>
@@ -126,8 +126,8 @@
         {% endif %}
     </div>
     <div id="options_list_{{name}}" class="options_list many_to_many_container" onclick="setFocusForManyToMany(this)" style="display: none;" data-related_model="{{related_model}}" data-filled="false" data-name="{{name}}">
-        <input 
-        type="text" 
+        <input
+        type="text"
         class="text_input_select manytomany_text_search"
         id="text_input_select_{{name}}"
         data-name="{{name}}"
@@ -150,8 +150,8 @@
         {% endif %}
     </div>
     <div id="options_list_{{name}}" class="options_list many_to_many_container" onclick="setFocusForManyToMany(this)" style="display: none;" data-related_model="{{related_model}}" data-filled="false" data-name="{{name}}">
-        <input 
-        type="text" 
+        <input
+        type="text"
         class="text_input_select manytomany_text_search"
         id="text_input_select_{{name}}"
         data-name="{{name}}"
@@ -168,21 +168,21 @@
 <!-- Too use this macro should import the upload_image.js file -->
 <div class="input-box">
     <div class="{% if readonly %}readonly_image_input{% endif %} {% if value %}added_image{% else %} dropzone-wrapper {% endif %}" id="imageInputContainer_{{picture_name}}"  {% if not readonly %} ondragover="dragoverDragAndDrop(event,this)" ondragleave="dragleaveDragAndDrop(event,this)" {% endif %}>
-        
+
         <div class="dropzone-desc">
             Escolhe ou arrasta uma imagem para {{label}}.
         </div>
 
-        <input 
-        id='selectedFileEditable_{{picture_name}}' 
-        type="file" 
-        onchange="inputChangeHandler(this)" 
-        data-picture_name="{{picture_name}}" 
+        <input
+        id='selectedFileEditable_{{picture_name}}'
+        type="file"
+        onchange="inputChangeHandler(this)"
+        data-picture_name="{{picture_name}}"
         class="dropzone">
 
         <img id="{{picture_name}}" class="final_input_image" {% if value %} src="{{ url_for('api.image_by_id', image_id=value) }}" {% endif %}>
         <img class="rechose_image" src="{{ url_for('static', filename='images/add_image.png') }}" onclick="rechoseImage('selectedFileEditable_{{picture_name}}')">
-        <div class="dropzone-desc-readonly"> {{label}} </div> 
+        <div class="dropzone-desc-readonly"> {{label}} </div>
     </div>
 </div>
 <input id='finalFile_{{picture_name}}' name="{{picture_name}}" class="disp-none" type='file' accept="image/*">
@@ -193,27 +193,27 @@
 <!-- Too use this macro should import the upload_image.js file -->
 <div class="input-box">
     <div class="{% if readonly %}readonly_image_input{% endif %} {% if value %}added_image{% else %} dropzone-wrapper {% endif %}" id="imageInputContainer_{{picture_name}}"  {% if not readonly %} ondragover="dragoverDragAndDrop(event,this)" ondragleave="dragleaveDragAndDrop(event,this)" {% endif %}>
-        
+
         <div class="dropzone-desc">
             Escolhe ou arrasta uma imagem para {{label}}.
         </div>
 
-        <input 
-        id='selectedFileEditable_{{picture_name}}' 
-        type="file" 
-        onchange="inputMultipleChangeHandler(this)" 
-        data-picture_name="{{picture_name}}" 
+        <input
+        id='selectedFileEditable_{{picture_name}}'
+        type="file"
+        onchange="inputMultipleChangeHandler(this)"
+        data-picture_name="{{picture_name}}"
         class="dropzone"
         name="{{picture_name}}"
         multiple>
-        
+
         {% if value %}
             {% for image in value.images %}
                 <img id="uploaded_image_{{image.id}}" class="final_input_image {% if loop.index > 1 %} inactive_image {% endif %}" src="{{ url_for('api.image_by_id', image_id=value) }}">
             {% endfor %}
         {% endif %}
         <img class="rechose_image" src="{{ url_for('static', filename='images/add_image.png') }}" onclick="rechoseImage('selectedFileEditable_{{picture_name}}')">
-        <div class="dropzone-desc-readonly"> {{label}} </div> 
+        <div class="dropzone-desc-readonly"> {{label}} </div>
         <div class="image_galery" id="galery_{{picture_name}}">
             {% if value %}
                 {% for image in value.images %}
@@ -231,21 +231,21 @@
 <button class="disp-none modalActivation" id="modal_button_{{picture_name}}" data-modal_id="modal_{{picture_name}}" type="button"></button>
 <div class="input-box">
     <div class="{% if readonly %}readonly_image_input{% endif %} {% if value %}added_image{% else %} dropzone-wrapper {% endif %}"  id="imageInputContainer_{{picture_name}}"  {% if not readonly %} ondragover="dragoverDragAndDrop(event,this)" ondragleave="dragleaveDragAndDrop(event,this)" {% endif %}>
-        
+
         <div class="dropzone-desc">
             Escolhe ou arrasta uma imagem para {{label}}.
         </div>
 
-        <input 
-        id='selectedFileEditable_{{picture_name}}' 
+        <input
+        id='selectedFileEditable_{{picture_name}}'
         type="file"
-        onchange="inputEditableChangeHandler(this)" 
-        data-picture_name="{{picture_name}}" 
+        onchange="inputEditableChangeHandler(this)"
+        data-picture_name="{{picture_name}}"
         class="dropzone">
 
         <img id="{{picture_name}}" class="final_input_image" {% if value %} src="{{ url_for('api.image_by_id', image_id=value) }}" {% endif %}>
         <img class="rechose_image" src="{{ url_for('static', filename='images/add_image.png') }}" onclick="rechoseImage('selectedFileEditable_{{picture_name}}')">
-        <div class="dropzone-desc-readonly"> {{label}} </div> 
+        <div class="dropzone-desc-readonly"> {{label}} </div>
         <div class="image_galery" id="galery"></div>
     </div>
 </div>
@@ -284,10 +284,10 @@
 {% macro date_input(label,name,required,value = value, readonly=readonly) %}
 <div class="input-box {% if value %}focus{% endif %}">
     <label class="input-label">{{label}}</label>
-    <input 
+    <input
     type="text"
-    name="{{name}}" 
-    class="input-1 {{ 'needs-validation' if required }}" 
+    name="{{name}}"
+    class="input-1 {{ 'needs-validation' if required }}"
     onfocus="setFocus(true,this,this.parentNode),turnToDateInput(this)"
     onblur="setFocus(false,this,this.parentNode),turnToTextInput(this)"
     {% if value %} value="{{value.strftime('%d/%m/%Y')}}" {% endif %}
@@ -298,10 +298,10 @@
 {% macro datetime_input(label,name,required,value = value, readonly=readonly) %}
 <div class="input-box {% if value %}focus{% endif %}">
     <label class="input-label">{{label}}</label>
-    <input 
+    <input
     type="text"
-    name="{{name}}" 
-    class="input-1 {{ 'needs-validation' if required }}" 
+    name="{{name}}"
+    class="input-1 {{ 'needs-validation' if required }}"
     onfocus="setFocus(true,this,this.parentNode),turnToDateTimeInput(this)"
     onblur="setFocus(false,this,this.parentNode),turnToTextInput(this)"
     {% if value %} value="{{value.strftime('%d/%m/%Y, %H:%M')}}" {% endif %}
@@ -312,12 +312,12 @@
 {% macro boolean_input(label,name,required,value,readonly=readonly) %}
 <div class="input-box for_checkbox">
     <label for="checkbox_{{name}}" class="checkbox-label">{{label}}</label>
-    <input 
+    <input
     id="checkbox_{{name}}"
-    type="checkbox" 
-    name="step_{{name}}" 
-    class="input-3 {{ 'needs-validation' if required }} disabled_input" 
-    onfocus="setFocus(true,this,this.parentNode)" 
+    type="checkbox"
+    name="step_{{name}}"
+    class="input-3 {{ 'needs-validation' if required }} disabled_input"
+    onfocus="setFocus(true,this,this.parentNode)"
     onblur="setFocus(false,this,this.parentNode)"
     data-field_name="{{name}}"
     onchange="setHiddenFieldValue(this)"
@@ -330,11 +330,11 @@
 {% macro color_input(label,name,required,value = value, readonly=readonly) %}
 <div class="input-box for_color">
     <label class="color-label">{{label}}</label>
-    <input 
-    type="color" 
-    name="step_{{name}}" 
-    class="input-2 {{ 'needs-validation' if required }} disabled_input" 
-    onfocus="setFocus(true,this,this.parentNode)" 
+    <input
+    type="color"
+    name="step_{{name}}"
+    class="input-2 {{ 'needs-validation' if required }} disabled_input"
+    onfocus="setFocus(true,this,this.parentNode)"
     onblur="setFocus(false,this,this.parentNode)"
     data-field_name="{{name}}"
     onchange="setHiddenFieldValue(this)"

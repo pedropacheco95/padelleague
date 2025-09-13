@@ -1,4 +1,5 @@
-from padel_league.models import User 
+from padel_league.models import User
+
 
 def setup_login_manager(login_manager):
     @login_manager.user_loader

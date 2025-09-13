@@ -47,7 +47,7 @@ document.addEventListener('click', function(event) {
 
 document.addEventListener('DOMContentLoaded', function() {
     setTimeout(checkInputs, 100); // Wait for 100ms before checking inputs
-    
+
     function checkInputs() {
         const inputs = document.querySelectorAll('input');
         inputs.forEach(input => {
@@ -210,14 +210,14 @@ function sortTable(header,columnIndex) {
     columnIndex = parseInt(columnIndex)-1;
     // Toggle the sort order for the clicked column
     var sortOrder = headerCells[columnIndex].classList.toggle('sort-order') ? 1 : -1;
-    
+
     // Reset the sort order for the other columns
     headerCells.forEach(function(cell, index) {
         if (index !== columnIndex) {
             cell.classList.remove('sort-order');
         }
     });
-    
+
     // Sort the table rows
     rows.sort(function(a, b) {
         var cellA = a.cells[columnIndex].textContent.toUpperCase();
@@ -230,12 +230,12 @@ function sortTable(header,columnIndex) {
             return 0;
         }
     });
-    
+
     // Update the table with the sorted rows
     rows.forEach(function(row) {
         table.tBodies[0].appendChild(row);
     });
-    
+
     // Update the sort indicator and remove the other indicators
     headerCells.forEach(function(cell, index) {
         var indicator = cell.querySelector('.sort-indicator');
@@ -406,11 +406,11 @@ function organizeChildrenByPriority(parentDiv) {
 
     const sortedChildren = Array.from(parentDiv.children).sort((a, b) => {
       const aPriority = parseInt(a.dataset.priority, 10) || 0;
-      const bPriority = parseInt(b.dataset.priority, 10) || 0; 
-      
+      const bPriority = parseInt(b.dataset.priority, 10) || 0;
+
       return aPriority - bPriority;
     });
-    
+
     // Append sorted children back to parent
     sortedChildren.forEach(child => parentDiv.appendChild(child));
 }

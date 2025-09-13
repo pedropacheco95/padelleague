@@ -1,13 +1,20 @@
 import click
 from werkzeug.security import generate_password_hash
-from .sql_db import db
-from padel_league.models import User, Backend_App
+
+from padel_league.models import Backend_App, User
+
 
 def register_cli(app):
     @app.cli.command("seed")
     @click.option("--admin-user", default="admin")
     @click.option("--admin-email", default="admin@example.com")
-    @click.option("--admin-password", envvar="ADMIN_PASSWORD", prompt=True, hide_input=True, confirmation_prompt=True)
+    @click.option(
+        "--admin-password",
+        envvar="ADMIN_PASSWORD",
+        prompt=True,
+        hide_input=True,
+        confirmation_prompt=True,
+    )
     def seed(admin_user, admin_email, admin_password):
         with app.app_context():
             admin = User.query.filter_by(username=admin_user).first()
@@ -20,9 +27,9 @@ def register_cli(app):
                 )
                 admin.create()
 
-            apps_app = Backend_App.query.filter_by(name='Aplicações').first()
+            apps_app = Backend_App.query.filter_by(name="Aplicações").first()
             if not apps_app:
-                apps_app = Backend_App(name='Aplicações', app_model_name='Backend_App')
+                apps_app = Backend_App(name="Aplicações", app_model_name="Backend_App")
                 apps_app.create()
 
             click.echo("Seeding done.")

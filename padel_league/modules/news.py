@@ -1,23 +1,32 @@
-from flask import Blueprint, flash, g, redirect, render_template, request, session, url_for , current_app
-from werkzeug.security import check_password_hash, generate_password_hash
-import unidecode
 import os
 
-from padel_league.models import News , Division, Player
+import unidecode
+from flask import (
+    Blueprint,
+    current_app,
+    flash,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
 
-bp = Blueprint('news', __name__,url_prefix='/news')
+from padel_league.models import Division, News, Player
 
-@bp.route('/create', methods=('GET', 'POST'))
+bp = Blueprint("news", __name__, url_prefix="/news")
+
+
+@bp.route("/create", methods=("GET", "POST"))
 def create():
-    if request.method == 'POST':
-        title = request.form['title']
-        text = request.form['text']
-        author = request.form['author']
-        files = request.files.getlist('pictures')
+    if request.method == "POST":
+        title = request.form["title"]
+        text = request.form["text"]
+        author = request.form["author"]
+        files = request.files.getlist("pictures")
         error = None
 
         if not author or not text or not title:
-            error = 'Tens que adicionar todas as informacoes necessarias.'
+            error = "Tens que adicionar todas as informacoes necessarias."
 
         if error is None:
             news = News(author=author, text=text, title=title)
@@ -25,62 +34,68 @@ def create():
 
             for index in range(len(files)):
                 file = files[index]
-                if file.filename != '':
+                if file.filename != "":
                     image_name = str(title).replace(" ", "").lower()
                     image_name = unidecode.unidecode(image_name)
-                    image_name = '{image_name}_{news_id}.jpg'.format(image_name=image_name,news_id=news.id)
+                    image_name = "{image_name}_{news_id}.jpg".format(
+                        image_name=image_name, news_id=news.id
+                    )
 
-                    filename = os.path.join('images',image_name)
-                    path = current_app.root_path + url_for('static', filename = filename)
+                    filename = os.path.join("images", image_name)
+                    path = current_app.root_path + url_for("static", filename=filename)
                     file_exists = os.path.exists(path)
                     if not file_exists:
-                        img_file = open(path,'wb')
+                        img_file = open(path, "wb")
                         img_file.close()
                     file.save(path)
 
                     news.cover_path = filename
                     news.save()
-            
-            return redirect(url_for('main.index'))
+
+            return redirect(url_for("main.index"))
         flash(error)
 
-    return render_template('news/create.html')
+    return render_template("news/create.html")
 
-@bp.route('/<news_id>', methods=('GET', 'POST'))
+
+@bp.route("/<news_id>", methods=("GET", "POST"))
 def news(news_id):
     news = News.query.filter_by(id=news_id).first()
-    return render_template('news/news.html',news=news)
+    return render_template("news/news.html", news=news)
 
-@bp.route('/delete/<news_id>', methods=('GET', 'POST'))
+
+@bp.route("/delete/<news_id>", methods=("GET", "POST"))
 def delete(news_id):
     news = News.query.filter_by(id=news_id).first()
     news.delete()
-    return redirect(url_for('main.index'))
+    return redirect(url_for("main.index"))
 
-@bp.route('/new_prompt', methods=('GET', 'POST'))
+
+@bp.route("/new_prompt", methods=("GET", "POST"))
 def new_prompt():
-    prompt = News.create_matchweek_prompt(Division,Player)
+    prompt = News.create_matchweek_prompt(Division, Player)
 
-    print(':::::::::::::::::::::')
-    print(':::::::::::::::::::::')
-    print(':::::::::::::::::::::')
+    print(":::::::::::::::::::::")
+    print(":::::::::::::::::::::")
+    print(":::::::::::::::::::::")
     print(prompt)
-    print(':::::::::::::::::::::')
-    print(':::::::::::::::::::::')
-    print(':::::::::::::::::::::')
+    print(":::::::::::::::::::::")
+    print(":::::::::::::::::::::")
+    print(":::::::::::::::::::::")
 
     return prompt
 
-@bp.route('/test_prompt', methods=('GET', 'POST'))
+
+@bp.route("/test_prompt", methods=("GET", "POST"))
 def test_prompt():
     prompt = News.get_all_jornalists_inputs(Division)
 
-    print(':::::::::::::::::::::')
-    print(':::::::::::::::::::::')
-    print(':::::::::::::::::::::')
+    print(":::::::::::::::::::::")
+    print(":::::::::::::::::::::")
+    print(":::::::::::::::::::::")
     print(prompt)
-    print(':::::::::::::::::::::')
-    print(':::::::::::::::::::::')
-    print(':::::::::::::::::::::')
+    print(":::::::::::::::::::::")
+    print(":::::::::::::::::::::")
+    print(":::::::::::::::::::::")
 
     return prompt

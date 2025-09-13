@@ -1,20 +1,20 @@
 import os
 
+
 class Config:
     """Base config (shared defaults)."""
+
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     TEMPLATES_AUTO_RELOAD = True
 
     # Database
-    POSTGRES_USER = os.getenv('POSTGRES_USER', 'padel_user')
-    POSTGRES_PW = os.getenv('POSTGRES_PW')
-    POSTGRES_DB = os.getenv('POSTGRES_DB', 'padel_league')
-    POSTGRES_PORT = os.getenv('POSTGRES_PORT', '5432')
-    POSTGRES_HOST = os.getenv('POSTGRES_HOST', 'localhost')
+    POSTGRES_USER = os.getenv("POSTGRES_USER", "padel_user")
+    POSTGRES_PW = os.getenv("POSTGRES_PW")
+    POSTGRES_DB = os.getenv("POSTGRES_DB", "padel_league")
+    POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5432")
+    POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
 
-    SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://{POSTGRES_USER}:{POSTGRES_PW}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
-    )
+    SQLALCHEMY_DATABASE_URI = f"postgresql://{POSTGRES_USER}:{POSTGRES_PW}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
 
     # Secret key (fallback only for dev)
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
@@ -34,6 +34,7 @@ class Config:
 class DevConfig(Config):
     DEBUG = True
     POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
+
 
 class DevConfigProdDB(Config):
     DEBUG = True

@@ -29,16 +29,16 @@
 {% endmacro %}
 
 {% macro news_card(news) %}
-    
+
     <article class="news_article" data-href="{{url_for('news.news',news_id=news.id)}}" onclick="linkToDatasetHref(this)">
         <div class="news_article_container">
             <div class="news_article_image">
                 <div class="news_article_image_background">
                     <a href="{{url_for('news.news',news_id=news.id)}}">
                         <img src="{{ news.cover_image_url }}" alt="">
-                    </a> 
-                </div> 
-            </div> 
+                    </a>
+                </div>
+            </div>
             <div class="news_article_main_text">
                 <div class="news_article_title_container">
                     <a href="{{url_for('news.news',news_id=news.id)}}">
