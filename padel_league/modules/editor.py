@@ -1,6 +1,6 @@
 from flask import Blueprint, redirect, render_template, request, url_for
 
-from padel_league.models import Backend_App
+from padel_league.models import Backend_App, MODELS
 from padel_league.tools import auth_tools
 
 bp = Blueprint("editor", __name__, url_prefix="/editor")
@@ -15,7 +15,6 @@ def before_request():
 @bp.route("/", methods=("GET", "POST"))
 def index():
     apps = Backend_App.query.all()
-    # apps = [app.get_dict() for app in apps]
     return render_template("editor/index.html", page="editor_index", apps=apps)
 
 
@@ -25,7 +24,7 @@ def display_all(model):
     per_page = 100
 
     page = f"editor_{model}_all"
-    model = globals()[model]
+    model = MODELS[model]
     empty_instance = model()
     data = empty_instance.get_display_all_data(page=page_num, per_page=per_page)
 
@@ -35,7 +34,7 @@ def display_all(model):
 @bp.route("/display/<model>/<id>", methods=("GET", "POST"))
 def display(model, id):
     page = f"editor_{model}"
-    model = globals()[model]
+    model = MODELS[model]
     instance = model.query.filter_by(id=id).first()
     data = instance.get_display_data()
     return render_template("editor/display.html", page=page, data=data)
@@ -45,7 +44,7 @@ def display(model, id):
 def create(model):
     page = f"editor_{model}_create"
     model_name = model
-    model = globals()[model_name]
+    model = MODELS[model_name]
     empty_instance = model()
     form = empty_instance.get_create_form()
     if request.method == "POST":
@@ -55,14 +54,3 @@ def create(model):
         return redirect(url_for("editor.display_all", model=model_name))
     data = empty_instance.get_create_data(form)
     return render_template("editor/create.html", page=page, data=data)
-
-
-@bp.route("/kanban", methods=("GET", "POST"))
-def kanban():
-    model = "User"
-    page = "editor_kanban"
-    page = f"editor_{model}_all"
-    model = globals()[model]
-    empty_instance = model()
-    data = empty_instance.get_display_all_data()
-    return render_template("editor/kanban.html", page=page, data=data)
