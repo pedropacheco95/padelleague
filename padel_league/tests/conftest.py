@@ -3,11 +3,9 @@ import tempfile
 
 import pytest
 
-from app import create_app
-from app.db import get_db, init_db
-
-with open(os.path.join(os.path.dirname(__file__), "data.sql"), "rb") as f:
-    _data_sql = f.read().decode("utf8")
+from padel_league import create_app
+from padel_league.sql_db import db, init_db
+from padel_league.models import User
 
 
 @pytest.fixture
@@ -17,13 +15,14 @@ def app():
     app = create_app(
         {
             "TESTING": True,
-            "DATABASE": db_path,
+            "SQLALCHEMY_DATABASE_URI": f"sqlite:///{db_path}",
+            "SQLALCHEMY_TRACK_MODIFICATIONS": False,
         }
     )
 
     with app.app_context():
-        init_db()
-        get_db().executescript(_data_sql)
+        init_db(app)
+        db.create_all()
 
     yield app
 
@@ -41,11 +40,21 @@ def runner(app):
     return app.test_cli_runner()
 
 
-class AuthActions(object):
+@pytest.fixture
+def seed_users(app):
+    with app.app_context():
+        user1 = User(username="test", password="secret")
+        user2 = User(username="other", password="secret2")
+        db.session.add_all([user1, user2])
+        db.session.commit()
+        return [user1, user2]
+
+
+class AuthActions:
     def __init__(self, client):
         self._client = client
 
-    def login(self, username="test", password="test"):
+    def login(self, username="test", password="secret"):
         return self._client.post(
             "/auth/login", data={"username": username, "password": password}
         )
