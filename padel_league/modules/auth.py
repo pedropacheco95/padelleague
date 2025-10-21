@@ -205,4 +205,5 @@ def generate_new_code(user_id):
 @login_required
 def logout():
     logout_user()
+    session["user"] = None
     return redirect(url_for("main.index"))
