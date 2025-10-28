@@ -4,7 +4,7 @@ from flask import Blueprint, abort, jsonify, redirect, render_template, request,
 from sqlalchemy.orm import joinedload
 
 from padel_league.model import Image
-from padel_league.models import Division, Match, OrderLine, Player
+from padel_league.models import Division, Match, OrderLine, Player, MODELS
 from padel_league.tools import tools
 
 bp = Blueprint("api", __name__, url_prefix="/api")
@@ -80,7 +80,7 @@ def delete_tournament(id):
 
 @bp.route("/edit/<model>/<id>", methods=["POST"])
 def edit(model, id):
-    model_cls = globals().get(model)
+    model_cls = MODELS.get(model)
     if not model_cls:
         return jsonify(success=False, error=f"Model {model} not found"), 404
 
@@ -114,7 +114,7 @@ def edit(model, id):
 def delete(model, id):
     model_name = model
     if request.method == "POST":
-        model = globals()[model]
+        model = MODELS[model]
         obj = model.query.filter_by(id=id).first()
         obj.delete()
         return jsonify(url_for("editor.display_all", model=model_name))
@@ -123,7 +123,7 @@ def delete(model, id):
 
 @bp.route("/query/<model>", methods=("GET", "POST"))
 def query(model):
-    model = globals()[model]
+    model = MODELS[model]
     instances = model.query.all()
     instances = [
         {"value": instance.id, "name": str(instance.name)} for instance in instances
@@ -141,8 +141,8 @@ def remove_relationship():
     id1 = int(data.get("id1"))
     id2 = int(data.get("id2"))
 
-    model1 = globals()[model_name1]
-    model2 = globals()[model_name2]
+    model1 = MODELS[model_name1]
+    model2 = MODELS[model_name2]
 
     obj1 = model1.query.filter_by(id=id1).first()
     obj2 = model2.query.filter_by(id=id2).first()
@@ -156,7 +156,7 @@ def remove_relationship():
 @bp.route("/modal_create_page/<model>", methods=("GET", "POST"))
 def modal_create_page(model):
     model_name = model
-    model = globals()[model_name]
+    model = MODELS[model_name]
     empty_instance = model()
     form = empty_instance.get_basic_create_form()
     if request.method == "POST":
@@ -172,7 +172,7 @@ def modal_create_page(model):
 @bp.route("/download_csv/<model>", methods=["GET", "POST"])
 def download_csv(model):
     model_name = model
-    model = globals()[model_name]
+    model = MODELS[model_name]
     filepath = tools.create_csv_for_model(model)
     return filepath
 
@@ -180,7 +180,7 @@ def download_csv(model):
 @bp.route("/upload_csv_to_db/<model>", methods=["GET", "POST"])
 def upload_csv_to_db(model):
     model_name = model
-    model = globals()[model_name]
+    model = MODELS[model_name]
     check = tools.upload_csv_to_model(model)
     if check:
         return jsonify(url_for("editor.display_all", model=model_name))
