@@ -72,7 +72,7 @@ class Sponsor(db.Model, model.Model):
 
         form = Form()
         # Create Picture block
-        fields = [get_field(name="image", label="Icone da app", type="Picture")]
+        fields = [get_field(name="image_id", label="Icone da app", type="Picture")]
         picture_block = Block("picture_block", fields)
         form.add_block(picture_block)
 
