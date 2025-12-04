@@ -129,6 +129,108 @@ body {
     margin-top: 0;
   }
 }
+.circle-chatbot_loader {
+  margin-bottom: 4em;
+  border: 5px solid rgba(0, 0, 0, 0.2);
+  border-left-color: #565656;
+  animation: chatbot_loader-spin 1.2s infinite linear;
+  position: relative;
+  display: inline-block;
+  vertical-align: top;
+  border-radius: 50%;
+  width: 8em;
+  height: 8em;
+}
+
+.load-complete {
+  animation: none;
+  border-color: #565656;
+  transition: 500ms ease-out;
+}
+
+.checkmark {
+  display: none;
+  transition: 500ms;
+}
+.checkmark.draw:after {
+  animation-duration: 800ms;
+  animation-timing-function: ease;
+  animation-name: checkmark;
+  transform: scaleX(-1) rotate(135deg);
+}
+.checkmark:after {
+  opacity: 1;
+  height: 4em;
+  width: 2em;
+  transform-origin: left top;
+  border-right: 5px solid #565656;
+  border-top: 5px solid #565656;
+  content: "";
+  left: 1.75em;
+  top: 3.75em;
+  position: absolute;
+}
+
+@keyframes chatbot_loader-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+@keyframes checkmark {
+  0% {
+    height: 0;
+    width: 0;
+    opacity: 1;
+  }
+  20% {
+    height: 0;
+    width: 2em;
+    opacity: 1;
+  }
+  40% {
+    height: 4em;
+    width: 2em;
+    opacity: 1;
+  }
+  100% {
+    height: 4em;
+    width: 2em;
+    opacity: 1;
+  }
+}
+.chatbot_loader {
+  width: 48px;
+  height: 48px;
+  display: inline-block;
+  position: relative;
+}
+.chatbot_loader::after, .chatbot_loader::before {
+  content: "";
+  width: 48px;
+  height: 48px;
+  border: 2px solid #5B9FA4;
+  position: absolute;
+  left: 0;
+  top: 0;
+  box-sizing: border-box;
+  animation: rotation 2s ease-in-out infinite;
+}
+.chatbot_loader::after {
+  border-color: #004F53;
+  animation-delay: 1s;
+}
+
+@keyframes rotation {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
 .c-player__content {
   z-index: 5;
   position: relative;
@@ -766,6 +868,121 @@ body {
   .c-tournaments .c-tournaments__content {
     width: 100%;
   }
+}
+
+.hiddenDiv {
+  display: none !important;
+}
+
+.chatbot_out_container {
+  height: fit-content;
+  min-height: 40vh;
+  align-content: center;
+  align-items: center;
+}
+
+.chatbot_initial_greeting {
+  text-align: center;
+}
+
+.chatbot {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  font-size: 1.8rem;
+}
+
+.chatContainer {
+  height: 100vh;
+  overflow-y: scroll;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow-y: auto;
+  margin: 4rem 1rem 0rem 1rem;
+}
+@media (min-width: 940px) {
+  .chatContainer {
+    width: calc(75% - 1.25rem);
+  }
+}
+@media (max-width: 47.99em) {
+  .chatContainer {
+    width: calc(95% - 1.25rem);
+  }
+}
+.chatContainer .message {
+  border-radius: 1rem;
+  margin: 0.5rem 0;
+  padding: 0.5rem 1rem 0.5rem 1rem;
+  max-width: 70%;
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+.chatContainer .user-message {
+  align-self: flex-end;
+  background-color: #dfdfdf;
+}
+.chatContainer .bot-message {
+  /* align-self: flex-start;
+  background-color: #f6f6f6;
+  border: 1px solid #ccc; */
+}
+
+.chatFormContainer {
+  margin-top: 10px;
+  display: flex;
+  bottom: 1rem;
+  background-color: white;
+  border-radius: 1rem;
+  box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  flex-direction: column;
+  padding: 0.1rem 0.5rem 0.5rem 0.5rem;
+  margin: 1rem;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+@media (min-width: 940px) {
+  .chatFormContainer {
+    width: 75%;
+  }
+}
+@media (max-width: 47.99em) {
+  .chatFormContainer {
+    width: 95%;
+  }
+}
+.chatFormContainer :focus-visible {
+  outline: none !important;
+}
+.chatFormContainer #user_input {
+  flex: 1;
+  padding: 0.75rem;
+  width: 98%;
+  max-height: 15rem;
+  overflow-y: scroll;
+}
+.chatFormContainer #user_input :focus-visible {
+  outline: none !important;
+}
+.chatFormContainer #user_input:empty:before {
+  content: attr(data-placeholder);
+  color: #8c8c8c;
+  pointer-events: none;
+}
+.chatFormContainer #sendButton {
+  width: 3.5rem;
+  height: 3.5rem;
+  margin-left: 10px;
+  border: none;
+  background: #3d3d3d;
+  color: #fff;
+  border-radius: 50%;
+  cursor: pointer;
+  align-self: end;
+}
+.chatFormContainer #sendButton:hover {
+  background: #6c6c6c;
 }
 
 html {

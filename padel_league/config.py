@@ -12,7 +12,7 @@ class Config:
     POSTGRES_PW = os.getenv("POSTGRES_PW")
     POSTGRES_DB = os.getenv("POSTGRES_DB", "padel_league")
     POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5432")
-    POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
+    POSTGRES_HOST = os.getenv("POSTGRES_HOST", "35.205.246.86")
 
     SQLALCHEMY_DATABASE_URI = f"postgresql://{POSTGRES_USER}:{POSTGRES_PW}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
 
@@ -29,6 +29,8 @@ class Config:
     # Sessions
     SESSION_PERMANENT = False
     SESSION_TYPE = "filesystem"
+
+    LLM_API_KEY = os.getenv("LLM_API_KEY", "")
 
 
 class DevConfig(Config):

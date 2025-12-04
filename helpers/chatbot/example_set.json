@@ -1,0 +1,595 @@
+[
+    {
+        "question": "Quem são os 5 jogadores com mais pontos de ranking?",
+        "sql_query": """
+        SELECT
+            p.id AS player_id,
+            p.name,
+            p.full_name,
+            p.ranking_points,
+            p.ranking_position
+        FROM players p
+        ORDER BY p.ranking_points DESC NULLS LAST, p.ranking_position ASC NULLS LAST
+        LIMIT 5;
+        """
+    },
+    {
+        "question": "Quantos jogadores existem na liga?",
+        "sql_query": """
+        SELECT COUNT(*) AS total_jogadores FROM players;
+        """
+    },
+
+    {
+        "question": "Quais são os nomes das divisões atuais?",
+        "sql_query": """
+        SELECT d.name
+        FROM divisions d
+        WHERE d.has_ended = FALSE
+        ORDER BY d.rating DESC;
+        """
+    },
+
+    {
+        "question": "Quando começou a edição mais recente da liga?",
+        "sql_query": """
+        SELECT e.name AS edicao, MIN(d.beginning_datetime) AS data_inicio
+        FROM editions e
+        JOIN divisions d ON d.edition_id = e.id
+        WHERE e.id = (
+            SELECT DISTINCT e2.id
+            FROM editions e2
+            JOIN divisions d2 ON d2.edition_id = e2.id
+            WHERE d2.has_ended = FALSE
+            ORDER BY e2.id DESC
+            LIMIT 1
+        )
+        GROUP BY e.name;
+        """
+    },
+
+    {
+        "question": "Que campos foram usados nos jogos realizados?",
+        "sql_query": """
+        SELECT DISTINCT m.field
+        FROM matches m
+        WHERE m.played = TRUE
+          AND m.field IS NOT NULL;
+        """
+    },
+
+    {
+        "question": "Quantos jogos já foram jogados?",
+        "sql_query": """
+        SELECT COUNT(*) AS jogos_jogados
+        FROM matches
+        WHERE played = TRUE;
+        """
+    },
+    {
+        "question": "Quais são os jogadores da Divisão 1 e os respetivos pontos?",
+        "sql_query": """
+        WITH current_edition AS (
+            SELECT e.id
+            FROM editions e
+            JOIN divisions d ON d.edition_id = e.id
+            WHERE d.has_ended = FALSE
+            ORDER BY e.id DESC
+            LIMIT 1
+        ),
+        div1 AS (
+            SELECT d.id
+            FROM divisions d
+            WHERE d.edition_id = (SELECT id FROM current_edition)
+              AND d.rating = 2000
+        )
+        SELECT p.name AS jogador, pid.points AS pontos
+        FROM players_in_division pid
+        JOIN players p ON p.id = pid.player_id
+        WHERE pid.division_id = (SELECT id FROM div1)
+        ORDER BY pid.points DESC;
+        """
+    },
+    {
+        "question": "Quem ganhou o último jogo da Divisão 2?",
+        "sql_query": """
+        WITH div2 AS (
+          SELECT id
+          FROM divisions
+          WHERE rating = 1000
+            AND has_ended = FALSE
+          ORDER BY id DESC
+          LIMIT 1
+        ),
+        ultimo_jogo AS (
+          SELECT *
+          FROM matches
+          WHERE division_id = (SELECT id FROM div2)
+            AND played = TRUE
+          ORDER BY date_hour DESC, id DESC
+          LIMIT 1
+        )
+        SELECT 
+            p.name AS jogador_vencedor,
+            uj.date_hour
+        FROM ultimo_jogo uj
+        JOIN players_in_match pim 
+            ON pim.match_id = uj.id
+        JOIN players p 
+            ON p.id = pim.player_id
+        WHERE
+              (uj.winner = 1  AND LOWER(pim.team) = 'home')
+          OR (uj.winner = -1 AND LOWER(pim.team) = 'away');
+        """
+    },
+    {
+        "question": "Quantas vitórias tem cada jogador da Divisão 3?",
+        "sql_query": """
+        WITH div3 AS (
+            SELECT id
+            FROM divisions
+            WHERE rating = 500
+              AND has_ended = FALSE
+            ORDER BY id DESC
+            LIMIT 1
+        ),
+        vitorias AS (
+            SELECT 
+                pim.player_id,
+                COUNT(*) AS vitorias
+            FROM matches m
+            JOIN players_in_match pim ON pim.match_id = m.id
+            WHERE m.division_id = (SELECT id FROM div3)
+              AND m.played = TRUE
+              AND (
+                    (m.winner = 1  AND LOWER(pim.team) = 'home')
+                OR  (m.winner = -1 AND LOWER(pim.team) = 'away')
+              )
+            GROUP BY pim.player_id
+        )
+        SELECT 
+            p.name,
+            COALESCE(v.vitorias, 0) AS vitorias
+        FROM players_in_division pid
+        JOIN players p ON p.id = pid.player_id
+        LEFT JOIN vitorias v ON v.player_id = p.id
+        WHERE pid.division_id = (SELECT id FROM div3)
+        ORDER BY vitorias DESC, p.name;
+        """
+    },
+    {
+        "question": "Qual é o jogador com mais jogos jogados?",
+        "sql_query": """
+        SELECT p.name, COUNT(DISTINCT pim.match_id) AS jogos
+        FROM players_in_match pim
+        JOIN players p ON p.id = pim.player_id
+        JOIN matches m ON m.id = pim.match_id
+        WHERE m.played = TRUE
+        GROUP BY p.name
+        ORDER BY jogos DESC
+        LIMIT 1;
+        """
+    },
+
+    {
+        "question": "Que jogadores têm mais de 100 pontos e jogaram pelo menos 5 partidas?",
+        "sql_query": """
+        WITH jogos AS (
+            SELECT pim.player_id, COUNT(*) AS jogos
+            FROM players_in_match pim
+            JOIN matches m ON m.id = pim.match_id
+            WHERE m.played = TRUE
+            GROUP BY pim.player_id
+        )
+        SELECT 
+            p.name,
+            pid.points,
+            j.jogos
+        FROM players_in_division pid
+        JOIN players p ON p.id = pid.player_id
+        JOIN jogos j ON j.player_id = p.id
+        WHERE pid.points > 100
+          AND j.jogos >= 5
+        ORDER BY pid.points DESC;
+        """
+    },
+    {
+        "question": "Quantos jogos foram jogados em cada divisao?",
+        "sql_query": """
+        SELECT 
+            d.name AS divisao,
+            COUNT(m.id) AS jogos_jogados
+        FROM matches m
+        JOIN divisions d ON d.id = m.division_id
+        WHERE m.played = TRUE
+        GROUP BY d.name, d.rating
+        ORDER BY d.rating DESC;
+        """
+    },
+    {
+        "question": "Quem é o líder atual de cada divisão?",
+        "sql_query": """
+        SELECT d.name AS divisao, p.name AS lider, pid.points
+        FROM players_in_division pid
+        JOIN players p ON p.id = pid.player_id
+        JOIN divisions d ON d.id = pid.division_id
+        WHERE d.has_ended = FALSE
+          AND pid.place = 1
+        ORDER BY d.rating DESC;
+        """
+    },
+    {
+        "question": "Quais foram os três jogadores com mais vitórias na última edição da liga?",
+        "sql_query": """
+        WITH ultima_edicao_fechada AS (
+            SELECT 
+                e.id
+            FROM editions e
+            JOIN divisions d ON d.edition_id = e.id
+            GROUP BY e.id
+            HAVING BOOL_AND(d.has_ended = TRUE)
+            ORDER BY e.id DESC
+            LIMIT 1
+        ),
+        vitorias AS (
+            SELECT 
+                pim.player_id,
+                COUNT(*) AS vitorias
+            FROM matches m
+            JOIN divisions d ON d.id = m.division_id
+            JOIN players_in_match pim ON pim.match_id = m.id
+            WHERE d.edition_id = (SELECT id FROM ultima_edicao_fechada)
+              AND m.played = TRUE
+              AND (
+                    (m.winner = 1  AND LOWER(pim.team) = 'home')
+                OR (m.winner = -1 AND LOWER(pim.team) = 'away')
+              )
+            GROUP BY pim.player_id
+        )
+        SELECT 
+            p.name,
+            v.vitorias
+        FROM vitorias v
+        JOIN players p ON p.id = v.player_id
+        ORDER BY v.vitorias DESC
+        LIMIT 3;
+        """
+    },
+
+    {
+        "question": "Que jogador melhorou mais a sua classificação entre duas edições consecutivas?",
+        "sql_query": """
+      WITH edicoes_fechadas AS (
+          SELECT 
+              e.id,
+              e.name
+          FROM editions e
+          JOIN divisions d ON d.edition_id = e.id
+          GROUP BY e.id, e.name
+          HAVING BOOL_AND(d.has_ended = TRUE)
+      ),
+      ordenadas AS (
+          SELECT 
+              id,
+              name,
+              LAG(id) OVER (ORDER BY id) AS ed_prev,
+              LAG(name) OVER (ORDER BY id) AS ed_prev_name
+          FROM edicoes_fechadas
+      ),
+      posicoes AS (
+          SELECT 
+              e.id AS edition_id,
+              e.name AS edition_name,
+              d.rating AS division_rating,
+              pid.player_id,
+              pid.place
+          FROM players_in_division pid
+          JOIN divisions d ON d.id = pid.division_id
+          JOIN editions e ON e.id = d.edition_id
+          WHERE e.id IN (SELECT id FROM edicoes_fechadas)
+      ),
+      melhorias AS (
+          SELECT 
+              curr.player_id,
+              ord.ed_prev AS edition_prev_id,
+              ord.ed_prev_name AS edition_prev_name,
+              ord.id AS edition_curr_id,
+              ord.name AS edition_curr_name,
+              prev.division_rating AS division_prev_rating,
+              curr.division_rating AS division_curr_rating,
+              prev.place AS place_prev,
+              curr.place AS place_curr,
+              (prev.place - curr.place) AS melhoria
+          FROM ordenadas ord
+          JOIN posicoes prev ON prev.edition_id = ord.ed_prev
+          JOIN posicoes curr ON curr.edition_id = ord.id
+                            AND curr.player_id = prev.player_id
+          WHERE ord.ed_prev IS NOT NULL
+      )
+      SELECT 
+          p.name,
+          melhoria,
+          place_prev,
+          place_curr,
+          edition_prev_name,
+          edition_curr_name,
+          division_prev_rating,
+          division_curr_rating
+      FROM melhorias
+      JOIN players p ON p.id = melhorias.player_id
+      WHERE melhoria > 0
+      ORDER BY melhoria DESC
+      LIMIT 1;
+      """
+    },
+
+    {
+        "question": "Mostra as próximas partidas (não jogadas) ordenadas por data e divisão.",
+        "sql_query": """
+        SELECT d.name AS divisao, m.date_hour, m.field
+        FROM matches m
+        JOIN divisions d ON d.id = m.division_id
+        WHERE m.played = FALSE
+        ORDER BY d.rating DESC, m.date_hour ASC;
+        """
+    },
+
+    {
+        "question": "Em que divisões joga o jogador chamado 'Pedro Pacheco'?",
+        "sql_query": """
+        SELECT DISTINCT d.name AS divisao, e.name AS edicao
+        FROM players p
+        JOIN players_in_division pid ON pid.player_id = p.id
+        JOIN divisions d ON d.id = pid.division_id
+        JOIN editions e ON e.id = d.edition_id
+        WHERE LOWER(p.full_name) LIKE '%pedro%' 
+          AND LOWER(p.full_name) LIKE '%pacheco%';
+        """
+    },
+
+    {
+        "question": "Que jogadores ganharam mais jogos jogando como equipa da casa?",
+        "sql_query": """
+        SELECT p.name, COUNT(*) AS vitorias_casa
+        FROM matches m
+        JOIN players_in_match pim ON pim.match_id = m.id
+        JOIN players p ON p.id = pim.player_id
+        WHERE LOWER(pim.team) = 'home'
+          AND m.played = TRUE
+          AND (
+                (m.winner = 1 AND LOWER(pim.team) = 'home')
+             OR (m.winner = -1 AND LOWER(pim.team) = 'away')
+          )
+        GROUP BY p.name
+        ORDER BY vitorias_casa DESC
+        LIMIT 5;
+        """
+    },
+
+    {
+        "question": "Mostra a classificação média (pontos) dos jogadores por divisão.",
+        "sql_query": """
+        SELECT d.name AS divisao, AVG(pid.points) AS media_pontos
+        FROM players_in_division pid
+        JOIN divisions d ON d.id = pid.division_id
+        WHERE d.has_ended = FALSE
+        GROUP BY d.name, d.rating
+        ORDER BY d.rating DESC;
+        """
+    },
+
+    {
+        "question": "Que jogadores jogaram mais vezes como adversários?",
+        "sql_query": """
+        WITH pairs AS (
+          SELECT 
+             LEAST(p1.player_id, p2.player_id) AS a,
+             GREATEST(p1.player_id, p2.player_id) AS b,
+             p1.match_id
+          FROM players_in_match p1
+          JOIN players_in_match p2
+             ON p1.match_id = p2.match_id
+            AND p1.team <> p2.team
+            AND p1.player_id <> p2.player_id
+          JOIN matches m ON m.id = p1.match_id
+          WHERE m.played = TRUE
+          GROUP BY 
+             LEAST(p1.player_id, p2.player_id),
+             GREATEST(p1.player_id, p2.player_id),
+             p1.match_id
+        )
+        SELECT pA.name AS jogador_a, pB.name AS jogador_b, COUNT(*) AS jogos_como_adversarios
+        FROM pairs
+        JOIN players pA ON pA.id = pairs.a
+        JOIN players pB ON pB.id = pairs.b
+        GROUP BY pA.name, pB.name
+        ORDER BY jogos_como_adversarios DESC, pA.name, pB.name
+        LIMIT 10;
+        """
+    },
+        {
+        "question": "Quem ganhou mais vezes nos confrontos Dudas v Miguel SG?",
+        "sql_query": """
+        WITH ids AS (
+            SELECT
+                MAX(CASE WHEN LOWER(p.name) LIKE '%dudas%' THEN p.id END) AS dudas_id,
+                MAX(CASE WHEN LOWER(p.name) LIKE '%miguel sg%' THEN p.id END) AS miguel_id
+            FROM players p
+        ),
+
+        confrontos AS (
+            SELECT 
+                m.id,
+                m.winner,
+
+                -- equipa de cada jogador
+                MAX(CASE WHEN pim.player_id = (SELECT dudas_id FROM ids) THEN LOWER(pim.team) END) AS dudas_team,
+                MAX(CASE WHEN pim.player_id = (SELECT miguel_id FROM ids) THEN LOWER(pim.team) END) AS miguel_team
+            FROM matches m
+            JOIN players_in_match pim ON pim.match_id = m.id
+            WHERE m.played = TRUE
+            AND m.id IN (
+                    SELECT match_id
+                    FROM players_in_match
+                    WHERE player_id IN (
+                        (SELECT dudas_id FROM ids),
+                        (SELECT miguel_id FROM ids)
+                    )
+                    GROUP BY match_id
+                    HAVING COUNT(DISTINCT player_id) = 2
+            )
+            GROUP BY m.id, m.winner
+        )
+
+        SELECT
+            CASE 
+                WHEN winner = 0 OR winner IS NULL THEN 'Empate/Indefinido'
+
+                -- Dudas wins
+                WHEN winner = 1  AND dudas_team = 'home' THEN 'Dudas'
+                WHEN winner = -1 AND dudas_team = 'away' THEN 'Dudas'
+
+                -- Miguel SG wins
+                WHEN winner = 1  AND miguel_team = 'home' THEN 'Miguel SG'
+                WHEN winner = -1 AND miguel_team = 'away' THEN 'Miguel SG'
+
+                ELSE 'Empate/Indefinido'
+            END AS jogador,
+            COUNT(*) AS vitorias
+        FROM confrontos
+        WHERE winner <> 0
+        GROUP BY jogador
+        ORDER BY vitorias DESC;
+        """
+    },
+    {
+        "question": "Quem tem melhor percentagem de vitórias nesta edição?",
+        "sql_query": """
+        WITH current_edition AS (
+          SELECT id
+          FROM editions
+          ORDER BY id DESC
+          LIMIT 1
+        ),
+        games AS (
+          SELECT pim.player_id, COUNT(DISTINCT pim.match_id) AS jogos
+          FROM players_in_match pim
+          JOIN matches m ON m.id = pim.match_id
+          JOIN divisions d ON d.id = m.division_id
+          WHERE d.edition_id = (SELECT id FROM current_edition)
+            AND m.played = TRUE
+          GROUP BY pim.player_id
+        ),
+        wins AS (
+          SELECT pim.player_id, COUNT(*) AS vitorias
+          FROM matches m
+          JOIN players_in_match pim ON pim.match_id = m.id
+          JOIN divisions d ON d.id = m.division_id
+          WHERE d.edition_id = (SELECT id FROM current_edition)
+            AND m.played = TRUE
+            AND (
+                  (m.winner = 1  AND LOWER(pim.team) = 'home')
+               OR (m.winner = -1 AND LOWER(pim.team) = 'away')
+            )
+          GROUP BY pim.player_id
+        )
+        SELECT p.name,
+               COALESCE(w.vitorias, 0) AS vitorias,
+               g.jogos,
+               ROUND(100.0 * COALESCE(w.vitorias, 0) / NULLIF(g.jogos, 0), 2) AS perc_vitorias
+        FROM games g
+        JOIN players p ON p.id = g.player_id
+        LEFT JOIN wins w ON w.player_id = g.player_id
+        WHERE g.jogos >= 5
+        ORDER BY perc_vitorias DESC, vitorias DESC, g.jogos DESC
+        LIMIT 10;
+        """
+    },
+
+    {
+        "question": "Quem tem melhor assiduidade de sempre?",
+        "sql_query": """
+        SELECT
+            p.id AS player_id,
+            p.name,
+            SUM(pid.appearances) AS jogos_jogados,
+            COUNT(*) AS divisoes_jogadas,
+            ROUND(
+                SUM(pid.appearances)::numeric / NULLIF(COUNT(*) * 21, 0),
+                3
+            ) AS assiduidade
+        FROM players_in_division pid
+        JOIN players p ON p.id = pid.player_id
+        GROUP BY p.id, p.name
+        HAVING COUNT(*) > 0
+        ORDER BY assiduidade DESC, jogos_jogados DESC, p.name
+        LIMIT 10;
+        """
+    },
+
+    {
+        "question": "Quem tem melhor percentagem de vitórias de sempre?",
+        "sql_query": """
+        WITH jogos AS (
+            SELECT 
+                pim.player_id,
+                COUNT(DISTINCT pim.match_id) AS jogos
+            FROM players_in_match pim
+            JOIN matches m ON m.id = pim.match_id
+            WHERE m.played = TRUE
+            GROUP BY pim.player_id
+        ),
+        vitorias AS (
+            SELECT 
+                pim.player_id,
+                COUNT(*) AS vitorias
+            FROM matches m
+            JOIN players_in_match pim ON pim.match_id = m.id
+            WHERE m.played = TRUE
+              AND (
+                    (m.winner = 1  AND LOWER(pim.team) = 'home')
+                OR (m.winner = -1 AND LOWER(pim.team) = 'away')
+              )
+            GROUP BY pim.player_id
+        )
+        SELECT 
+            p.name,
+            COALESCE(v.vitorias, 0) AS vitorias,
+            j.jogos,
+            ROUND(100.0 * COALESCE(v.vitorias, 0) / NULLIF(j.jogos, 0), 2) AS perc_vitorias
+        FROM jogos j
+        JOIN players p ON p.id = j.player_id
+        LEFT JOIN vitorias v ON v.player_id = j.player_id
+        WHERE j.jogos >= 5
+        ORDER BY perc_vitorias DESC, vitorias DESC, j.jogos DESC
+        LIMIT 20;
+        """
+    },
+
+    {
+        "question": "Quantas vezes é que o Talinho jogou a 1ª Divisão?",
+        "sql_query": """
+          WITH primeira_div AS (
+              SELECT id
+              FROM divisions
+              WHERE rating = 2000
+          ),
+          tal AS (
+              SELECT id
+              FROM players
+              WHERE LOWER(name) LIKE '%talinho%'
+                OR LOWER(full_name) LIKE '%talinho%'
+              LIMIT 1
+          )
+          SELECT 
+              p.name,
+              COUNT(*) AS vezes_primeira_divisao
+          FROM players_in_division pid
+          JOIN tal ON tal.id = pid.player_id
+          JOIN players p ON p.id = tal.id
+          WHERE pid.division_id IN (SELECT id FROM primeira_div)
+          GROUP BY p.name;
+        """
+    }
+
+]

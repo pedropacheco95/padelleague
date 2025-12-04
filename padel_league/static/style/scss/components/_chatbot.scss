@@ -1,0 +1,121 @@
+@use "../mixins" as *;
+@use "../variables" as *;
+
+.hiddenDiv{
+    display: none!important;
+}
+
+.chatbot_out_container{
+    height: fit-content;
+    min-height: 40vh;
+    align-content: center;
+    align-items: center;
+}
+
+.chatbot_initial_greeting{
+    text-align: center;
+}
+
+.chatbot {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    font-size: 1.8rem;
+}
+
+.chatContainer {
+    height: 100vh;
+    overflow-y: scroll;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow-y: auto;
+    margin: 4rem 1rem 0rem 1rem;
+
+    @include size-query(large) {
+        width: calc(75% - 1.25rem);
+    }
+
+    @include size-query(small) {
+        width: calc(95% - 1.25rem);
+    }
+
+    .message {
+        border-radius: $border-radius;
+        margin: 0.5rem 0;
+        padding: .5rem 1rem .5rem 1rem;
+        max-width: 70%;
+        line-height: 1.4;
+        word-wrap: break-word;
+    }
+
+    .user-message {
+        align-self: flex-end;
+        background-color: #dfdfdf;
+    }
+
+    .bot-message {
+        /* align-self: flex-start;
+        background-color: #f6f6f6;
+        border: 1px solid #ccc; */
+    }
+}
+
+.chatFormContainer {
+    margin-top: 10px;
+    display: flex;
+    bottom: 1rem;
+    background-color: white;
+    border-radius: $border-radius;
+    box-shadow: $box-shadow;
+    flex-direction: column;
+    padding: .1rem .5rem 0.5rem .5rem;
+    margin: 1rem;
+    border: 1px solid rgba(0,0,0,0.12);
+    
+    @include size-query(large) {
+        width: 75%;
+    }
+
+    @include size-query(small) {
+        width: 95%;
+    }
+
+    :focus-visible{
+        outline: none!important;
+    }
+
+    #user_input {
+        flex: 1;
+        padding: 0.75rem;
+        width: 98%;
+        max-height: 15rem;
+        overflow-y: scroll;
+
+        :focus-visible{
+            outline: none!important;
+        }
+    }
+
+    #user_input:empty:before {
+        content: attr(data-placeholder);
+        color: #8c8c8c;
+        pointer-events: none;
+    }
+
+    #sendButton {
+        width: 3.5rem;
+        height: 3.5rem;
+        margin-left: 10px;
+        border: none;
+        background: #3d3d3d;
+        color: #fff;
+        border-radius: 50%;
+        cursor: pointer;
+        align-self: end;
+    }
+    #sendButton:hover {
+        background: #6c6c6c;
+    }
+}
