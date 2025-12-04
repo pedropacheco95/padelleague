@@ -24,6 +24,7 @@ dependencies = [
     "SQLAlchemy==1.4.52",
     "Flask-SQLAlchemy==2.5.1",
     "psycopg2-binary==2.9.9",
+    "pandas==2.3.3",
 
     # --- Migrations ---
     "Flask-Migrate==4.0.7",
