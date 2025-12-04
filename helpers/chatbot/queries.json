@@ -1,0 +1,102 @@
+[
+    {
+        "question": "Quem são os 5 jogadores com mais pontos de ranking?",
+        "sql_query": "\n        SELECT\n            p.id AS player_id,\n            p.name,\n            p.full_name,\n            p.ranking_points,\n            p.ranking_position\n        FROM players p\n        ORDER BY p.ranking_points DESC NULLS LAST, p.ranking_position ASC NULLS LAST\n        LIMIT 5;\n        "
+    },
+    {
+        "question": "Quantos jogadores existem na liga?",
+        "sql_query": "\n        SELECT COUNT(*) AS total_jogadores FROM players;\n        "
+    },
+    {
+        "question": "Quais são os nomes das divisões atuais?",
+        "sql_query": "\n        SELECT d.name\n        FROM divisions d\n        WHERE d.has_ended = FALSE\n        ORDER BY d.rating DESC;\n        "
+    },
+    {
+        "question": "Quando começou a edição mais recente da liga?",
+        "sql_query": "\n        SELECT e.name AS edicao, MIN(d.beginning_datetime) AS data_inicio\n        FROM editions e\n        JOIN divisions d ON d.edition_id = e.id\n        WHERE e.id = (\n            SELECT DISTINCT e2.id\n            FROM editions e2\n            JOIN divisions d2 ON d2.edition_id = e2.id\n            WHERE d2.has_ended = FALSE\n            ORDER BY e2.id DESC\n            LIMIT 1\n        )\n        GROUP BY e.name;\n        "
+    },
+    {
+        "question": "Que campos foram usados nos jogos realizados?",
+        "sql_query": "\n        SELECT DISTINCT m.field\n        FROM matches m\n        WHERE m.played = TRUE\n          AND m.field IS NOT NULL;\n        "
+    },
+    {
+        "question": "Quantos jogos já foram jogados?",
+        "sql_query": "\n        SELECT COUNT(*) AS jogos_jogados\n        FROM matches\n        WHERE played = TRUE;\n        "
+    },
+    {
+        "question": "Quais são os jogadores da Divisão 1 e os respetivos pontos?",
+        "sql_query": "\n        WITH current_edition AS (\n            SELECT e.id\n            FROM editions e\n            JOIN divisions d ON d.edition_id = e.id\n            WHERE d.has_ended = FALSE\n            ORDER BY e.id DESC\n            LIMIT 1\n        ),\n        div1 AS (\n            SELECT d.id\n            FROM divisions d\n            WHERE d.edition_id = (SELECT id FROM current_edition)\n              AND d.rating = 2000\n        )\n        SELECT p.name AS jogador, pid.points AS pontos\n        FROM players_in_division pid\n        JOIN players p ON p.id = pid.player_id\n        WHERE pid.division_id = (SELECT id FROM div1)\n        ORDER BY pid.points DESC;\n        "
+    },
+    {
+        "question": "Quem ganhou o último jogo da Divisão 2?",
+        "sql_query": "\n        WITH div2 AS (\n          SELECT id\n          FROM divisions\n          WHERE rating = 1000\n            AND has_ended = FALSE\n          ORDER BY id DESC\n          LIMIT 1\n        ),\n        ultimo_jogo AS (\n          SELECT *\n          FROM matches\n          WHERE division_id = (SELECT id FROM div2)\n            AND played = TRUE\n          ORDER BY date_hour DESC, id DESC\n          LIMIT 1\n        )\n        SELECT \n            p.name AS jogador_vencedor,\n            uj.date_hour\n        FROM ultimo_jogo uj\n        JOIN players_in_match pim \n            ON pim.match_id = uj.id\n        JOIN players p \n            ON p.id = pim.player_id\n        WHERE\n              (uj.winner = 1  AND LOWER(pim.team) = 'home')\n          OR (uj.winner = -1 AND LOWER(pim.team) = 'away');\n        "
+    },
+    {
+        "question": "Quantas vitórias tem cada jogador da Divisão 3?",
+        "sql_query": "\n        WITH div3 AS (\n            SELECT id\n            FROM divisions\n            WHERE rating = 500\n              AND has_ended = FALSE\n            ORDER BY id DESC\n            LIMIT 1\n        ),\n        vitorias AS (\n            SELECT \n                pim.player_id,\n                COUNT(*) AS vitorias\n            FROM matches m\n            JOIN players_in_match pim ON pim.match_id = m.id\n            WHERE m.division_id = (SELECT id FROM div3)\n              AND m.played = TRUE\n              AND (\n                    (m.winner = 1  AND LOWER(pim.team) = 'home')\n                OR  (m.winner = -1 AND LOWER(pim.team) = 'away')\n              )\n            GROUP BY pim.player_id\n        )\n        SELECT \n            p.name,\n            COALESCE(v.vitorias, 0) AS vitorias\n        FROM players_in_division pid\n        JOIN players p ON p.id = pid.player_id\n        LEFT JOIN vitorias v ON v.player_id = p.id\n        WHERE pid.division_id = (SELECT id FROM div3)\n        ORDER BY vitorias DESC, p.name;\n        "
+    },
+    {
+        "question": "Qual é o jogador com mais jogos jogados?",
+        "sql_query": "\n        SELECT p.name, COUNT(DISTINCT pim.match_id) AS jogos\n        FROM players_in_match pim\n        JOIN players p ON p.id = pim.player_id\n        JOIN matches m ON m.id = pim.match_id\n        WHERE m.played = TRUE\n        GROUP BY p.name\n        ORDER BY jogos DESC\n        LIMIT 1;\n        "
+    },
+    {
+        "question": "Que jogadores têm mais de 100 pontos e jogaram pelo menos 5 partidas?",
+        "sql_query": "\n        WITH jogos AS (\n            SELECT pim.player_id, COUNT(*) AS jogos\n            FROM players_in_match pim\n            JOIN matches m ON m.id = pim.match_id\n            WHERE m.played = TRUE\n            GROUP BY pim.player_id\n        )\n        SELECT \n            p.name,\n            pid.points,\n            j.jogos\n        FROM players_in_division pid\n        JOIN players p ON p.id = pid.player_id\n        JOIN jogos j ON j.player_id = p.id\n        WHERE pid.points > 100\n          AND j.jogos >= 5\n        ORDER BY pid.points DESC;\n        "
+    },
+    {
+        "question": "Quantos jogos foram jogados em cada divisao?",
+        "sql_query": "\n        SELECT \n            d.name AS divisao,\n            COUNT(m.id) AS jogos_jogados\n        FROM matches m\n        JOIN divisions d ON d.id = m.division_id\n        WHERE m.played = TRUE\n        GROUP BY d.name, d.rating\n        ORDER BY d.rating DESC;\n        "
+    },
+    {
+        "question": "Quem é o líder atual de cada divisão?",
+        "sql_query": "\n        SELECT d.name AS divisao, p.name AS lider, pid.points\n        FROM players_in_division pid\n        JOIN players p ON p.id = pid.player_id\n        JOIN divisions d ON d.id = pid.division_id\n        WHERE d.has_ended = FALSE\n          AND pid.place = 1\n        ORDER BY d.rating DESC;\n        "
+    },
+    {
+        "question": "Quais foram os três jogadores com mais vitórias na última edição da liga?",
+        "sql_query": "\n        WITH ultima_edicao_fechada AS (\n            SELECT \n                e.id\n            FROM editions e\n            JOIN divisions d ON d.edition_id = e.id\n            GROUP BY e.id\n            HAVING BOOL_AND(d.has_ended = TRUE)\n            ORDER BY e.id DESC\n            LIMIT 1\n        ),\n        vitorias AS (\n            SELECT \n                pim.player_id,\n                COUNT(*) AS vitorias\n            FROM matches m\n            JOIN divisions d ON d.id = m.division_id\n            JOIN players_in_match pim ON pim.match_id = m.id\n            WHERE d.edition_id = (SELECT id FROM ultima_edicao_fechada)\n              AND m.played = TRUE\n              AND (\n                    (m.winner = 1  AND LOWER(pim.team) = 'home')\n                OR (m.winner = -1 AND LOWER(pim.team) = 'away')\n              )\n            GROUP BY pim.player_id\n        )\n        SELECT \n            p.name,\n            v.vitorias\n        FROM vitorias v\n        JOIN players p ON p.id = v.player_id\n        ORDER BY v.vitorias DESC\n        LIMIT 3;\n        "
+    },
+    {
+        "question": "Que jogador melhorou mais a sua classificação entre duas edições consecutivas?",
+        "sql_query": "\n      WITH edicoes_fechadas AS (\n          SELECT \n              e.id,\n              e.name\n          FROM editions e\n          JOIN divisions d ON d.edition_id = e.id\n          GROUP BY e.id, e.name\n          HAVING BOOL_AND(d.has_ended = TRUE)\n      ),\n      ordenadas AS (\n          SELECT \n              id,\n              name,\n              LAG(id) OVER (ORDER BY id) AS ed_prev,\n              LAG(name) OVER (ORDER BY id) AS ed_prev_name\n          FROM edicoes_fechadas\n      ),\n      posicoes AS (\n          SELECT \n              e.id AS edition_id,\n              e.name AS edition_name,\n              d.rating AS division_rating,\n              pid.player_id,\n              pid.place\n          FROM players_in_division pid\n          JOIN divisions d ON d.id = pid.division_id\n          JOIN editions e ON e.id = d.edition_id\n          WHERE e.id IN (SELECT id FROM edicoes_fechadas)\n      ),\n      melhorias AS (\n          SELECT \n              curr.player_id,\n              ord.ed_prev AS edition_prev_id,\n              ord.ed_prev_name AS edition_prev_name,\n              ord.id AS edition_curr_id,\n              ord.name AS edition_curr_name,\n              prev.division_rating AS division_prev_rating,\n              curr.division_rating AS division_curr_rating,\n              prev.place AS place_prev,\n              curr.place AS place_curr,\n              (prev.place - curr.place) AS melhoria\n          FROM ordenadas ord\n          JOIN posicoes prev ON prev.edition_id = ord.ed_prev\n          JOIN posicoes curr ON curr.edition_id = ord.id\n                            AND curr.player_id = prev.player_id\n          WHERE ord.ed_prev IS NOT NULL\n      )\n      SELECT \n          p.name,\n          melhoria,\n          place_prev,\n          place_curr,\n          edition_prev_name,\n          edition_curr_name,\n          division_prev_rating,\n          division_curr_rating\n      FROM melhorias\n      JOIN players p ON p.id = melhorias.player_id\n      WHERE melhoria > 0\n      ORDER BY melhoria DESC\n      LIMIT 1;\n      "
+    },
+    {
+        "question": "Mostra as próximas partidas (não jogadas) ordenadas por data e divisão.",
+        "sql_query": "\n        SELECT d.name AS divisao, m.date_hour, m.field\n        FROM matches m\n        JOIN divisions d ON d.id = m.division_id\n        WHERE m.played = FALSE\n        ORDER BY d.rating DESC, m.date_hour ASC;\n        "
+    },
+    {
+        "question": "Em que divisões joga o jogador chamado 'Pedro Pacheco'?",
+        "sql_query": "\n        SELECT DISTINCT d.name AS divisao, e.name AS edicao\n        FROM players p\n        JOIN players_in_division pid ON pid.player_id = p.id\n        JOIN divisions d ON d.id = pid.division_id\n        JOIN editions e ON e.id = d.edition_id\n        WHERE LOWER(p.full_name) LIKE '%pedro%' \n          AND LOWER(p.full_name) LIKE '%pacheco%';\n        "
+    },
+    {
+        "question": "Que jogadores ganharam mais jogos jogando como equipa da casa?",
+        "sql_query": "\n        SELECT p.name, COUNT(*) AS vitorias_casa\n        FROM matches m\n        JOIN players_in_match pim ON pim.match_id = m.id\n        JOIN players p ON p.id = pim.player_id\n        WHERE LOWER(pim.team) = 'home'\n          AND m.played = TRUE\n          AND (\n                (m.winner = 1 AND LOWER(pim.team) = 'home')\n             OR (m.winner = -1 AND LOWER(pim.team) = 'away')\n          )\n        GROUP BY p.name\n        ORDER BY vitorias_casa DESC\n        LIMIT 5;\n        "
+    },
+    {
+        "question": "Mostra a classificação média (pontos) dos jogadores por divisão.",
+        "sql_query": "\n        SELECT d.name AS divisao, AVG(pid.points) AS media_pontos\n        FROM players_in_division pid\n        JOIN divisions d ON d.id = pid.division_id\n        WHERE d.has_ended = FALSE\n        GROUP BY d.name, d.rating\n        ORDER BY d.rating DESC;\n        "
+    },
+    {
+        "question": "Que jogadores jogaram mais vezes como adversários?",
+        "sql_query": "\n        WITH pairs AS (\n          SELECT \n             LEAST(p1.player_id, p2.player_id) AS a,\n             GREATEST(p1.player_id, p2.player_id) AS b,\n             p1.match_id\n          FROM players_in_match p1\n          JOIN players_in_match p2\n             ON p1.match_id = p2.match_id\n            AND p1.team <> p2.team\n            AND p1.player_id <> p2.player_id\n          JOIN matches m ON m.id = p1.match_id\n          WHERE m.played = TRUE\n          GROUP BY \n             LEAST(p1.player_id, p2.player_id),\n             GREATEST(p1.player_id, p2.player_id),\n             p1.match_id\n        )\n        SELECT pA.name AS jogador_a, pB.name AS jogador_b, COUNT(*) AS jogos_como_adversarios\n        FROM pairs\n        JOIN players pA ON pA.id = pairs.a\n        JOIN players pB ON pB.id = pairs.b\n        GROUP BY pA.name, pB.name\n        ORDER BY jogos_como_adversarios DESC, pA.name, pB.name\n        LIMIT 10;\n        "
+    },
+    {
+        "question": "Quem ganhou mais vezes nos confrontos Dudas v Miguel SG?",
+        "sql_query": "\n        WITH ids AS (\n            SELECT\n                MAX(CASE WHEN LOWER(p.name) LIKE '%dudas%' THEN p.id END) AS dudas_id,\n                MAX(CASE WHEN LOWER(p.name) LIKE '%miguel sg%' THEN p.id END) AS miguel_id\n            FROM players p\n        ),\n\n        confrontos AS (\n            SELECT \n                m.id,\n                m.winner,\n\n                -- equipa de cada jogador\n                MAX(CASE WHEN pim.player_id = (SELECT dudas_id FROM ids) THEN LOWER(pim.team) END) AS dudas_team,\n                MAX(CASE WHEN pim.player_id = (SELECT miguel_id FROM ids) THEN LOWER(pim.team) END) AS miguel_team\n            FROM matches m\n            JOIN players_in_match pim ON pim.match_id = m.id\n            WHERE m.played = TRUE\n            AND m.id IN (\n                    SELECT match_id\n                    FROM players_in_match\n                    WHERE player_id IN (\n                        (SELECT dudas_id FROM ids),\n                        (SELECT miguel_id FROM ids)\n                    )\n                    GROUP BY match_id\n                    HAVING COUNT(DISTINCT player_id) = 2\n            )\n            GROUP BY m.id, m.winner\n        )\n\n        SELECT\n            CASE \n                WHEN winner = 0 OR winner IS NULL THEN 'Empate/Indefinido'\n\n                -- Dudas wins\n                WHEN winner = 1  AND dudas_team = 'home' THEN 'Dudas'\n                WHEN winner = -1 AND dudas_team = 'away' THEN 'Dudas'\n\n                -- Miguel SG wins\n                WHEN winner = 1  AND miguel_team = 'home' THEN 'Miguel SG'\n                WHEN winner = -1 AND miguel_team = 'away' THEN 'Miguel SG'\n\n                ELSE 'Empate/Indefinido'\n            END AS jogador,\n            COUNT(*) AS vitorias\n        FROM confrontos\n        WHERE winner <> 0\n        GROUP BY jogador\n        ORDER BY vitorias DESC;\n        "
+    },
+    {
+        "question": "Quem tem melhor percentagem de vitórias nesta edição?",
+        "sql_query": "\n        WITH current_edition AS (\n          SELECT id\n          FROM editions\n          ORDER BY id DESC\n          LIMIT 1\n        ),\n        games AS (\n          SELECT pim.player_id, COUNT(DISTINCT pim.match_id) AS jogos\n          FROM players_in_match pim\n          JOIN matches m ON m.id = pim.match_id\n          JOIN divisions d ON d.id = m.division_id\n          WHERE d.edition_id = (SELECT id FROM current_edition)\n            AND m.played = TRUE\n          GROUP BY pim.player_id\n        ),\n        wins AS (\n          SELECT pim.player_id, COUNT(*) AS vitorias\n          FROM matches m\n          JOIN players_in_match pim ON pim.match_id = m.id\n          JOIN divisions d ON d.id = m.division_id\n          WHERE d.edition_id = (SELECT id FROM current_edition)\n            AND m.played = TRUE\n            AND (\n                  (m.winner = 1  AND LOWER(pim.team) = 'home')\n               OR (m.winner = -1 AND LOWER(pim.team) = 'away')\n            )\n          GROUP BY pim.player_id\n        )\n        SELECT p.name,\n               COALESCE(w.vitorias, 0) AS vitorias,\n               g.jogos,\n               ROUND(100.0 * COALESCE(w.vitorias, 0) / NULLIF(g.jogos, 0), 2) AS perc_vitorias\n        FROM games g\n        JOIN players p ON p.id = g.player_id\n        LEFT JOIN wins w ON w.player_id = g.player_id\n        WHERE g.jogos >= 5\n        ORDER BY perc_vitorias DESC, vitorias DESC, g.jogos DESC\n        LIMIT 10;\n        "
+    },
+    {
+        "question": "Quem tem melhor assiduidade de sempre?",
+        "sql_query": "\n        SELECT\n            p.id AS player_id,\n            p.name,\n            SUM(pid.appearances) AS jogos_jogados,\n            COUNT(*) AS divisoes_jogadas,\n            ROUND(\n                SUM(pid.appearances)::numeric / NULLIF(COUNT(*) * 21, 0),\n                3\n            ) AS assiduidade\n        FROM players_in_division pid\n        JOIN players p ON p.id = pid.player_id\n        GROUP BY p.id, p.name\n        HAVING COUNT(*) > 0\n        ORDER BY assiduidade DESC, jogos_jogados DESC, p.name\n        LIMIT 10;\n        "
+    },
+    {
+        "question": "Quem tem melhor percentagem de vitórias de sempre?",
+        "sql_query": "\n        WITH jogos AS (\n            SELECT \n                pim.player_id,\n                COUNT(DISTINCT pim.match_id) AS jogos\n            FROM players_in_match pim\n            JOIN matches m ON m.id = pim.match_id\n            WHERE m.played = TRUE\n            GROUP BY pim.player_id\n        ),\n        vitorias AS (\n            SELECT \n                pim.player_id,\n                COUNT(*) AS vitorias\n            FROM matches m\n            JOIN players_in_match pim ON pim.match_id = m.id\n            WHERE m.played = TRUE\n              AND (\n                    (m.winner = 1  AND LOWER(pim.team) = 'home')\n                OR (m.winner = -1 AND LOWER(pim.team) = 'away')\n              )\n            GROUP BY pim.player_id\n        )\n        SELECT \n            p.name,\n            COALESCE(v.vitorias, 0) AS vitorias,\n            j.jogos,\n            ROUND(100.0 * COALESCE(v.vitorias, 0) / NULLIF(j.jogos, 0), 2) AS perc_vitorias\n        FROM jogos j\n        JOIN players p ON p.id = j.player_id\n        LEFT JOIN vitorias v ON v.player_id = j.player_id\n        WHERE j.jogos >= 5\n        ORDER BY perc_vitorias DESC, vitorias DESC, j.jogos DESC\n        LIMIT 20;\n        "
+    },
+    {
+        "question": "Quantas vezes é que o Talinho jogou a 1ª Divisão?",
+        "sql_query": "\n          WITH primeira_div AS (\n              SELECT id\n              FROM divisions\n              WHERE rating = 2000\n          ),\n          tal AS (\n              SELECT id\n              FROM players\n              WHERE LOWER(name) LIKE '%talinho%'\n                OR LOWER(full_name) LIKE '%talinho%'\n              LIMIT 1\n          )\n          SELECT \n              p.name,\n              COUNT(*) AS vezes_primeira_divisao\n          FROM players_in_division pid\n          JOIN tal ON tal.id = pid.player_id\n          JOIN players p ON p.id = tal.id\n          WHERE pid.division_id IN (SELECT id FROM primeira_div)\n          GROUP BY p.name;\n        "
+    }
+]

@@ -16,6 +16,7 @@ from . import (
     uploads,
     users,
     startup,
+    chatbot_api,
 )
 
 
@@ -37,6 +38,7 @@ def register_blueprints(app):
     app.register_blueprint(editions.bp)
     app.register_blueprint(editor.bp)
     app.register_blueprint(sponsors.bp)
+    app.register_blueprint(chatbot_api.bp)
     return True
 
 
@@ -58,4 +60,5 @@ __all__ = [
     "uploads",
     "users",
     "startup",
+    "chatbot_api",
 ]
