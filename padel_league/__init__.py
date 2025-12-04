@@ -14,7 +14,6 @@ def create_app(test_config=None):
 
     # Load config
     env = os.getenv("FLASK_ENV", "development")
-    print(env)
     if test_config:
         app.config.from_mapping(test_config)
     elif env == "production":

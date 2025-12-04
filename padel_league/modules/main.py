@@ -36,3 +36,8 @@ def calendar():
 @bp.route("/statues", methods=("GET", "POST"))
 def statues():
     return render_template("statues.html")
+
+
+@bp.route("/chatbot", methods=("GET", "POST"))
+def chatbot():
+    return render_template("chatbot.html")

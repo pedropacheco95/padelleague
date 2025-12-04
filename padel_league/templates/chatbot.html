@@ -1,0 +1,23 @@
+{% extends 'layout.html' %}
+
+{% block main %}
+<script src="{{ url_for('static', filename='js/chat.js')}}" defer></script>
+
+<div class="chatbot_out_container">
+    <h2 class="chatbot_initial_greeting" id="chatbot_initial_greeting">Então o que vens perguntar hoje?</h2>
+    <div class="chatbot">
+        <div class="chatContainer hiddenDiv" id="chatContainer"></div>
+    
+        <div class="chatFormContainer" id="chatFormContainer">
+            <div 
+                type="text" 
+                id="user_input"
+                contenteditable="true"
+                name="user_input" 
+                data-placeholder="Escreve aqui a tua perguntinha..."
+            ></div>
+            <button id="sendButton" type="submit">></button>
+        </div>
+    </div>
+</div>
+{% endblock %}

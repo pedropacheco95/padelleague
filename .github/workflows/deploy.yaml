@@ -60,6 +60,7 @@ jobs:
             -e POSTGRES_PW=${{ secrets.POSTGRES_PW }} \
             -e FLASK_SECRET_KEY=${{ secrets.FLASK_SECRET_KEY }} \
             -e MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }} \
+            -e LLM_API_KEY=${{ secrets.LLM_API_KEY }} \
             -e GCS_UPLOADS_BUCKET=${{ secrets.GCS_UPLOADS_BUCKET }} \
             ${{ secrets.DOCKERHUB_USERNAME }}/porto-padel-league:latest
 
