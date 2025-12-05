@@ -88,6 +88,17 @@ class LLMConversation:
         """
         self.add_message(role="system", content=self.system_prompt)
 
+    def update_system_prompt(self, new_prompt: str):
+        """
+        Replaces the system prompt in the first message.
+        """
+        if self.messages and self.messages[0].role == "system":
+            self.messages[0].content = new_prompt
+        else:
+            self.messages.insert(0, LLMMessage(role="system", content=new_prompt))
+
+        self.system_prompt = new_prompt
+
     def add_message(self, role: str, content: str, max_tokens: int = 2048):
         """
         Adds a new message to the conversation.
@@ -126,11 +137,9 @@ class LLMConversation:
         idx = 1
         while total_tokens > self.max_total_tokens and idx < len(conversation_list):
             removed_message = conversation_list.pop(idx)
-            removed_tokens = removed_message.estimate_tokens()
-            total_tokens -= removed_tokens
+            total_tokens -= removed_message.estimate_tokens()
 
-        conversation_list = [m.to_openai_format() for m in self.messages]
-        return conversation_list
+        return [m.to_openai_format() for m in self.messages]
 
     def compute_total_tokens(self) -> int:
         """

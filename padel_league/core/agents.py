@@ -2,7 +2,7 @@ import re
 from pandas.errors import DatabaseError
 import json
 import copy
-from .llm_handler import LLMConversation
+from .llm_handler import LLMConversation, LLMClient
 
 
 class Agent:
@@ -26,8 +26,12 @@ class DataAgent(Agent):
     divisions, matches, schedules, rankings, or players.
     """
 
-    def __init__(self, llm_client, sql_client):
-        self.llm_client = llm_client
+    system_prompt = """
+    You're a Postgres SQL expert.
+    """
+
+    def __init__(self, api_key, sql_client):
+        self.llm_client = LLMClient(api_key=api_key, model="gpt-5.1")
         self.sql_client = sql_client
 
         self.schema = """
@@ -116,7 +120,11 @@ class DataAgent(Agent):
 
     def ask_llm_client(self, prompt):
         return self.llm_client.generate_response(
-            prompt=prompt, reasoning_effort="none", temperature=0, verbosity="low"
+            prompt=prompt,
+            reasoning_effort="none",
+            temperature=0,
+            verbosity="low",
+            initial_instruction=self.system_prompt,
         )
 
     def extract_sql_block(self, text: str) -> str:
@@ -172,10 +180,10 @@ class DataAgent(Agent):
         """
 
         llm_answer = self.llm_client.generate_response(
-            model="gpt-5.1",
             prompt=repair_prompt,
             reasoning_effort="medium",
             verbosity="low",
+            temperature=0,
         )
         return self.extract_sql_block(llm_answer)
 
@@ -324,12 +332,25 @@ class GenericAnswerAgent(Agent):
     Takes a full natural-language question and returns a general answer.
     """
 
-    def __init__(self, llm):
-        self.llm = llm
+    system_prompt = """
+    És um assistente útil.
+    Responde sempre em Português de Portugal.
+    Usa vocabulário e ortografia europeia.
+    Se o utilizador escrever noutra língua, responde em PT-PT.
+    NUNCA respondas em PT-BR.
+    """
 
-    def run(self, original_question, agent_question: str) -> str:
+    def __init__(self, api_key):
+        self.llm = LLMClient(api_key=api_key)
+
+    def run(self, original_question, agent_question, conversation=None) -> str:
+
+        if conversation:
+            conversation = copy.deepcopy(conversation)
+
         prompt = f"""
-        You are a helpful and friendly assistant.
+        You are a helpful and friendly AI Agent. An Orchestrator has interpreted a conversation and provided a question for you.
+        You'll be sent the user question, and the orchestrator interpretation. Answer naturally.
 
         Answer the user's question naturally.
 
@@ -339,10 +360,25 @@ class GenericAnswerAgent(Agent):
         The orchestrator agent interpreted this as:
 
         {agent_question}
+
+        Always answer in European Portuguese. Portuguese from Portugal. Never speak Brazilian.
         """
-        return self.llm.generate_response(
-            prompt=prompt, reasoning_effort="minimal", verbosity="low"
-        )
+
+        if conversation:
+            conversation.update_system_prompt(self.system_prompt)
+            conversation.add_message(role="user", content=prompt)
+            answer = self.llm.generate_response_for_conversation(
+                conversation=conversation, reasoning_effort="minimal", verbosity="low"
+            )
+        else:
+            answer = self.llm.generate_response(
+                prompt=prompt,
+                reasoning_effort="minimal",
+                verbosity="low",
+                initial_instruction=self.system_prompt,
+            )
+
+        return answer
 
     def run_debug(self, original_question, agent_question: str) -> str:
         prompt = f"""
@@ -376,11 +412,24 @@ class PadelLeagueAnswerAgent(Agent):
     divisions, matches, schedules, rankings, or players.
     """
 
-    def __init__(self, llm, data_agent):
-        self.llm = llm
+    system_prompt = """
+    És um assistente da Porto Padel League.
+    És um especialista em informação sobre esta liga amigável.
+    Responde sempre em Português de Portugal.
+    Usa vocabulário e ortografia europeia.
+    Se o utilizador escrever noutra língua, responde em PT-PT.
+    NUNCA respondas em PT-BR.
+    """
+
+    def __init__(self, api_key, data_agent):
+        self.llm = LLMClient(api_key=api_key)
         self.data_agent = data_agent
 
-    def run(self, original_question, agent_questions: str) -> str:
+    def run(self, original_question, agent_questions, conversation=None) -> str:
+
+        if conversation:
+            conversation = copy.deepcopy(conversation)
+
         db_result = [
             {"question": question, "db_result": self.data_agent.run(question)}
             for question in agent_questions
@@ -410,11 +459,24 @@ class PadelLeagueAnswerAgent(Agent):
         ask him to rephrase the question. Only do this if the information is missing.
 
         Don't talk about the table you received, the rows etc, etc. This is internal work that the user is not privy to. He just asked the original question.
+        Always answer in European Portuguese. Portuguese from Portugal. Never speak Brazilian.
         """
 
-        return self.llm.generate_response(
-            prompt=prompt, reasoning_effort="minimal", verbosity="low"
-        )
+        if conversation:
+            conversation.update_system_prompt(self.system_prompt)
+            conversation.add_message(role="user", content=prompt)
+            answer = self.llm.generate_response_for_conversation(
+                conversation=conversation, reasoning_effort="minimal", verbosity="low"
+            )
+        else:
+            answer = self.llm.generate_response(
+                prompt=prompt,
+                reasoning_effort="minimal",
+                verbosity="low",
+                initial_instruction=self.system_prompt,
+            )
+
+        return answer
 
     def run_debug(self, original_question, agent_questions: str) -> str:
         db_result = [
@@ -459,65 +521,73 @@ class PadelLeagueAnswerAgent(Agent):
 
 
 class OrchestratorAgent:
-    def __init__(self, llm, agents):
-        self.llm = llm
+
+    system_prompt = """
+    You're an orchestrator agent, charged with processing a conversation and giving tasks to other AI Agents.
+    Always ask your questions in English.
+
+    Your job is to:
+    1. Understand the user's message IN CONTEXT of the conversation.
+    2. Rewrite the message into one or more explicit questions.
+    3. Decide which agent should answer each question.
+    4. Output ONLY valid JSON.
+
+    Here are the available agents:
+    {self.agents_description}
+
+    Rules:
+    - If the question is NOT related to padel or the padel league → assign to GenericAnswerAgent.
+    - If the question IS related to padel league, divisions, players, standings, matches → assign to PadelLeagueAnswerAgent.
+    - If the user asks multiple questions, split them into separate tasks, each understandable for a standalone agent.
+    - If the user refers to previous context (e.g. "and division 2?"), rewrite into a full, explicit question.
+    - Keep the questions as simple as possible. Don't add information you don't see somewhere in the conversation.
+    - ALWAYS return a JSON object with a top-level field "agent", which is a list of calls.
+
+    Example output format:
+    {{
+    "agent": [
+        {{
+        "name": "PadelLeagueAnswerAgent",
+        "question": [
+            "What are the points for division 2 in the 2024 season?",
+            "How many victories has the first place of division 2 in the 2024 season?"
+            ]
+        }}
+    ]
+    }}
+
+    or
+
+    {{
+    "agent": [
+        {{
+        "name": "GenericAnswerAgent",
+        "question": [
+            "Explain why padel is so popular."
+            ]
+        }}
+    ]
+    }}
+
+    """
+
+    def __init__(self, api_key, agents):
+        self.llm = LLMClient(api_key=api_key, model="gpt-5.1")
         self.agents = agents
         self.agents_description = [
             {"name": agent.name, "description": agent.description} for agent in agents
         ]
-        self.conversation = LLMConversation()
+        self.conversation = LLMConversation(system_prompt=self.system_prompt)
         self.agents_dict = {agent.name: agent for agent in agents}
 
     def choose_agents(self, user_message):
         prompt = f"""
-        You are the Orchestrator Agent in a multi-agent system.
-
-        Your job is to:
-        1. Understand the user's message IN CONTEXT of the conversation.
-        2. Rewrite the message into one or more explicit questions.
-        3. Decide which agent should answer each question.
-        4. Output ONLY valid JSON.
-
-        Here are the available agents:
-        {self.agents_description}
-
-        Rules:
-        - If the question is NOT related to padel or the padel league → assign to GenericAnswerAgent.
-        - If the question IS related to padel league, divisions, players, standings, matches → assign to PadelLeagueAnswerAgent.
-        - If the user asks multiple questions, split them into separate tasks, each understandable for a standalone agent.
-        - If the user refers to previous context (e.g. "and division 2?"), rewrite into a full, explicit question.
-        - Keep the questions as simple as possible. Don't add information you don't see somewhere in the conversation.
-        - ALWAYS return a JSON object with a top-level field "agent", which is a list of calls.
-
-        Example output format:
-        {{
-        "agent": [
-            {{
-            "name": "PadelLeagueAnswerAgent",
-            "question": [
-                "What are the points for division 2 in the 2024 season?",
-                "How many victories has the first place of division 2 in the 2024 season?"
-                ]
-            }}
-        ]
-        }}
-
-        or
-
-        {{
-        "agent": [
-            {{
-            "name": "GenericAnswerAgent",
-            "question": [
-                "Explain why padel is so popular."
-                ]
-            }}
-        ]
-        }}
+        This was the last user message.
 
         User message:
         {user_message}
 
+        Send the tasks to the specific agents.
         Respond with JSON only.
         """
 
@@ -537,7 +607,7 @@ class OrchestratorAgent:
         agent_name = tasks["agent"][0]["name"]
         agent_question = tasks["agent"][0]["question"]
         agent = self.agents_dict[agent_name]
-        answer = agent.run(user_message, agent_question)
+        answer = agent.run(user_message, agent_question, self.conversation)
         self.conversation.add_message("user", user_message)
         self.conversation.add_message("assistant", answer)
         return answer

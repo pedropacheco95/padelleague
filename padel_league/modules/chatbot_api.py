@@ -1,5 +1,4 @@
 from flask import Blueprint, request, session, jsonify, current_app
-from padel_league.core.llm_handler import LLMClient
 from padel_league.core.agents import (
     DataAgent,
     GenericAnswerAgent,
@@ -33,19 +32,18 @@ def init_llm():
 
         api_key = current_app.config["LLM_API_KEY"]
 
-        llm_client = LLMClient(api_key=api_key)
-        llm_client_for_data = LLMClient(api_key=api_key, model="gpt-5.1")
-        llm_client_for_orchestrator = LLMClient(api_key=api_key, model="gpt-5.1")
         sql_client = SQLClient()
 
-        data_agent = DataAgent(llm_client_for_data, sql_client)
+        data_agent = DataAgent(api_key=api_key, sql_client=sql_client)
 
-        generic_answer_agent = GenericAnswerAgent(llm_client)
-        padelleague_answer_agent = PadelLeagueAnswerAgent(llm_client, data_agent)
+        generic_answer_agent = GenericAnswerAgent(api_key=api_key)
+        padelleague_answer_agent = PadelLeagueAnswerAgent(
+            api_key=api_key, data_agent=data_agent
+        )
 
         orchestrator_agent = OrchestratorAgent(
-            llm_client_for_orchestrator,
-            [generic_answer_agent, padelleague_answer_agent],
+            api_key=api_key,
+            agents=[generic_answer_agent, padelleague_answer_agent],
         )
 
 
