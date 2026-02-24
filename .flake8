@@ -9,6 +9,7 @@ extend-ignore =
     E501
     E203
     W503
+    B018
 
 exclude =
     .venv
@@ -16,3 +17,5 @@ exclude =
     __pycache__
     build
     dist
+    padel_league_frontend/node_modules,
+    padel_league_frontend

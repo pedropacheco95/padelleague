@@ -67,3 +67,12 @@ class User(db.Model, UserMixin, model.Model):
         form.add_block(info_block)
 
         return form
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "username": self.username,
+            "email": self.email,
+            "isAdmin": self.is_admin,
+            "playerId": self.player_id,
+        }

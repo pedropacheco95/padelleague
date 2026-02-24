@@ -18,6 +18,8 @@ from . import (
     startup,
     chatbot_api,
 )
+from .frontend_api.v1 import auth as api_v1_auth
+from .frontend_api.v1 import main as api_v1_main
 
 
 # Register Blueprints
@@ -39,6 +41,10 @@ def register_blueprints(app):
     app.register_blueprint(editor.bp)
     app.register_blueprint(sponsors.bp)
     app.register_blueprint(chatbot_api.bp)
+
+    app.register_blueprint(api_v1_auth.bp)
+    app.register_blueprint(api_v1_main.bp)
+
     return True
 
 
