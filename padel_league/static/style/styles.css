@@ -9,6 +9,7 @@ body {
   margin: 0;
   padding: 0;
   font-family: "Gemunu Libre", sans-serif;
+  color: #281e1e;
 }
 
 @keyframes animateContainer {
@@ -2790,6 +2791,9 @@ a:any-link {
     overflow-x: scroll !important;
     text-align: center;
   }
+  .player_tables_container .c-flex-table--shuffle-games {
+    flex-direction: column;
+  }
   .player_tables_container .c-flex-table__heading {
     padding: 0 !important;
     margin: 2.5rem !important;
@@ -3469,7 +3473,6 @@ ul {
 }
 .page-customer-account #content {
   box-shadow: none;
-  background: none;
   padding-left: 0;
   padding-top: 0;
 }

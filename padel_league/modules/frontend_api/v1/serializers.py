@@ -167,11 +167,199 @@ def serialize_sponsor(sponsor):
     }
 
 
+def serialize_standings_row(rel, position):
+    return {
+        "position": position,
+        "player": serialize_player(rel.player, short=True),
+        "points": round(rel.points) if rel.points else 0,
+        "wins": rel.wins,
+        "draws": rel.draws,
+        "losts": rel.losts,
+        # Template divides appearances by 3 to convert match-appearances → matchweek-appearances
+        "appearances": int(rel.appearances / 3) if rel.appearances else 0,
+    }
+
+
+def serialize_player_ranking(player):
+    return {
+        **serialize_player(player, short=True),
+        "rankingPosition": player.ranking_position,
+    }
+
+
+def serialize_player_detail(player):
+    n_played = len(player.matches_played())
+    n_won = len(player.matches_won())
+    n_lost = len(player.matches_lost())
+    n_drawn = len(player.matches_drawn())
+    efficiency = round(n_won / n_played * 100, 2) if n_played else 0
+
+    n_tournaments = len(player.divisions_relations)
+    matchweeks_played = round(n_played / 3) if n_played else 0
+    matchweeks_missed = (
+        round(n_tournaments * 7 - n_played / 3) if n_played and n_tournaments else 0
+    )
+    matchweeks_per_tournament = (
+        round(n_played / 3 / n_tournaments, 2) if n_played and n_tournaments else 0
+    )
+    attendance = (
+        round(n_played / (n_tournaments * 3 * 7) * 100, 2)
+        if n_played and n_tournaments
+        else 0
+    )
+
+    try:
+        other_players = (
+            player.previous_and_next_player() if player.divisions_relations else None
+        )
+    except Exception:
+        other_players = None
+
+    tournament_history = []
+    for rel in player.divisions_relations:
+        d = rel.division
+        won = len(player.matches_won(d))
+        played = len(player.matches_played(d))
+        place = rel.place or "Por jogar"
+        points = rel.compute_ranking_points()
+        tournament_history.append(
+            {
+                "divisionId": d.id,
+                "divisionName": d.name,
+                "endDate": d.end_date.isoformat() if d.end_date else None,
+                "won": won,
+                "played": played,
+                "place": place,
+                "rankingPoints": points,
+            }
+        )
+
+    return {
+        "id": player.id,
+        "name": player.name,
+        "fullName": player.full_name or player.name,
+        "pictureUrl": player.picture_url,
+        "largePictureUrl": player.large_picture_url,
+        "rankingPoints": round(player.ranking_points) if player.ranking_points else 0,
+        "rankingPosition": player.ranking_position,
+        "birthday": player.birthday.isoformat() if player.birthday else None,
+        "height": player.height,
+        "preferedHand": player.prefered_hand,
+        "preferedPosition": player.prefered_position,
+        "username": player.user.username if player.user else None,
+        "previousPlayer": (
+            serialize_player_ranking(other_players["previous"])
+            if other_players
+            else None
+        ),
+        "nextPlayer": (
+            serialize_player_ranking(other_players["next"]) if other_players else None
+        ),
+        "matchesPlayed": n_played,
+        "matchesWon": n_won,
+        "matchesLost": n_lost,
+        "matchesDrawn": n_drawn,
+        "efficiency": efficiency,
+        "tournamentsPlayed": n_tournaments,
+        "matchweeksPlayed": matchweeks_played,
+        "matchweeksMissed": matchweeks_missed,
+        "matchweeksPerTournament": matchweeks_per_tournament,
+        "attendance": attendance,
+        "tournamentHistory": tournament_history,
+    }
+
+
+def serialize_player_short(player):
+
+    return {
+        "id": player.id,
+        "name": player.name,
+        "fullName": player.full_name or player.name,
+        "pictureUrl": player.picture_url,
+        "rankingPoints": round(player.ranking_points) if player.ranking_points else 0,
+    }
+
+
 def serialize_user(user):
     return {
         "id": user.id,
         "username": user.username,
         "email": user.email,
         "isAdmin": user.is_admin,
+        "superAdmin": user.super_admin,
         "playerId": user.player_id,
+    }
+
+
+def serialize_shuffle_match(match):
+    home_players = match.home_players()
+    away_players = match.away_players()
+
+    def player_id(players, idx):
+        if idx < len(players) and players[idx]:
+            return str(players[idx].id)
+        return "sub"
+
+    return {
+        "id": str(match.id),
+        "matchweek": match.matchweek,
+        "division": match.division,
+        "team1": [player_id(home_players, 0), player_id(home_players, 1)],
+        "team2": [player_id(away_players, 0), player_id(away_players, 1)],
+        "score1": match.score1,
+        "score2": match.score2,
+        "played": bool(match.played),
+    }
+
+
+def serialize_shuffle_tournament(tournament):
+    players = []
+    divisions = {}
+
+    for rel in tournament.players_relations:
+        pid = str(rel.player.id)
+        players.append(
+            {
+                "id": pid,
+                "name": rel.player.name,
+                "fullName": rel.player.full_name or rel.player.name,
+                "pictureUrl": rel.player.picture_url,
+                "position": rel.position or 0,
+                "points": rel.points or 0,
+                "wins": rel.wins or 0,
+                "draws": rel.draws or 0,
+                "losses": rel.losses or 0,
+                "gamesPlayed": rel.games_played or 0,
+                "gamesWon": rel.games_won or 0,
+                "gamesLost": rel.games_lost or 0,
+            }
+        )
+        divisions.setdefault(rel.division_number, []).append(
+            (rel.position or 9999, pid)
+        )
+
+    division_items = [
+        {
+            "number": number,
+            "playerIds": [
+                pid for _, pid in sorted(player_items, key=lambda x: (x[0], x[1]))
+            ],
+        }
+        for number, player_items in sorted(divisions.items(), key=lambda x: x[0])
+    ]
+
+    return {
+        "id": tournament.id,
+        "title": tournament.title,
+        "currentMatchweek": tournament.current_matchweek,
+        "maxPlayers": tournament.max_players,
+        "players": sorted(players, key=lambda p: ((p["position"] or 9999), p["id"])),
+        "matches": [
+            serialize_shuffle_match(m)
+            for m in sorted(
+                tournament.matches, key=lambda m: (m.matchweek, m.division, m.id)
+            )
+        ],
+        "divisions": division_items,
+        "divisionMultipliers": tournament.division_multipliers,
     }

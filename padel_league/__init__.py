@@ -21,7 +21,7 @@ def create_app(test_config=None):
             r"/api/v1/*": {
                 "origins": [
                     "http://localhost:8080",
-                    "http://34.78.247.45",
+                    "http://35.205.246.86",
                 ]
             }
         },

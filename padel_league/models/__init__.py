@@ -4,6 +4,8 @@ from .divisions import Division
 from .users import User
 from .players import Player
 from .matches import Match
+from .shuffle_tournaments import ShuffleTournament
+from .shuffle_matches import ShuffleMatch
 from .news import News
 from .registrations import Registration
 from .products import Product
@@ -17,6 +19,8 @@ from .sponsors import Sponsor
 from .sponsor_clicks import SponsorClick
 from .Association_PlayerDivision import Association_PlayerDivision
 from .Association_PlayerMatch import Association_PlayerMatch
+from .Association_PlayerShuffleTournament import Association_PlayerShuffleTournament
+from .Association_PlayerShuffleMatch import Association_PlayerShuffleMatch
 from .Association_ProductProductAttribute import Association_ProductProductAttribute
 from .Association_ProductProductAttributeValue import (
     Association_ProductProductAttributeValue,
@@ -29,6 +33,8 @@ MODELS = {
     "Division": Division,
     "Player": Player,
     "Match": Match,
+    "ShuffleTournament": ShuffleTournament,
+    "ShuffleMatch": ShuffleMatch,
     "News": News,
     "Registration": Registration,
     "Product": Product,
@@ -42,6 +48,8 @@ MODELS = {
     "SponsorClick": SponsorClick,
     "Association_PlayerDivision": Association_PlayerDivision,
     "Association_PlayerMatch": Association_PlayerMatch,
+    "Association_PlayerShuffleTournament": Association_PlayerShuffleTournament,
+    "Association_PlayerShuffleMatch": Association_PlayerShuffleMatch,
     "Association_ProductProductAttribute": Association_ProductProductAttribute,
     "Association_ProductProductAttributeValue": Association_ProductProductAttributeValue,
 }
