@@ -32,7 +32,7 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/ppl_frontend:latest
           platforms: linux/amd64
-      
+
       - name: Deploy on GCE
         uses: appleboy/ssh-action@v1.2.5
         with:
@@ -43,5 +43,5 @@ jobs:
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/ppl_frontend:latest
             docker stop ppl_frontend || true && docker rm ppl_frontend || true
             docker run -d --name ppl_frontend \
-              -p 3000:80 \
+              -p 80:80 \
               ${{ secrets.DOCKERHUB_USERNAME }}/ppl_frontend:latest
