@@ -1657,6 +1657,10 @@ a:any-link {
           text-align: center;
     }
 
+    .c-flex-table--shuffle-games{
+      flex-direction: column;
+    }
+
     .c-flex-table__heading{
       padding: 0!important;
       margin: 2.5rem!important;
@@ -2265,7 +2269,6 @@ ul {
   }
   #content {
     box-shadow: none;
-    background: none;
     padding-left: 0;
     padding-top: 0;
   }

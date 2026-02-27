@@ -1,7 +1,6 @@
 @import url("https://fonts.googleapis.com/css?family=Open+Sans:400,400i,600,700");
 @import url("https://fonts.googleapis.com/css2?family=Titillium+Web:wght@200&display=swap");
 button, input[type=submit], input[type=reset] {
-  background: none;
   color: inherit;
   border: none;
   padding: 0;

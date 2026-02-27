@@ -41,12 +41,18 @@ class Player(db.Model, model.Model):
 
     @property
     def large_picture_url(self):
-        return self.large_picture.url() if self.logo_image else None
+        return self.large_picture.url() if self.large_picture else None
 
     user = relationship("User", back_populates="player", uselist=False)
     matches_relations = relationship("Association_PlayerMatch", back_populates="player")
     divisions_relations = relationship(
         "Association_PlayerDivision", back_populates="player"
+    )
+    shuffle_tournaments_relations = relationship(
+        "Association_PlayerShuffleTournament", back_populates="player"
+    )
+    shuffle_matches_relations = relationship(
+        "Association_PlayerShuffleMatch", back_populates="player"
     )
     editions_relations_registrations = relationship(
         "Registration", back_populates="player"

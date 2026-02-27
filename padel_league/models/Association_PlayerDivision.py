@@ -18,8 +18,8 @@ class Association_PlayerDivision(db.Model, model.Model):
     player_id = Column(Integer, ForeignKey("players.id"), primary_key=True)
     division_id = Column(Integer, ForeignKey("divisions.id"), primary_key=True)
 
-    division = relationship("Division", back_populates="division_relations")
-    player = relationship("Player", back_populates="matches_relations")
+    division = relationship("Division", back_populates="players_relations")
+    player = relationship("Player", back_populates="division_relations")
 
     @hybrid_property
     def name(self):

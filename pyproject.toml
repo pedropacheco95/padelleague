@@ -9,7 +9,7 @@ description = "Porto Padel League Flask app"
 authors = [
   { name="Pedro Pacheco", email="pedropachecocontas@gmail.com" }
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.10,<4"
 
 dependencies = [
     # --- Flask core ---
@@ -19,6 +19,8 @@ dependencies = [
     "itsdangerous==2.1.2",
     "click==8.1.7",
     "MarkupSafe==2.1.5",
+    "Flask-Cors==4.0.0",
+    "Flask-JWT-Extended==4.6.0",
 
     # --- DB ---
     "SQLAlchemy==1.4.52",

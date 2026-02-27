@@ -18,6 +18,7 @@ class User(db.Model, UserMixin, model.Model):
     email = Column(String(120), unique=True, nullable=False)
     password = Column(Text, nullable=False)
     is_admin = Column(Boolean, default=False)
+    super_admin = Column(Boolean, default=False)
     generated_code = Column(Integer)
     player_id = Column(Integer, ForeignKey("players.id"))
 
@@ -31,6 +32,7 @@ class User(db.Model, UserMixin, model.Model):
             searchable_column,
             {"field": "email", "label": "Email"},
             {"field": "is_admin", "label": "Administrador?"},
+            {"field": "super_admin", "label": "Super Administrador?"},
             {"field": "player", "label": "Jogador Associado"},
         ]
         return searchable_column, table_columns
@@ -62,8 +64,19 @@ class User(db.Model, UserMixin, model.Model):
                 type="ManyToOne",
                 related_model="Player",
             ),
+            get_field(name="super_admin", label="Super Administrador?", type="Boolean"),
         ]
         info_block = Block("info_block", fields)
         form.add_block(info_block)
 
         return form
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "username": self.username,
+            "email": self.email,
+            "isAdmin": self.is_admin,
+            "superAdmin": self.super_admin,
+            "playerId": self.player_id,
+        }
