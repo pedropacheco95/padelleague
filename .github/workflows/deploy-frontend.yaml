@@ -30,7 +30,7 @@ jobs:
         with:
           context: ./padel_league_frontend
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/levelup_frontend:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/ppl_frontend:latest
           platforms: linux/amd64
       
       - name: Deploy on GCE
@@ -40,8 +40,8 @@ jobs:
           username: ${{ secrets.GCE_USER }}
           key: ${{ secrets.GCE_SSH_PRIVATE_KEY }}
           script: |
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/levelup_frontend:latest
-            docker stop levelup_frontend || true && docker rm levelup_frontend || true
-            docker run -d --name levelup_frontend \
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/ppl_frontend:latest
+            docker stop ppl_frontend || true && docker rm ppl_frontend || true
+            docker run -d --name ppl_frontend \
               -p 80:80 \
-              ${{ secrets.DOCKERHUB_USERNAME }}/levelup_frontend:latest
+              ${{ secrets.DOCKERHUB_USERNAME }}/ppl_frontend:latest
