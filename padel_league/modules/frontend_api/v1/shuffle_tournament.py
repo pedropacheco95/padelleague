@@ -117,10 +117,10 @@ def calculate_divisions():
             -(rel.points or 0),
             -(rel.games_played or 0),
             -((rel.games_won or 0) - (rel.games_lost or 0)),
-            (
-                rel.player.ranking_position
-                if rel.player and rel.player.ranking_position
-                else 9999
+            -(
+                rel.player.ranking_points
+                if rel.player and rel.player.ranking_points is not None
+                else 0
             ),
             shuffle_tournament._draw_order_for_player(rel.player_id),
         ),

@@ -185,11 +185,11 @@ class ShuffleTournament(db.Model, model.Model):
                 -(rel.points or 0),  # 1) Pontos
                 -(rel.games_played or 0),  # 2) Presenças na liga atual
                 -((rel.games_won or 0) - (rel.games_lost or 0)),  # 3) Diferença jogos
-                (
-                    rel.player.ranking_position
-                    if rel.player and rel.player.ranking_position
-                    else 9999
-                ),  # 4) Ranking geral
+                -(
+                    rel.player.ranking_points
+                    if rel.player and rel.player.ranking_points is not None
+                    else 0
+                ),  # 4) Ranking geral (pontos)
                 self._draw_order_for_player(rel.player_id),  # 5) Sorteio
             ),
         )
