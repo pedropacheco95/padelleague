@@ -7,6 +7,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 
 from padel_league import model
 from padel_league.sql_db import db
+from padel_league.tools.input_tools import Block, Field, Form
 
 
 class ShuffleTournament(db.Model, model.Model):
@@ -35,6 +36,74 @@ class ShuffleTournament(db.Model, model.Model):
     @hybrid_property
     def name(self):
         return f"{self.title}"
+
+    def display_all_info(self):
+        searchable_column = {"field": "title", "label": "Título"}
+        table_columns = [
+            searchable_column,
+            {"field": "current_matchweek", "label": "Jornada atual"},
+            {"field": "max_players", "label": "Máx jogadores"},
+            {"field": "number_of_divisions", "label": "Nº divisões"},
+            {"field": "has_ended", "label": "Já acabou?"},
+        ]
+        return searchable_column, table_columns
+
+    def get_create_form(self):
+        def get_field(name, label, type, required=False, related_model=None):
+            return Field(
+                instance_id=getattr(self, "id", None),
+                model=self.model_name,
+                name=name,
+                label=label,
+                type=type,
+                required=required,
+                related_model=related_model,
+            )
+
+        form = Form()
+        fields = [
+            get_field(name="title", label="Título", type="Text", required=True),
+            get_field(
+                name="current_matchweek",
+                label="Jornada atual",
+                type="Integer",
+                required=True,
+            ),
+            get_field(
+                name="max_players",
+                label="Máx jogadores",
+                type="Integer",
+                required=True,
+            ),
+            get_field(
+                name="number_of_divisions",
+                label="Nº divisões",
+                type="Integer",
+                required=True,
+            ),
+            get_field(name="has_ended", label="Já acabou?", type="Boolean"),
+            get_field(
+                name="division_multipliers_raw",
+                label="Multiplicadores",
+                type="Text",
+                required=True,
+            ),
+            get_field(
+                name="matches",
+                label="Jogos",
+                type="OneToMany",
+                related_model="ShuffleMatch",
+            ),
+            get_field(
+                name="players_relations",
+                label="Jogadores (Relações)",
+                type="OneToMany",
+                related_model="Association_PlayerShuffleTournament",
+            ),
+        ]
+        info_block = Block("info_block", fields)
+        form.add_block(info_block)
+        return form
 
     @property
     def division_multipliers(self):

@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship
 
 from padel_league import model
 from padel_league.sql_db import db
+from padel_league.tools.input_tools import Block, Field, Form
 
 
 class Association_ProductProductAttributeValue(db.Model, model.Model):
@@ -24,3 +25,44 @@ class Association_ProductProductAttributeValue(db.Model, model.Model):
     product = relationship(
         "Product", back_populates="product_attribute_values_relations"
     )
+
+    def display_all_info(self):
+        searchable_column = {"field": "product", "label": "Produto"}
+        table_columns = [
+            searchable_column,
+            {"field": "product_attribute_value", "label": "Valor de atributo"},
+        ]
+        return searchable_column, table_columns
+
+    def get_create_form(self):
+        def get_field(name, label, type, required=False, related_model=None):
+            return Field(
+                instance_id=getattr(self, "id", None),
+                model=self.model_name,
+                name=name,
+                label=label,
+                type=type,
+                required=required,
+                related_model=related_model,
+            )
+
+        form = Form()
+        fields = [
+            get_field(
+                name="product",
+                label="Produto",
+                type="ManyToOne",
+                required=True,
+                related_model="Product",
+            ),
+            get_field(
+                name="product_attribute_value",
+                label="Valor de atributo",
+                type="ManyToOne",
+                required=True,
+                related_model="ProductAttributeValue",
+            ),
+        ]
+        info_block = Block("info_block", fields)
+        form.add_block(info_block)
+        return form
