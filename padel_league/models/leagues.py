@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
 
 from padel_league import model
+from padel_league.models.players import Player
 from padel_league.sql_db import db
 from padel_league.tools.input_tools import Block, Field, Form
 
@@ -67,8 +68,11 @@ class League(db.Model, model.Model):
             self.editions, key=lambda edition: edition.id, reverse=True
         )[:4]
 
+        played_players = self.all_players_that_played()
+        played_player_ids = {player.id for player in played_players}
+
         # Process each player who has participated.
-        for player in self.all_players_that_played():
+        for player in played_players:
             total_points = 0
 
             # Filter player's division relations to only those in recent editions with ended divisions.
@@ -84,6 +88,13 @@ class League(db.Model, model.Model):
             # Update player's ranking points and set the default ranking position.
             player.ranking_points = total_points
             player.ranking_position = 1
+            player.save()
+
+        # Players who exist but did not play in recent editions should have zero points.
+        for player in Player.query.all():
+            if player.id in played_player_ids:
+                continue
+            player.ranking_points = 0
             player.save()
 
         # Update ranking positions based on the new points.

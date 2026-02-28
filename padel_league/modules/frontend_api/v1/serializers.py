@@ -324,6 +324,11 @@ def serialize_shuffle_tournament(tournament):
                 "name": rel.player.name,
                 "fullName": rel.player.full_name or rel.player.name,
                 "pictureUrl": rel.player.picture_url,
+                "rankingPoints": (
+                    round(rel.player.ranking_points)
+                    if rel.player and rel.player.ranking_points
+                    else 0
+                ),
                 "position": rel.position or 0,
                 "points": rel.points or 0,
                 "wins": rel.wins or 0,
