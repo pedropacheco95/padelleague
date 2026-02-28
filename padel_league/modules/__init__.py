@@ -24,6 +24,7 @@ from .frontend_api.v1 import matches as api_v1_matches
 from .frontend_api.v1 import players as api_v1_players
 from .frontend_api.v1 import shuffle_tournament as api_v1_shuffle_tournament
 from .frontend_api.v1 import tournaments as api_v1_tournaments
+from .frontend_api.v1 import divisions as api_v1_divisions
 
 
 # Register Blueprints
@@ -52,6 +53,7 @@ def register_blueprints(app):
     app.register_blueprint(api_v1_players.bp)
     app.register_blueprint(api_v1_shuffle_tournament.bp)
     app.register_blueprint(api_v1_tournaments.bp)
+    app.register_blueprint(api_v1_divisions.bp)
 
     return True
 
