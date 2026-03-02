@@ -368,3 +368,26 @@ def serialize_shuffle_tournament(tournament):
         "divisions": division_items,
         "divisionMultipliers": tournament.division_multipliers,
     }
+
+
+def _serialize_shuffle_player_relation(rel):
+    player = rel.player
+    return {
+        "id": str(player.id),
+        "name": player.name,
+        "fullName": player.full_name or player.name,
+        "pictureUrl": player.picture_url,
+        "rankingPoints": (
+            round(player.ranking_points)
+            if player and player.ranking_points is not None
+            else 0
+        ),
+        "position": rel.position or 0,
+        "points": rel.points or 0,
+        "wins": rel.wins or 0,
+        "draws": rel.draws or 0,
+        "losses": rel.losses or 0,
+        "gamesPlayed": rel.games_played or 0,
+        "gamesWon": rel.games_won or 0,
+        "gamesLost": rel.games_lost or 0,
+    }

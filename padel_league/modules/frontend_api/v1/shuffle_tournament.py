@@ -10,11 +10,206 @@ from padel_league.models import (
 )
 from padel_league.modules.frontend_api.v1.serializers import (
     serialize_shuffle_tournament,
+    _serialize_shuffle_player_relation,
 )
 
 bp = Blueprint(
     "api_v1_shuffle_tournament", __name__, url_prefix="/api/v1/shuffle_tournament"
 )
+
+
+def _compute_player_comparison_stats(
+    tournament,
+    player_id,
+    relation_by_player_id,
+    played_matches,
+    all_matches,
+    matches_by_matchweek,
+    ranking_position_by_player_id,
+):
+    results = []
+    divisions_played = set()
+    normalized_player_id = str(player_id)
+
+    for match in played_matches:
+        home_ids = [
+            str(rel.player_id) for rel in match.players_relations if rel.team == "Home"
+        ]
+        away_ids = [
+            str(rel.player_id) for rel in match.players_relations if rel.team == "Away"
+        ]
+        in_home = normalized_player_id in home_ids
+        in_away = normalized_player_id in away_ids
+
+        if not in_home and not in_away:
+            continue
+
+        divisions_played.add(int(match.division or 0))
+        team_ids = home_ids if in_home else away_ids
+        opp_ids = away_ids if in_home else home_ids
+
+        partner_candidates = [pid for pid in team_ids if pid != normalized_player_id]
+        partner_id = partner_candidates[0] if partner_candidates else "sub"
+        opponent_1 = opp_ids[0] if len(opp_ids) > 0 else "sub"
+        opponent_2 = opp_ids[1] if len(opp_ids) > 1 else "sub"
+
+        team_score = int(match.score1 if in_home else match.score2)
+        opp_score = int(match.score2 if in_home else match.score1)
+
+        results.append(
+            {
+                "matchweek": int(match.matchweek or 0),
+                "division": int(match.division or 0),
+                "partnerId": partner_id,
+                "opponentIds": [opponent_1, opponent_2],
+                "teamScore": team_score,
+                "oppScore": opp_score,
+                "won": team_score > opp_score,
+                "drew": team_score == opp_score,
+            }
+        )
+
+    wins = len([r for r in results if r["won"]])
+    draws = len([r for r in results if r["drew"]])
+    losses = len(results) - wins - draws
+    win_rate = round((wins / len(results)) * 100) if results else 0
+    divisions_sorted = sorted(divisions_played)
+
+    current_streak = {"type": "W", "count": 0}
+    ordered_results = sorted(
+        results,
+        key=lambda r: (r["matchweek"], r["teamScore"], r["oppScore"]),
+        reverse=True,
+    )
+    if ordered_results:
+        first = ordered_results[0]
+        streak_type = "W" if first["won"] else ("D" if first["drew"] else "L")
+        streak_count = 1
+        for r in ordered_results[1:]:
+            item_type = "W" if r["won"] else ("D" if r["drew"] else "L")
+            if item_type == streak_type:
+                streak_count += 1
+            else:
+                break
+        current_streak = {"type": streak_type, "count": streak_count}
+
+    best_win_diff = 0
+    for r in results:
+        if r["won"]:
+            best_win_diff = max(best_win_diff, r["teamScore"] - r["oppScore"])
+
+    worst_loss_diff = 0
+    for r in results:
+        if (not r["won"]) and (not r["drew"]):
+            worst_loss_diff = max(worst_loss_diff, r["oppScore"] - r["teamScore"])
+
+    def avg_opponent_position(result):
+        opp1 = result["opponentIds"][0] if result["opponentIds"][0] != "sub" else "sub"
+        opp2 = result["opponentIds"][1] if result["opponentIds"][1] != "sub" else "sub"
+        return (
+            ranking_position_by_player_id.get(opp1, 9999)
+            + ranking_position_by_player_id.get(opp2, 9999)
+        ) / 2
+
+    biggest_wins = sorted(
+        [r for r in results if r["won"]],
+        key=avg_opponent_position,
+    )[:3]
+    worst_losses = sorted(
+        [r for r in results if (not r["won"]) and (not r["drew"])],
+        key=avg_opponent_position,
+        reverse=True,
+    )[:3]
+
+    max_matchweek = max([int(m.matchweek or 0) for m in all_matches], default=0)
+    all_player_ids = list(relation_by_player_id.keys())
+    cumulative_points = {}
+
+    for pid in all_player_ids:
+        points_by_mw = {}
+        running_points = 0
+        for mw in range(1, max_matchweek + 1):
+            for match in matches_by_matchweek.get(mw, []):
+                home_ids = [
+                    rel.player_id
+                    for rel in match.players_relations
+                    if rel.team == "Home"
+                ]
+                away_ids = [
+                    rel.player_id
+                    for rel in match.players_relations
+                    if rel.team == "Away"
+                ]
+                home_ids = [str(pid) for pid in home_ids]
+                away_ids = [str(pid) for pid in away_ids]
+                in_home = pid in home_ids
+                in_away = pid in away_ids
+                if not in_home and not in_away:
+                    continue
+
+                team_score = int(match.score1 if in_home else match.score2)
+                opp_score = int(match.score2 if in_home else match.score1)
+                multiplier = int(
+                    tournament.division_multipliers.get(int(match.division or 0), 1)
+                )
+                if team_score > opp_score:
+                    running_points += 3 * multiplier
+                elif team_score == opp_score:
+                    running_points += 1 * multiplier
+            points_by_mw[mw] = running_points
+        cumulative_points[pid] = points_by_mw
+
+    snapshots = []
+    for mw in range(1, max_matchweek + 1):
+        rankings = sorted(
+            all_player_ids,
+            key=lambda pid: (
+                -(cumulative_points.get(pid, {}).get(mw, 0)),
+                ranking_position_by_player_id.get(pid, 9999),
+                pid,
+            ),
+        )
+        snapshots.append(
+            {
+                "matchweek": mw,
+                "points": cumulative_points.get(normalized_player_id, {}).get(mw, 0),
+                "position": (
+                    rankings.index(normalized_player_id) + 1
+                    if normalized_player_id in rankings
+                    else 0
+                ),
+            }
+        )
+
+    player_rel = relation_by_player_id[normalized_player_id]
+    unique_matchweeks = len(set([r["matchweek"] for r in results]))
+    avg_points_per_matchweek = (
+        round((player_rel.points or 0) / unique_matchweeks, 1)
+        if unique_matchweeks > 0
+        else 0
+    )
+
+    a = {
+        "player": _serialize_shuffle_player_relation(player_rel),
+        "wins": wins,
+        "draws": draws,
+        "losses": losses,
+        "winRate": win_rate,
+        "totalGames": len(results),
+        "points": player_rel.points or 0,
+        "bestWinDiff": best_win_diff,
+        "worstLossDiff": worst_loss_diff,
+        "currentStreak": current_streak,
+        "divisionsPlayed": divisions_sorted,
+        "highestDivision": min(divisions_sorted) if divisions_sorted else 0,
+        "lowestDivision": max(divisions_sorted) if divisions_sorted else 0,
+        "biggestWins": biggest_wins,
+        "worstLosses": worst_losses,
+        "avgPointsPerMatchweek": avg_points_per_matchweek,
+        "snapshots": snapshots,
+    }
+
+    return a
 
 
 @bp.route("", methods=["GET"])
@@ -32,6 +227,88 @@ def detail():
 
     shuffle_tournament.recalculate_player_stats()
     return jsonify(serialize_shuffle_tournament(shuffle_tournament))
+
+
+@bp.route("/player_comparison", methods=["GET"])
+def player_comparison():
+    tournament_id = request.args.get("tournamentId", type=int)
+    player1_id_raw = (request.args.get("player1Id") or "").strip()
+    player2_id_raw = (request.args.get("player2Id") or "").strip()
+
+    if not player1_id_raw or not player2_id_raw:
+        return jsonify({"error": "player1Id and player2Id are required"}), 400
+    if player1_id_raw == player2_id_raw:
+        return jsonify({"error": "player1Id and player2Id must be different"}), 400
+
+    if tournament_id is not None:
+        shuffle_tournament = ShuffleTournament.query.filter_by(id=tournament_id).first()
+    else:
+        shuffle_tournament = (
+            ShuffleTournament.query.filter_by(has_ended=False)
+            .order_by(ShuffleTournament.id.desc())
+            .first()
+        )
+        if not shuffle_tournament:
+            shuffle_tournament = ShuffleTournament.query.order_by(
+                ShuffleTournament.id.asc()
+            ).first()
+
+    if not shuffle_tournament:
+        return jsonify({"error": "Shuffle tournament not found"}), 404
+
+    shuffle_tournament.recalculate_player_stats()
+    relation_by_player_id = {
+        str(rel.player_id): rel for rel in shuffle_tournament.players_relations
+    }
+
+    if (
+        player1_id_raw not in relation_by_player_id
+        or player2_id_raw not in relation_by_player_id
+    ):
+        return jsonify({"error": "One or both players are not in this tournament"}), 400
+
+    all_matches = list(shuffle_tournament.matches or [])
+    played_matches = [
+        m
+        for m in all_matches
+        if m.played and m.score1 is not None and m.score2 is not None
+    ]
+    matches_by_matchweek = {}
+    for match in played_matches:
+        matches_by_matchweek.setdefault(int(match.matchweek or 0), []).append(match)
+
+    ranking_position_by_player_id = {
+        str(rel.player_id): (rel.position or 9999)
+        for rel in shuffle_tournament.players_relations
+    }
+
+    stats_1 = _compute_player_comparison_stats(
+        shuffle_tournament,
+        player1_id_raw,
+        relation_by_player_id,
+        played_matches,
+        all_matches,
+        matches_by_matchweek,
+        ranking_position_by_player_id,
+    )
+    stats_2 = _compute_player_comparison_stats(
+        shuffle_tournament,
+        player2_id_raw,
+        relation_by_player_id,
+        played_matches,
+        all_matches,
+        matches_by_matchweek,
+        ranking_position_by_player_id,
+    )
+
+    return jsonify(
+        {
+            "tournamentId": shuffle_tournament.id,
+            "totalPlayers": len(shuffle_tournament.players_relations or []),
+            "player1": stats_1,
+            "player2": stats_2,
+        }
+    )
 
 
 @bp.route("/remove_player_from_matchweek", methods=["POST"])
