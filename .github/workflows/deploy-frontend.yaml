@@ -1,10 +1,9 @@
 name: Build and Deploy Frontend to GCE
+
 on:
   push:
-    branches: [ master ]
-    paths:
-      - 'padel_league_frontend/**'
-  workflow_dispatch:
+    branches:
+      - main
 
 jobs:
   build-and-deploy:

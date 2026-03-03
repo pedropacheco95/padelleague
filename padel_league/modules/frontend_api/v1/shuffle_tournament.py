@@ -2,8 +2,10 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 
 from padel_league.models import (
+    Association_PlayerMatch,
     Association_PlayerShuffleMatch,
     Association_PlayerShuffleTournament,
+    Match,
     Player,
     ShuffleMatch,
     ShuffleTournament,
@@ -16,6 +18,153 @@ from padel_league.modules.frontend_api.v1.serializers import (
 bp = Blueprint(
     "api_v1_shuffle_tournament", __name__, url_prefix="/api/v1/shuffle_tournament"
 )
+
+
+def _compute_shuffle_head_to_head(played_matches, player1_id, player2_id):
+    head_to_head = []
+    p1 = str(player1_id)
+    p2 = str(player2_id)
+
+    for match in played_matches:
+        home_rels = [rel for rel in match.players_relations if rel.team == "Home"]
+        away_rels = [rel for rel in match.players_relations if rel.team == "Away"]
+        home_ids = [str(rel.player_id) for rel in home_rels]
+        away_ids = [str(rel.player_id) for rel in away_rels]
+
+        p1_home = p1 in home_ids
+        p2_home = p2 in home_ids
+        p1_away = p1 in away_ids
+        p2_away = p2 in away_ids
+
+        if (p1_home and p2_home) or (p1_away and p2_away):
+            continue
+        if not ((p1_home and p2_away) or (p1_away and p2_home)):
+            continue
+
+        p1_in_home = p1_home
+        p1_team_rels = home_rels if p1_in_home else away_rels
+        p2_team_rels = away_rels if p1_in_home else home_rels
+
+        p1_partner_rel = next(
+            (rel for rel in p1_team_rels if str(rel.player_id) != p1), None
+        )
+        p2_partner_rel = next(
+            (rel for rel in p2_team_rels if str(rel.player_id) != p2), None
+        )
+
+        p1_score = int(match.score1 if p1_in_home else match.score2)
+        p2_score = int(match.score2 if p1_in_home else match.score1)
+        winner = "draw"
+        if p1_score > p2_score:
+            winner = "p1"
+        elif p2_score > p1_score:
+            winner = "p2"
+
+        head_to_head.append(
+            {
+                "matchId": int(match.id),
+                "source": "shuffle",
+                "sourceLabel": "Shuffle",
+                "matchweek": int(match.matchweek or 0),
+                "division": int(match.division or 0),
+                "divisionLabel": None,
+                "p1PartnerId": (
+                    str(p1_partner_rel.player_id) if p1_partner_rel else "sub"
+                ),
+                "p1PartnerName": (
+                    p1_partner_rel.player.name
+                    if p1_partner_rel and p1_partner_rel.player
+                    else "Substituto"
+                ),
+                "p2PartnerId": (
+                    str(p2_partner_rel.player_id) if p2_partner_rel else "sub"
+                ),
+                "p2PartnerName": (
+                    p2_partner_rel.player.name
+                    if p2_partner_rel and p2_partner_rel.player
+                    else "Substituto"
+                ),
+                "p1Score": p1_score,
+                "p2Score": p2_score,
+                "winner": winner,
+            }
+        )
+
+    return head_to_head
+
+
+def _compute_league_head_to_head(played_matches, player1_id, player2_id):
+    head_to_head = []
+    p1 = str(player1_id)
+    p2 = str(player2_id)
+
+    for match in played_matches:
+        home_rels = [rel for rel in match.players_relations if rel.team == "Home"]
+        away_rels = [rel for rel in match.players_relations if rel.team == "Away"]
+        home_ids = [str(rel.player_id) for rel in home_rels]
+        away_ids = [str(rel.player_id) for rel in away_rels]
+
+        p1_home = p1 in home_ids
+        p2_home = p2 in home_ids
+        p1_away = p1 in away_ids
+        p2_away = p2 in away_ids
+
+        if (p1_home and p2_home) or (p1_away and p2_away):
+            continue
+        if not ((p1_home and p2_away) or (p1_away and p2_home)):
+            continue
+
+        p1_in_home = p1_home
+        p1_team_rels = home_rels if p1_in_home else away_rels
+        p2_team_rels = away_rels if p1_in_home else home_rels
+
+        p1_partner_rel = next(
+            (rel for rel in p1_team_rels if str(rel.player_id) != p1), None
+        )
+        p2_partner_rel = next(
+            (rel for rel in p2_team_rels if str(rel.player_id) != p2), None
+        )
+
+        p1_score = int(match.games_home_team if p1_in_home else match.games_away_team)
+        p2_score = int(match.games_away_team if p1_in_home else match.games_home_team)
+        winner = "draw"
+        if p1_score > p2_score:
+            winner = "p1"
+        elif p2_score > p1_score:
+            winner = "p2"
+
+        division_label = match.division.name if match.division else None
+        head_to_head.append(
+            {
+                "matchId": int(match.id),
+                "source": "league",
+                "sourceLabel": "Liga",
+                "matchweek": int(match.matchweek or 0),
+                "division": int(match.division_id or 0),
+                "divisionLabel": division_label,
+                "p1PartnerId": (
+                    str(p1_partner_rel.player_id) if p1_partner_rel else "sub"
+                ),
+                "p1PartnerName": (
+                    p1_partner_rel.player.name
+                    if p1_partner_rel and p1_partner_rel.player
+                    else "Substituto"
+                ),
+                "p2PartnerId": (
+                    str(p2_partner_rel.player_id) if p2_partner_rel else "sub"
+                ),
+                "p2PartnerName": (
+                    p2_partner_rel.player.name
+                    if p2_partner_rel and p2_partner_rel.player
+                    else "Substituto"
+                ),
+                "p1Score": p1_score,
+                "p2Score": p2_score,
+                "winner": winner,
+            }
+        )
+
+    return head_to_head
 
 
 def _compute_player_comparison_stats(
@@ -301,12 +450,64 @@ def player_comparison():
         ranking_position_by_player_id,
     )
 
+    shuffle_h2h = _compute_shuffle_head_to_head(
+        played_matches, player1_id_raw, player2_id_raw
+    )
+
+    league_h2h = []
+    try:
+        player1_id_int = int(player1_id_raw)
+        player2_id_int = int(player2_id_raw)
+        regular_matches = (
+            Match.query.join(
+                Association_PlayerMatch, Association_PlayerMatch.match_id == Match.id
+            )
+            .filter(
+                Association_PlayerMatch.player_id.in_([player1_id_int, player2_id_int])
+            )
+            .filter(Match.played.is_(True))
+            .filter(
+                Match.games_home_team.isnot(None), Match.games_away_team.isnot(None)
+            )
+            .all()
+        )
+        regular_matches_by_id = {m.id: m for m in regular_matches}
+        league_h2h = _compute_league_head_to_head(
+            list(regular_matches_by_id.values()), player1_id_raw, player2_id_raw
+        )
+    except (TypeError, ValueError):
+        league_h2h = []
+
+    all_head_to_head = sorted(
+        shuffle_h2h + league_h2h,
+        key=lambda item: (
+            int(item.get("matchweek") or 0),
+            int(item.get("matchId") or 0),
+        ),
+        reverse=True,
+    )
+
+    p1_wins = len([item for item in all_head_to_head if item.get("winner") == "p1"])
+    p2_wins = len([item for item in all_head_to_head if item.get("winner") == "p2"])
+    draws = len([item for item in all_head_to_head if item.get("winner") == "draw"])
+    head_to_head_totals = {
+        "total": len(all_head_to_head),
+        "p1Wins": p1_wins,
+        "p2Wins": p2_wins,
+        "draws": draws,
+        "p1Losses": p2_wins,
+        "p2Losses": p1_wins,
+    }
+    head_to_head = all_head_to_head[:5]
+
     return jsonify(
         {
             "tournamentId": shuffle_tournament.id,
             "totalPlayers": len(shuffle_tournament.players_relations or []),
             "player1": stats_1,
             "player2": stats_2,
+            "headToHead": head_to_head,
+            "headToHeadTotals": head_to_head_totals,
         }
     )
 
