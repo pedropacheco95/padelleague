@@ -118,10 +118,15 @@ def edit(id):
         )
         match.field = match_field
         if not match.played:
-            match.division.add_match_to_table(match)
-            # match.division.edition.league.ranking_add_match(match)
             match.played = True
         match.save()
+        # Recompute standings from scratch — handles both first-time edits
+        # and re-edits of an already-played match (the previous incremental
+        # add_match_to_table call only ran once per match).
+        try:
+            match.division.update_table(force_update=True)
+        except Exception:
+            pass
 
         return redirect(
             url_for("matches.match", id=match.id, edited_match="edited_match")
