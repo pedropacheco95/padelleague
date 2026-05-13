@@ -67,13 +67,20 @@ def edit_match(id):
         h, a = int(home_games), int(away_games)
         match.winner = 1 if h > a else (-1 if a > h else 0)
         if not match.played:
-            try:
-                match.division.add_match_to_table(match)
-            except Exception:
-                pass
             match.played = True
 
     match.save()
+
+    # Always recompute the division standings from scratch so re-edits to
+    # an already-played match update points/wins/games. add_match_to_table
+    # was incremental and gated on first-time edits, leaving classification
+    # stale on every subsequent edit.
+    if home_games is not None and away_games is not None:
+        try:
+            match.division.update_table(force_update=True)
+        except Exception:
+            pass
+
     return jsonify(serialize_match(match))
 
 
