@@ -1,3 +1,4 @@
+from flask import url_for
 from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
@@ -276,6 +277,24 @@ class Division(db.Model, model.Model):
         )[:limit]
 
         return upcoming_matches
+
+    def get_display_data(self):
+        data = super().get_display_data()
+        data["extra_actions"] = [
+            {
+                "url": url_for(
+                    "editor.division_replace_player", division_id=self.id
+                ),
+                "label": "Substituir jogador",
+            },
+            {
+                "url": url_for(
+                    "editor.division_readd_player", division_id=self.id
+                ),
+                "label": "Readicionar jogador a jornada",
+            },
+        ]
+        return data
 
     def display_all_info(self):
         searchable_column = {"field": "name", "label": "Nome"}

@@ -1,0 +1,93 @@
+{% extends 'editor/layout.html' %}
+
+{% block title %}Substituir jogador — {{ division.name }}{% endblock %}
+
+{% block main %}
+<form class="editor_objects_container"
+      method="POST"
+      action="{{ url_for('editor.division_replace_player', division_id=division.id) }}">
+
+    <div class="editor_objects_header">
+        <div class="editor_header_elements">
+            <h2 class="editor_header_title"
+                data-href="{{ url_for('editor.display', model='Division', id=division.id) }}"
+                onclick="linkToDatasetHref(this)">
+                Substituir jogador na divisão {{ division.name }}
+            </h2>
+            <div class="header_buttons">
+                <button type="submit" class="editor_header_create_button general_button">Substituir</button>
+                <a class="editor_header_actions general_button"
+                   href="{{ url_for('editor.display', model='Division', id=division.id) }}">Cancelar</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="editor_objects_information_container">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash_messages">
+                    {% for category, message in messages %}
+                        <div class="flash flash-{{ category }}"
+                             style="padding: 0.6rem 0.9rem; border-radius: 0.4rem; margin-bottom: 0.5rem;
+                                    color: {% if category == 'error' %}#7a1f1f{% else %}#1f5a2a{% endif %};
+                                    background: {% if category == 'error' %}#fdecec{% else %}#e7f6ea{% endif %};
+                                    border: 1px solid {% if category == 'error' %}#f1b5b5{% else %}#b8e0c1{% endif %};">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="editor_objects_main_block">
+            <div class="editor_objects_main_block_info">
+
+                <div class="input-box focus">
+                    <label class="input-label" for="player_a_id">Jogador a substituir (saída)</label>
+                    <select class="input-1 needs-validation"
+                            id="player_a_id"
+                            name="player_a_id"
+                            required
+                            onfocus="setFocus(true,this,this.parentNode)"
+                            onblur="setFocus(false,this,this.parentNode)">
+                        <option value="">-- Escolher jogador --</option>
+                        {% for p in current_players %}
+                            <option value="{{ p.id }}">{{ p.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="input-box focus">
+                    <label class="input-label" for="player_b_id">Novo jogador (entrada)</label>
+                    <select class="input-1 needs-validation"
+                            id="player_b_id"
+                            name="player_b_id"
+                            required
+                            onfocus="setFocus(true,this,this.parentNode)"
+                            onblur="setFocus(false,this,this.parentNode)">
+                        <option value="">-- Escolher jogador --</option>
+                        {% for p in available_players %}
+                            <option value="{{ p.id }}">{{ p.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                {% if division.has_ended %}
+                <div class="input-box for_checkbox">
+                    <label class="checkbox-label" for="confirm_has_ended_replace">
+                        Esta divisão está encerrada. Confirmar substituição mesmo assim.
+                    </label>
+                    <input id="confirm_has_ended_replace"
+                           type="checkbox"
+                           name="confirm_has_ended"
+                           value="1"
+                           class="input-3">
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}

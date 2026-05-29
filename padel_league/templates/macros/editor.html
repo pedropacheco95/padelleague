@@ -42,6 +42,9 @@
                         <div class="editor_header_actions_dropdown_item dropdown_item" onclick="showHideElementByClass('delete_cell')" data-href="">Apagar</div>
                         <div class="editor_header_actions_dropdown_item dropdown_item" onclick="downloadCSV(this),event.stopPropagation()" data-href="{{data['download_csv_url']}}">Download</div>
                         <div class="editor_header_actions_dropdown_item dropdown_item" onclick="callAPI(this,true),event.stopPropagation()" data-href="{{data['upload_csv_url']}}">Upload</div>
+                        {% for action in data.get('extra_actions', []) %}
+                        <div class="editor_header_actions_dropdown_item dropdown_item" onclick="linkToDatasetHref(this)" data-href="{{ action.url }}">{{ action.label }}</div>
+                        {% endfor %}
                     </div>
                 </div>
             </div>
@@ -190,6 +193,9 @@
                 <div id="editor_actions_dropdown" class="editor_header_actions_dropdown dropdown_box" style="display: none;">
                     <div class="editor_actions_container">
                         <div class="editor_header_actions_dropdown_item dropdown_item" onclick="callAPI(this,true)" data-href="{{data['delete_url']}}">Apagar</div>
+                        {% for action in data.get('extra_actions', []) %}
+                        <div class="editor_header_actions_dropdown_item dropdown_item" onclick="linkToDatasetHref(this)" data-href="{{ action.url }}">{{ action.label }}</div>
+                        {% endfor %}
                     </div>
                 </div>
             </div>
