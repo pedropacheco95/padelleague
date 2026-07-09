@@ -246,4 +246,35 @@ def remove_player_from_matchweek(id):
             assoc.delete()
             removed_count += 1
 
+    # The player's Association_PlayerMatch rows changed, so the denormalised
+    # standings columns must be recomputed from scratch — otherwise the
+    # removed player keeps showing stale points/appearances until the
+    # matchweek advances (update_table's read-time recompute is gated on
+    # matchweek changing).
+    if removed_count:
+        try:
+            division.update_table(force_update=True)
+        except Exception:
+            pass
+
     return jsonify({"removedAssociations": removed_count})
+
+
+@bp.route("/<int:id>/refresh_standings", methods=["POST"])
+@jwt_required()
+def refresh_standings(id):
+    """Force a full recompute of the division's standings.
+
+    Manual fallback for admins in case an edit path missed triggering the
+    automatic recalculation.
+    """
+    division = Division.query.filter_by(id=id).first_or_404()
+    division.update_table(force_update=True)
+
+    standings = [
+        serialize_standings_row(rel, position)
+        for position, rel in enumerate(
+            division.players_relations_classification(), start=1
+        )
+    ]
+    return jsonify({"standings": standings})
