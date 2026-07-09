@@ -22,6 +22,7 @@ class Division(db.Model, model.Model):
     end_date = Column(Date)
     has_ended = Column(Boolean, default=False)
     open_division = Column(Boolean, default=False)
+    standings_up_to_date = Column(Boolean, default=True)
     edition_id = Column(Integer, ForeignKey("editions.id"))
 
     logo_image_id = Column(Integer, ForeignKey("images.id", ondelete="SET NULL"))
@@ -137,6 +138,8 @@ class Division(db.Model, model.Model):
                 relation.games_lost = games_lost
                 relation.matchweek = matchweek
                 relation.save()
+            self.standings_up_to_date = True
+            self.save()
         self.players_classification(update_places=True)
         games_not_played = [match for match in self.matches if not match.played]
         if not games_not_played:

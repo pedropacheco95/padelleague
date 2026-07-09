@@ -264,6 +264,8 @@ def division_replace_player(division_id):
         flash(f"Falha ao substituir jogador: {exc}", "error")
         return render_form()
 
+    division.standings_up_to_date = False
+    division.save()
     try:
         division.update_table(force_update=True)
     except Exception as exc:  # noqa: BLE001
@@ -363,6 +365,8 @@ def division_readd_player(division_id):
         flash(f"Falha ao readicionar jogador: {exc}", "error")
         return render_form()
 
+    division.standings_up_to_date = False
+    division.save()
     try:
         division.update_table(force_update=True)
     except Exception as exc:  # noqa: BLE001

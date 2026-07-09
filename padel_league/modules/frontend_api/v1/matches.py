@@ -1,6 +1,6 @@
 import datetime
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, current_app, jsonify, request
 
 from padel_league.models import Association_PlayerMatch, Division, Match, ShuffleMatch
 
@@ -40,6 +40,7 @@ def edit_match(id):
     data = request.get_json()
 
     # Remove player from ALL matches in this matchweek in this division
+    players_eliminated = False
     for item in data.get("playersEliminated", []):
         player_id = item.get("playerId")
         if not player_id:
@@ -50,7 +51,10 @@ def edit_match(id):
                     match_id=mw_match.id, player_id=player_id
                 ).first()
                 if assoc:
+                    match_was_played = mw_match.played
                     assoc.delete()
+                    if match_was_played:
+                        players_eliminated = True
 
     home_games = data.get("homeGames")
     away_games = data.get("awayGames")
@@ -74,12 +78,25 @@ def edit_match(id):
     # Always recompute the division standings from scratch so re-edits to
     # an already-played match update points/wins/games. add_match_to_table
     # was incremental and gated on first-time edits, leaving classification
-    # stale on every subsequent edit.
-    if home_games is not None and away_games is not None:
+    # stale on every subsequent edit. Also recompute when a player was
+    # eliminated/substituted from an already-played match, even if no score
+    # was submitted in this call — otherwise the removed player keeps their
+    # stale points until a later score edit happens to also be present.
+    # players_eliminated is only True when the removal affected a PLAYED
+    # match — get_match_relations_played() (used by update_table) ignores
+    # unplayed matches, so removing a player from one changes nothing.
+    if (home_games is not None and away_games is not None) or players_eliminated:
+        match.division.standings_up_to_date = False
+        match.division.save()
         try:
             match.division.update_table(force_update=True)
-        except Exception:
-            pass
+        except Exception as exc:  # noqa: BLE001
+            current_app.logger.exception(
+                "[match-edit] update_table failed division=%s match=%s: %s",
+                match.division_id,
+                match.id,
+                exc,
+            )
 
     return jsonify(serialize_match(match))
 

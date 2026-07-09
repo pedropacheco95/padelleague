@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import jwt_required
 
 from padel_league.models import (
@@ -235,6 +235,7 @@ def remove_player_from_matchweek(id):
         return jsonify({"error": "playerId and matchweek must be integers"}), 400
 
     removed_count = 0
+    standings_affected = False
     for match in division.matches:
         if match.matchweek != matchweek:
             continue
@@ -243,7 +244,55 @@ def remove_player_from_matchweek(id):
             match_id=match.id, player_id=player_id
         ).first()
         if assoc:
+            match_was_played = match.played
             assoc.delete()
             removed_count += 1
+            if match_was_played:
+                standings_affected = True
+
+    # The player's Association_PlayerMatch rows changed, so the denormalised
+    # standings columns must be recomputed from scratch — otherwise the
+    # removed player keeps showing stale points/appearances until the
+    # matchweek advances (update_table's read-time recompute is gated on
+    # matchweek changing). Only worth doing when a PLAYED match was
+    # affected — get_match_relations_played() (used by update_table) ignores
+    # unplayed matches, so removing a player from one changes nothing.
+    if standings_affected:
+        division.standings_up_to_date = False
+        division.save()
+        try:
+            division.update_table(force_update=True)
+        except Exception as exc:  # noqa: BLE001
+            current_app.logger.exception(
+                "[admin-action] remove_player_from_matchweek update_table failed"
+                " division=%s: %s",
+                division.id,
+                exc,
+            )
 
     return jsonify({"removedAssociations": removed_count})
+
+
+@bp.route("/<int:id>/refresh_standings", methods=["POST"])
+@jwt_required()
+def refresh_standings(id):
+    """Force a full recompute of the division's standings.
+
+    Manual fallback for admins in case an edit path missed triggering the
+    automatic recalculation.
+    """
+    division = Division.query.filter_by(id=id).first_or_404()
+    division.update_table(force_update=True)
+
+    standings = [
+        serialize_standings_row(rel, position)
+        for position, rel in enumerate(
+            division.players_relations_classification(), start=1
+        )
+    ]
+    return jsonify(
+        {
+            "standings": standings,
+            "standingsUpToDate": division.standings_up_to_date,
+        }
+    )

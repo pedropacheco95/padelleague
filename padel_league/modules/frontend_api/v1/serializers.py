@@ -107,6 +107,7 @@ def serialize_division(division, short=False):
         "rating": division.rating,
         "hasEnded": division.has_ended,
         "openDivision": division.open_division,
+        "standingsUpToDate": division.standings_up_to_date,
         "logoImageUrl": division.logo_image_url,
         "largePictureUrl": division.large_picture_url,
         "editionId": division.edition_id,

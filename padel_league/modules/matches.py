@@ -1,6 +1,14 @@
 import datetime
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import (
+    Blueprint,
+    current_app,
+    flash,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
 
 from padel_league.models import Association_PlayerMatch, Division, Match, Player
 
@@ -123,10 +131,17 @@ def edit(id):
         # Recompute standings from scratch — handles both first-time edits
         # and re-edits of an already-played match (the previous incremental
         # add_match_to_table call only ran once per match).
+        match.division.standings_up_to_date = False
+        match.division.save()
         try:
             match.division.update_table(force_update=True)
-        except Exception:
-            pass
+        except Exception as exc:  # noqa: BLE001
+            current_app.logger.exception(
+                "[match-edit] update_table failed division=%s match=%s: %s",
+                match.division_id,
+                match.id,
+                exc,
+            )
 
         return redirect(
             url_for("matches.match", id=match.id, edited_match="edited_match")
