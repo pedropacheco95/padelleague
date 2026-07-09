@@ -235,6 +235,7 @@ def remove_player_from_matchweek(id):
         return jsonify({"error": "playerId and matchweek must be integers"}), 400
 
     removed_count = 0
+    standings_affected = False
     for match in division.matches:
         if match.matchweek != matchweek:
             continue
@@ -243,15 +244,22 @@ def remove_player_from_matchweek(id):
             match_id=match.id, player_id=player_id
         ).first()
         if assoc:
+            match_was_played = match.played
             assoc.delete()
             removed_count += 1
+            if match_was_played:
+                standings_affected = True
 
     # The player's Association_PlayerMatch rows changed, so the denormalised
     # standings columns must be recomputed from scratch — otherwise the
     # removed player keeps showing stale points/appearances until the
     # matchweek advances (update_table's read-time recompute is gated on
-    # matchweek changing).
-    if removed_count:
+    # matchweek changing). Only worth doing when a PLAYED match was
+    # affected — get_match_relations_played() (used by update_table) ignores
+    # unplayed matches, so removing a player from one changes nothing.
+    if standings_affected:
+        division.standings_up_to_date = False
+        division.save()
         try:
             division.update_table(force_update=True)
         except Exception as exc:  # noqa: BLE001
@@ -282,4 +290,9 @@ def refresh_standings(id):
             division.players_relations_classification(), start=1
         )
     ]
-    return jsonify({"standings": standings})
+    return jsonify(
+        {
+            "standings": standings,
+            "standingsUpToDate": division.standings_up_to_date,
+        }
+    )

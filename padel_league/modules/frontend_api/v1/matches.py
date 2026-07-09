@@ -51,8 +51,10 @@ def edit_match(id):
                     match_id=mw_match.id, player_id=player_id
                 ).first()
                 if assoc:
+                    match_was_played = mw_match.played
                     assoc.delete()
-                    players_eliminated = True
+                    if match_was_played:
+                        players_eliminated = True
 
     home_games = data.get("homeGames")
     away_games = data.get("awayGames")
@@ -77,10 +79,15 @@ def edit_match(id):
     # an already-played match update points/wins/games. add_match_to_table
     # was incremental and gated on first-time edits, leaving classification
     # stale on every subsequent edit. Also recompute when a player was
-    # eliminated/substituted even if no score was submitted in this call —
-    # otherwise the removed player keeps their stale points until a later
-    # score edit happens to also be present.
+    # eliminated/substituted from an already-played match, even if no score
+    # was submitted in this call — otherwise the removed player keeps their
+    # stale points until a later score edit happens to also be present.
+    # players_eliminated is only True when the removal affected a PLAYED
+    # match — get_match_relations_played() (used by update_table) ignores
+    # unplayed matches, so removing a player from one changes nothing.
     if (home_games is not None and away_games is not None) or players_eliminated:
+        match.division.standings_up_to_date = False
+        match.division.save()
         try:
             match.division.update_table(force_update=True)
         except Exception as exc:  # noqa: BLE001
