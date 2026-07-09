@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import jwt_required
 
 from padel_league.models import (
@@ -254,8 +254,13 @@ def remove_player_from_matchweek(id):
     if removed_count:
         try:
             division.update_table(force_update=True)
-        except Exception:
-            pass
+        except Exception as exc:  # noqa: BLE001
+            current_app.logger.exception(
+                "[admin-action] remove_player_from_matchweek update_table failed"
+                " division=%s: %s",
+                division.id,
+                exc,
+            )
 
     return jsonify({"removedAssociations": removed_count})
 

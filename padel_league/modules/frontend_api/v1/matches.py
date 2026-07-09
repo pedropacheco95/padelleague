@@ -83,8 +83,13 @@ def edit_match(id):
     if (home_games is not None and away_games is not None) or players_eliminated:
         try:
             match.division.update_table(force_update=True)
-        except Exception:
-            pass
+        except Exception as exc:  # noqa: BLE001
+            current_app.logger.exception(
+                "[match-edit] update_table failed division=%s match=%s: %s",
+                match.division_id,
+                match.id,
+                exc,
+            )
 
     return jsonify(serialize_match(match))
 
