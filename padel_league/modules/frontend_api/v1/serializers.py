@@ -178,6 +178,8 @@ def serialize_standings_row(rel, position):
         "losts": rel.losts,
         # Template divides appearances by 3 to convert match-appearances → matchweek-appearances
         "appearances": int(rel.appearances / 3) if rel.appearances else 0,
+        "gamesWon": rel.games_won or 0,
+        "gamesLost": rel.games_lost or 0,
     }
 
 
