@@ -8,6 +8,7 @@ import pytest
 from sqlalchemy import event
 
 from padel_league import create_app
+from padel_league.modules import chatbot_api
 from padel_league.models import (
     Association_PlayerDivision,
     Association_PlayerMatch,
@@ -50,8 +51,18 @@ def app():
             "TESTING": True,
             "SQLALCHEMY_DATABASE_URI": f"sqlite:///{db_path}",
             "SQLALCHEMY_TRACK_MODIFICATIONS": False,
+            # create_app bypasses the Config class when given a test config,
+            # so the JWT settings the API endpoints need have to be spelled out.
+            "JWT_SECRET_KEY": "test-jwt-secret",
+            "JWT_TOKEN_LOCATION": ["headers"],
+            "JWT_HEADER_TYPE": "Bearer",
         }
     )
+
+    # chatbot_api registers a `before_app_request` hook that builds the LLM
+    # agents on the first request of *any* endpoint. Mark them as already
+    # initialised so hitting an unrelated API route doesn't need an API key.
+    chatbot_api.orchestrator_agent = chatbot_api.orchestrator_agent or object()
 
     with app.app_context():
         init_db(app)
@@ -258,3 +269,57 @@ def test_force_is_refused_once_a_match_has_been_played(app):
 
     with app.app_context():
         assert Match.query.filter_by(division_id=division_id).count() == 42
+
+
+def _auth_header(app):
+    from flask_jwt_extended import create_access_token
+
+    with app.app_context():
+        return {"Authorization": f"Bearer {create_access_token(identity='1')}"}
+
+
+def test_endpoint_generates_fixtures_and_names_the_draw(app):
+    division_id, player_ids = _make_division(app)
+
+    response = app.test_client().post(
+        f"/api/v1/divisions/{division_id}/generate_matches",
+        json={},
+        headers=_auth_header(app),
+    )
+
+    assert response.status_code == 201, response.get_data(as_text=True)
+    body = response.get_json()
+    assert body["matches_created"] == 42
+    assert sorted(seat["id"] for seat in body["seats"].values()) == sorted(player_ids)
+    assert all(seat["name"] for seat in body["seats"].values())
+
+    with app.app_context():
+        assert Match.query.filter_by(division_id=division_id).count() == 42
+
+
+def test_endpoint_requires_authentication(app):
+    division_id, _ = _make_division(app)
+
+    response = app.test_client().post(
+        f"/api/v1/divisions/{division_id}/generate_matches", json={}
+    )
+
+    assert response.status_code == 401
+    with app.app_context():
+        assert Match.query.filter_by(division_id=division_id).count() == 0
+
+
+def test_endpoint_reports_a_conflict_instead_of_crashing(app):
+    division_id, _ = _make_division(app)
+    headers = _auth_header(app)
+    client = app.test_client()
+
+    client.post(
+        f"/api/v1/divisions/{division_id}/generate_matches", json={}, headers=headers
+    )
+    response = client.post(
+        f"/api/v1/divisions/{division_id}/generate_matches", json={}, headers=headers
+    )
+
+    assert response.status_code == 409
+    assert "already has 42 matches" in response.get_json()["message"]
