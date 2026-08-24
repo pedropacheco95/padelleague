@@ -101,3 +101,36 @@ def register_cli(app):
                 apps_app.create()
 
             click.echo("Seeding done.")
+
+    @app.cli.command("generate-artwork")
+    @click.option("--edition-id", type=int, required=True)
+    @click.option(
+        "--kind",
+        type=click.Choice(["poster", "banner", "both"]),
+        default="both",
+    )
+    @click.option(
+        "--force", is_flag=True, help="Replace artwork a division already has."
+    )
+    def generate_artwork(edition_id, kind, force):
+        """Generate and attach division posters and banners for an edition."""
+        from padel_league.models import Edition
+        from padel_league.services.artwork import generate_for_edition
+
+        kinds = ("poster", "banner") if kind == "both" else (kind,)
+
+        with app.app_context():
+            edition = Edition.query.filter_by(id=edition_id).first()
+            if not edition:
+                raise click.ClickException(f"edition {edition_id} was not found")
+            results = generate_for_edition(edition, kinds=kinds, force=force)
+            click.echo(json.dumps(results, indent=2, ensure_ascii=False))
+            failed = [r for r in results if r.get("error")]
+            resized = [r for r in results if r.get("was_resized")]
+            if resized:
+                click.echo(
+                    f"{len(resized)} image(s) were not the exact size and were "
+                    "cover-cropped — worth a human look."
+                )
+            if failed:
+                raise click.ClickException(f"{len(failed)} image(s) failed")
