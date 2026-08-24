@@ -13,6 +13,8 @@ from padel_league.models import (
     Association_PlayerDivision,
     Association_PlayerMatch,
     Division,
+    Edition,
+    League,
     Match,
     Player,
 )
@@ -69,6 +71,8 @@ def app():
         db.metadata.create_all(
             bind=db.engine,
             tables=[
+                League.__table__,
+                Edition.__table__,
                 Division.__table__,
                 Player.__table__,
                 Match.__table__,
@@ -200,6 +204,58 @@ def test_dates_are_weekly_and_fields_alternate(app):
         for matchweek in range(1, 8):
             fields = [m.field for m in matches if m.matchweek == matchweek]
             assert fields == ["Campo 1", "Campo 2"] * 3
+
+
+def test_each_division_of_an_edition_gets_its_own_pair_of_courts(app):
+    """All six divisions play at the same time, so 1a..6a take Campos 1..12."""
+    from padel_league.services.fixtures import fields_for
+
+    with app.app_context():
+        league = League(name="Padel League")
+        db.session.add(league)
+        db.session.flush()
+        edition = Edition(name="22a Edicao", league_id=league.id)
+        db.session.add(edition)
+        db.session.flush()
+        for i in range(6):
+            db.session.add(
+                Division(
+                    name=f"Masters - {i + 1}a Divisao",
+                    rating=2000 // (2**i),
+                    beginning_datetime=START,
+                    edition_id=edition.id,
+                )
+            )
+        db.session.commit()
+
+        ladder = sorted(
+            Edition.query.get(edition.id).divisions, key=lambda d: -d.rating
+        )
+        assert [fields_for(d) for d in ladder] == [
+            ("Campo 1", "Campo 2"),
+            ("Campo 3", "Campo 4"),
+            ("Campo 5", "Campo 6"),
+            ("Campo 7", "Campo 8"),
+            ("Campo 9", "Campo 10"),
+            ("Campo 11", "Campo 12"),
+        ]
+
+
+def test_a_division_with_no_edition_keeps_the_old_courts(app):
+    from padel_league.services.fixtures import fields_for
+
+    division_id, _ = _make_division(app)
+    with app.app_context():
+        assert fields_for(Division.query.get(division_id)) == ("Campo 1", "Campo 2")
+
+
+def test_fields_can_be_overridden_explicitly(app):
+    division_id, _ = _make_division(app)
+    summary = _generate(app, division_id, fields=("Campo 7", "Campo 8"))
+    assert summary["fields"] == ["Campo 7", "Campo 8"]
+    with app.app_context():
+        used = {m.field for m in Match.query.filter_by(division_id=division_id)}
+        assert used == {"Campo 7", "Campo 8"}
 
 
 def test_end_date_is_the_last_matchweek_not_a_week_later(app):

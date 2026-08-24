@@ -24,7 +24,8 @@ from padel_league.sql_db import db
 PLAYERS_PER_DIVISION = 8
 MATCHWEEK_COUNT = 7
 GAMES_PER_MATCHWEEK = 6
-FIELDS = ("Campo 1", "Campo 2")
+DEFAULT_FIELDS = ("Campo 1", "Campo 2")
+COURTS_PER_DIVISION = 2
 
 
 class FixtureGenerationError(Exception):
@@ -61,6 +62,30 @@ def load_games_order():
     return matchweeks
 
 
+def fields_for(division):
+    """The two courts this division plays on.
+
+    All divisions of an edition now play at the same time, one pair of courts
+    each: 1ª on Campos 1-2, 2ª on 3-4, ... 6ª on 11-12. The pair is derived from
+    the division's position on the ladder (highest rating first), so it follows
+    the edition's shape rather than needing to be configured.
+
+    A division with no edition keeps the old Campo 1 / Campo 2.
+    """
+    edition = division.edition
+    if edition is None:
+        return DEFAULT_FIELDS
+    ladder = sorted(
+        edition.divisions, key=lambda d: (-(d.rating or 0), (d.name or "").lower())
+    )
+    try:
+        index = ladder.index(division)
+    except ValueError:
+        return DEFAULT_FIELDS
+    first = index * COURTS_PER_DIVISION + 1
+    return tuple(f"Campo {first + n}" for n in range(COURTS_PER_DIVISION))
+
+
 def _delete_existing_matches(matches):
     """Remove matches and their player associations. Caller commits.
 
@@ -75,7 +100,9 @@ def _delete_existing_matches(matches):
     db.session.flush()
 
 
-def generate_division_fixtures(division, force=False, rng=None, commit=True):
+def generate_division_fixtures(
+    division, force=False, rng=None, commit=True, fields=None
+):
     """Create the full fixture list for ``division``.
 
     Runs as a single transaction. Returns a summary dict including the
@@ -83,7 +110,8 @@ def generate_division_fixtures(division, force=False, rng=None, commit=True):
     is random.
 
     Pass ``commit=False`` to leave the work pending in the session, so a caller
-    building several divisions can commit them as one unit.
+    building several divisions can commit them as one unit. ``fields`` overrides
+    the courts; by default they come from the division's ladder position.
 
     Raises FixtureGenerationError when the division is not in a state where
     fixtures can be generated (wrong player count, no start date, or matches
@@ -117,6 +145,7 @@ def generate_division_fixtures(division, force=False, rng=None, commit=True):
             )
 
     matchweeks = load_games_order()
+    fields = tuple(fields) if fields else fields_for(division)
 
     # The draw is random by design — the same players get different partners
     # each edition. `seats` is returned so the draw stays auditable.
@@ -138,7 +167,7 @@ def generate_division_fixtures(division, force=False, rng=None, commit=True):
                 division_id=division.id,
                 date_hour=date_hour,
                 matchweek=matchweek,
-                field=FIELDS[index % len(FIELDS)],
+                field=fields[index % len(fields)],
                 played=False,
             )
             db.session.add(match)
@@ -174,6 +203,7 @@ def generate_division_fixtures(division, force=False, rng=None, commit=True):
         "matches_created": created,
         "matchweeks": MATCHWEEK_COUNT,
         "beginning_datetime": division.beginning_datetime.isoformat(),
+        "fields": list(fields),
         "end_date": division.end_date.isoformat(),
         "seats": seats,
     }
