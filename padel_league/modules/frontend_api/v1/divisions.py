@@ -2,6 +2,7 @@ import datetime
 import re
 
 from flask import Blueprint, jsonify, request
+from flask_jwt_extended import jwt_required
 from sqlalchemy.exc import IntegrityError
 
 from padel_league.sql_db import db
@@ -12,6 +13,10 @@ from padel_league.models import (
     Player,
 )
 from padel_league.modules.frontend_api.v1.serializers import serialize_division
+from padel_league.services.fixtures import (
+    FixtureGenerationError,
+    generate_division_fixtures,
+)
 
 bp = Blueprint("api_v1_divisions", __name__, url_prefix="/api/v1/divisions")
 
@@ -304,3 +309,34 @@ def last_played_players():
         )
 
     return jsonify({"divisions": divisions_payload})
+
+
+@bp.route("/<int:id>/generate_matches", methods=["POST"])
+@jwt_required()
+def generate_matches(id):
+    division = Division.query.filter_by(id=id).first_or_404()
+    data = request.get_json(silent=True) or {}
+    force = bool(data.get("force", False))
+
+    try:
+        summary = generate_division_fixtures(division, force=force)
+    except FixtureGenerationError as exc:
+        return _json_error(str(exc), 409)
+
+    summary["seats"] = _describe_seats(summary["seats"])
+    return jsonify(summary), 201
+
+
+def _describe_seats(seats):
+    """Turn {seat: player_id} into {seat: {id, name}} for a readable response."""
+    players = {
+        player.id: player
+        for player in Player.query.filter(Player.id.in_(seats.values())).all()
+    }
+    return {
+        seat: {
+            "id": player_id,
+            "name": players[player_id].name if player_id in players else None,
+        }
+        for seat, player_id in seats.items()
+    }
