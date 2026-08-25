@@ -8,6 +8,7 @@ edition is created or nothing is.
 
 import datetime
 
+from padel_league.model import Image
 from padel_league.models import (
     Association_PlayerDivision,
     Division,
@@ -101,8 +102,29 @@ def validate_plan(plan):
         if rating is None:
             raise EditionPlanError(f"{name}: rating is required")
 
+        # Artwork is optional here — it is normally generated afterwards by
+        # `flask generate-artwork`, but a plan may point at existing images.
+        images = {}
+        for key in ("logo_image_id", "large_picture_id"):
+            value = division.get(key)
+            if value is None:
+                images[key] = None
+                continue
+            try:
+                value = int(value)
+            except (TypeError, ValueError):
+                raise EditionPlanError(f"{name}: {key} must be an integer")
+            if not Image.query.filter_by(id=value).first():
+                raise EditionPlanError(f"{name}: {key} {value} was not found")
+            images[key] = value
+
         normalised.append(
-            {"name": name, "rating": int(rating), "players": list(players)}
+            {
+                "name": name,
+                "rating": int(rating),
+                "players": list(players),
+                **images,
+            }
         )
 
     found = {
@@ -144,6 +166,8 @@ def create_edition_from_plan(plan):
                 rating=spec["rating"],
                 has_ended=False,
                 open_division=False,
+                logo_image_id=spec["logo_image_id"],
+                large_picture_id=spec["large_picture_id"],
             )
             db.session.add(division)
             db.session.flush()
