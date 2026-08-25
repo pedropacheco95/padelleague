@@ -134,3 +134,71 @@ def register_cli(app):
                 )
             if failed:
                 raise click.ClickException(f"{len(failed)} image(s) failed")
+
+    @app.cli.command("backfill-player-accounts")
+    @click.option(
+        "--dry-run", is_flag=True, help="List players missing a login, write nothing."
+    )
+    @click.option(
+        "--player-id",
+        "player_ids",
+        type=int,
+        multiple=True,
+        help="Only these players. Omit to cover everyone missing a login.",
+    )
+    def backfill_player_accounts(dry_run, player_ids):
+        """Give every player without a login one (username = full name, no
+        spaces, lower case; password = the username)."""
+        from padel_league.services.accounts import (
+            ensure_user_for_player,
+            players_without_accounts,
+            username_for,
+        )
+        from padel_league.sql_db import db
+
+        with app.app_context():
+            missing = players_without_accounts()
+            if player_ids:
+                wanted = set(player_ids)
+                found = {p.id for p in missing}
+                unknown = sorted(wanted - found)
+                if unknown:
+                    raise click.ClickException(
+                        f"player(s) {unknown} either do not exist or already "
+                        "have a login"
+                    )
+                missing = [p for p in missing if p.id in wanted]
+            if not missing:
+                click.echo("Every player already has a login.")
+                return
+            if dry_run:
+                for player in missing:
+                    click.echo(
+                        f"{player.id:>4}  {player.full_name or player.name}  ->  "
+                        f"{username_for(player.full_name or player.name)}"
+                    )
+                click.echo(
+                    f"{len(missing)} player(s) missing a login. Nothing written."
+                )
+                return
+            created = []
+            for player in missing:
+                user, was_created = ensure_user_for_player(player, commit=False)
+                if was_created:
+                    created.append(user)
+            db.session.commit()
+            click.echo(
+                json.dumps(
+                    [
+                        {
+                            "player_id": u.player_id,
+                            "username": u.username,
+                            "email": u.email,
+                            "password": u.username,
+                        }
+                        for u in created
+                    ],
+                    indent=2,
+                    ensure_ascii=False,
+                )
+            )
