@@ -210,7 +210,7 @@ class DataAgent(Agent):
         5. “Última edição” usually means last closed edition.
         6. Divisions identified by rating, not name:
         2000 → D1, 1000 → D2, 500 → D3, 250 → D4, 125 → D5.
-        7. For place/points/faltas questions → current edition.
+        7. For place/points/faltas questions about a division → current edition.
         8. For historical counts → all editions.
         9. matches.winner stores **1 for home team win**, **-1 for away team win**, **0 for tie** — NOT a player_id.
         10. To get the winning **players**, match the team logic:
@@ -231,6 +231,10 @@ class DataAgent(Agent):
         23. Use correct PostgreSQL types consistently.
         24. Avoid invalid or non-existent column names.
         25. Follow strict PostgreSQL GROUP BY rules.
+        26. The GLOBAL league ranking ("ranking geral", "ranking da liga", "melhor jogador da liga",
+            "quem está no topo do ranking") lives in players.ranking_points and players.ranking_position
+            (position 1 = best). It is NOT division points. Order by players.ranking_position ASC
+            (or ranking_points DESC) and never join divisions for it.
 
 
         ---
@@ -288,6 +292,20 @@ class DataAgent(Agent):
         ORDER BY vitorias DESC, p.name;
         ```
 
+        Second example (global ranking, NOT division standings):
+
+        Input question:
+        "Quem está no top 3 do ranking geral?"
+
+        Output:
+        ```sql
+        SELECT p.name, p.ranking_points, p.ranking_position
+        FROM players p
+        WHERE p.ranking_position IS NOT NULL
+        ORDER BY p.ranking_position ASC, p.ranking_points DESC
+        LIMIT 3;
+        ```
+
         Write a valid PostgreSQL query that answers the following question.
         Return **only** a fenced markdown code block. No extra explanation.
 
@@ -343,7 +361,9 @@ class GenericAnswerAgent(Agent):
     def __init__(self, api_key):
         self.llm = LLMClient(api_key=api_key)
 
-    def run(self, original_question, agent_question, conversation=None) -> str:
+    def run(
+        self, original_question, agent_question, conversation=None, trace=None
+    ) -> str:
 
         if conversation:
             conversation = copy.deepcopy(conversation)
@@ -425,7 +445,9 @@ class PadelLeagueAnswerAgent(Agent):
         self.llm = LLMClient(api_key=api_key)
         self.data_agent = data_agent
 
-    def run(self, original_question, agent_questions, conversation=None) -> str:
+    def run(
+        self, original_question, agent_questions, conversation=None, trace=None
+    ) -> str:
 
         if conversation:
             conversation = copy.deepcopy(conversation)
@@ -434,6 +456,21 @@ class PadelLeagueAnswerAgent(Agent):
             {"question": question, "db_result": self.data_agent.run(question)}
             for question in agent_questions
         ]
+        if trace is not None:
+            trace["sql_queries"] = [
+                {
+                    "question": item["question"],
+                    "sql": item["db_result"].get("sql"),
+                    "repaired_from": item["db_result"].get("repaired_from"),
+                    "error": item["db_result"].get("error"),
+                    "row_count": (
+                        len(item["db_result"]["rows"])
+                        if isinstance(item["db_result"].get("rows"), list)
+                        else None
+                    ),
+                }
+                for item in db_result
+            ]
 
         db_rows_str = "\n".join(
             f"Question: {item['question']}\nRows: {item['db_result'].get('rows', [])}\n"
@@ -629,10 +666,13 @@ class OrchestratorAgent:
         )
         return self.parse_tasks(raw)
 
-    def run(self, user_message, conversation=None):
+    def run(self, user_message, conversation=None, trace=None):
         """
         Answers `user_message` in the context of `conversation` (defaults to
         the orchestrator's own conversation) and records the exchange in it.
+
+        If `trace` is a dict it is filled with the routing decision and the
+        SQL that ran, so the caller can log it.
         """
         conversation = conversation if conversation is not None else self.conversation
         tasks = self.choose_agents(user_message, conversation)
@@ -644,7 +684,10 @@ class OrchestratorAgent:
         agent = self.agents_dict.get(agent_name)
         if agent is None:
             agent = self.agents_dict["GenericAnswerAgent"]
-        answer = agent.run(user_message, agent_question, conversation)
+        if trace is not None:
+            trace["agent_name"] = agent.name
+            trace["agent_questions"] = agent_question
+        answer = agent.run(user_message, agent_question, conversation, trace=trace)
         if answer:
             conversation.add_message("user", user_message)
             conversation.add_message("assistant", answer)

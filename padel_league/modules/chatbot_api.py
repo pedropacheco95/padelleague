@@ -1,4 +1,6 @@
+import json
 import logging
+import time
 import uuid
 
 from flask import Blueprint, current_app, jsonify, request, session
@@ -10,6 +12,8 @@ from padel_league.core.agents import (
     PadelLeagueAnswerAgent,
 )
 from padel_league.core.services import SQLClient
+from padel_league.models import ChatbotLog
+from padel_league.sql_db import db
 
 bp = Blueprint("chatbot_api", __name__, url_prefix="/api/v1/chatbot")
 
@@ -100,17 +104,57 @@ def chat():
         return jsonify({"error": "No user_input provided"}), 400
 
     conversation = get_conversation()
+    trace = {}
+    started = time.monotonic()
 
     try:
-        response = orchestrator_agent.run(user_input, conversation=conversation)
-    except Exception:  # noqa: BLE001 - never leak a stack trace to the chat UI
+        response = orchestrator_agent.run(
+            user_input, conversation=conversation, trace=trace
+        )
+    except Exception as exc:  # noqa: BLE001 - never leak a stack trace to the chat UI
         logging.exception("Chatbot failed to answer: %r", user_input)
+        log_question(user_input, trace, started, answer=None, error=repr(exc))
         return jsonify({"response": FALLBACK_ANSWER, "error": "llm_failure"}), 502
 
     if not response:
+        log_question(user_input, trace, started, answer=None, error="empty_answer")
         return jsonify({"response": FALLBACK_ANSWER, "error": "empty_answer"}), 502
 
+    log_question(user_input, trace, started, answer=response)
     return jsonify({"response": response})
+
+
+def log_question(question, trace, started, answer=None, error=None):
+    """
+    Persists one ChatbotLog row. Never raises: a logging problem must not
+    turn a good answer into an error for the user.
+    """
+    try:
+        row = ChatbotLog(
+            session_id=session.get("conversation_id"),
+            question=question,
+            agent_name=trace.get("agent_name"),
+            agent_questions=_json(trace.get("agent_questions")),
+            sql_queries=_json(trace.get("sql_queries")),
+            answer=answer,
+            status="ok" if error is None else "error",
+            error=error,
+            duration_ms=int((time.monotonic() - started) * 1000),
+        )
+        db.session.add(row)
+        db.session.commit()
+    except Exception:  # noqa: BLE001
+        logging.exception("Could not write chatbot log")
+        try:
+            db.session.rollback()
+        except Exception:  # noqa: BLE001
+            pass
+
+
+def _json(value):
+    if value is None:
+        return None
+    return json.dumps(value, ensure_ascii=False, default=str)
 
 
 @bp.route("/reset", methods=["POST"])
