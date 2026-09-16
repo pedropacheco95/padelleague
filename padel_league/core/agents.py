@@ -233,8 +233,9 @@ class DataAgent(Agent):
         25. Follow strict PostgreSQL GROUP BY rules.
         26. The GLOBAL league ranking ("ranking geral", "ranking da liga", "melhor jogador da liga",
             "quem está no topo do ranking") lives in players.ranking_points and players.ranking_position
-            (position 1 = best). It is NOT division points. Order by players.ranking_position ASC
-            (or ranking_points DESC) and never join divisions for it.
+            (position 1 = best). It is NOT division points and needs no join with divisions.
+            Unranked players have ranking_position = 0 or NULL and ranking_points = 0: ALWAYS exclude
+            them (WHERE ranking_position > 0). Order by ranking_points DESC, ranking_position ASC.
 
 
         ---
@@ -301,8 +302,8 @@ class DataAgent(Agent):
         ```sql
         SELECT p.name, p.ranking_points, p.ranking_position
         FROM players p
-        WHERE p.ranking_position IS NOT NULL
-        ORDER BY p.ranking_position ASC, p.ranking_points DESC
+        WHERE p.ranking_position > 0
+        ORDER BY p.ranking_points DESC, p.ranking_position ASC
         LIMIT 3;
         ```
 
