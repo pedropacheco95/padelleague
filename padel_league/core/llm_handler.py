@@ -139,7 +139,7 @@ class LLMConversation:
             removed_message = conversation_list.pop(idx)
             total_tokens -= removed_message.estimate_tokens()
 
-        return [m.to_openai_format() for m in self.messages]
+        return [m.to_openai_format() for m in conversation_list]
 
     def compute_total_tokens(self) -> int:
         """

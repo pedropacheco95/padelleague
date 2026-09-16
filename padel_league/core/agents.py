@@ -577,10 +577,36 @@ class OrchestratorAgent:
         self.agents_description = [
             {"name": agent.name, "description": agent.description} for agent in agents
         ]
-        self.conversation = LLMConversation(system_prompt=self.system_prompt)
+        # The class-level prompt is a template; render the agent list into it.
+        self.system_prompt = self.__class__.system_prompt.format(self=self)
+        self.conversation = self.new_conversation()
         self.agents_dict = {agent.name: agent for agent in agents}
 
-    def choose_agents(self, user_message):
+    def new_conversation(self):
+        """A fresh, independent conversation (one per chat session)."""
+        return LLMConversation(system_prompt=self.system_prompt)
+
+    @staticmethod
+    def parse_tasks(raw):
+        """
+        Parses the orchestrator's JSON answer, tolerating ```json fences and
+        stray text around the object.
+        """
+        if not raw:
+            raise ValueError("Orchestrator returned an empty answer")
+        text = raw.strip()
+        fenced = re.search(r"```(?:json)?\s*(.*?)```", text, re.DOTALL)
+        if fenced:
+            text = fenced.group(1).strip()
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError:
+            start, end = text.find("{"), text.rfind("}")
+            if start == -1 or end == -1:
+                raise
+            return json.loads(text[start : end + 1])
+
+    def choose_agents(self, user_message, conversation=None):
         prompt = f"""
         This was the last user message.
 
@@ -591,7 +617,8 @@ class OrchestratorAgent:
         Respond with JSON only.
         """
 
-        new_conversation = copy.deepcopy(self.conversation)
+        base = conversation if conversation is not None else self.conversation
+        new_conversation = copy.deepcopy(base)
         new_conversation.add_message("user", prompt)
 
         raw = self.llm.generate_response_for_conversation(
@@ -600,14 +627,25 @@ class OrchestratorAgent:
             verbosity="low",
             temperature=0,
         )
-        return json.loads(raw)
+        return self.parse_tasks(raw)
 
-    def run(self, user_message):
-        tasks = self.choose_agents(user_message)
-        agent_name = tasks["agent"][0]["name"]
-        agent_question = tasks["agent"][0]["question"]
-        agent = self.agents_dict[agent_name]
-        answer = agent.run(user_message, agent_question, self.conversation)
-        self.conversation.add_message("user", user_message)
-        self.conversation.add_message("assistant", answer)
+    def run(self, user_message, conversation=None):
+        """
+        Answers `user_message` in the context of `conversation` (defaults to
+        the orchestrator's own conversation) and records the exchange in it.
+        """
+        conversation = conversation if conversation is not None else self.conversation
+        tasks = self.choose_agents(user_message, conversation)
+        calls = tasks.get("agent") or []
+        if not calls:
+            raise ValueError(f"Orchestrator returned no agent call: {tasks!r}")
+        agent_name = calls[0]["name"]
+        agent_question = calls[0]["question"]
+        agent = self.agents_dict.get(agent_name)
+        if agent is None:
+            agent = self.agents_dict["GenericAnswerAgent"]
+        answer = agent.run(user_message, agent_question, conversation)
+        if answer:
+            conversation.add_message("user", user_message)
+            conversation.add_message("assistant", answer)
         return answer

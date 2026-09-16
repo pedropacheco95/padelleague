@@ -39,6 +39,5 @@ class SQLClient:
         """
         Run INSERT/UPDATE/DELETE queries and commit.
         """
-        self.session.execute(text(query), params or {})
         result = self.session.execute(text(query), params or {})
         return [dict(row) for row in result.mappings().all()]
