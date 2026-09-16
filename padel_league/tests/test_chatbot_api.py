@@ -3,12 +3,15 @@
 The LLM is replaced by a fake orchestrator so no API key or network is needed.
 """
 
+import json
 import os
 import tempfile
 
 import pytest
 
 from padel_league import create_app
+from padel_league.models import ChatbotLog
+from padel_league.sql_db import db
 from padel_league.core.llm_handler import LLMConversation
 from padel_league.modules import chatbot_api
 
@@ -24,8 +27,14 @@ class FakeOrchestrator:
     def new_conversation(self):
         return LLMConversation(system_prompt="test")
 
-    def run(self, user_message, conversation=None):
+    def run(self, user_message, conversation=None, trace=None):
         self.calls.append((user_message, conversation))
+        if trace is not None:
+            trace["agent_name"] = "PadelLeagueAnswerAgent"
+            trace["agent_questions"] = [f"rewritten: {user_message}"]
+            trace["sql_queries"] = [
+                {"question": user_message, "sql": "SELECT 1", "row_count": 1}
+            ]
         if self.fail:
             raise RuntimeError("boom")
         if self.empty:
@@ -50,6 +59,9 @@ def app():
             "JWT_HEADER_TYPE": "Bearer",
         }
     )
+    with app.app_context():
+        ChatbotLog.__table__.create(bind=db.engine)
+
     yield app
     os.close(db_fd)
     os.unlink(db_path)
@@ -154,3 +166,46 @@ def test_orchestrator_parses_fenced_json():
     assert OrchestratorAgent.parse_tasks('ok {"agent": []} done') == {"agent": []}
     with pytest.raises(ValueError):
         OrchestratorAgent.parse_tasks(None)
+
+
+def test_every_question_is_logged(app, fake_orchestrator):
+    client = app.test_client()
+    client.post("/api/v1/chatbot/chat", data={"user_input": "quem lidera?"})
+
+    with app.app_context():
+        rows = ChatbotLog.query.all()
+        assert len(rows) == 1
+        row = rows[0]
+        assert row.question == "quem lidera?"
+        assert row.answer == "echo: quem lidera?"
+        assert row.status == "ok"
+        assert row.agent_name == "PadelLeagueAnswerAgent"
+        assert json.loads(row.agent_questions) == ["rewritten: quem lidera?"]
+        assert json.loads(row.sql_queries)[0]["sql"] == "SELECT 1"
+        assert row.session_id
+        assert row.duration_ms is not None and row.duration_ms >= 0
+        assert row.verdict is None
+
+
+def test_failures_are_logged_too(app, monkeypatch):
+    monkeypatch.setattr(chatbot_api, "orchestrator_agent", FakeOrchestrator(fail=True))
+    monkeypatch.setattr(chatbot_api, "conversation_cache", {})
+    client = app.test_client()
+    client.post("/api/v1/chatbot/chat", data={"user_input": "olá"})
+
+    with app.app_context():
+        row = ChatbotLog.query.one()
+        assert row.status == "error"
+        assert "boom" in row.error
+        assert row.answer is None
+
+
+def test_logging_failure_does_not_break_the_answer(app, fake_orchestrator, monkeypatch):
+    def explode(*_args, **_kwargs):
+        raise RuntimeError("db down")
+
+    monkeypatch.setattr(chatbot_api.db.session, "commit", explode)
+    client = app.test_client()
+    resp = client.post("/api/v1/chatbot/chat", data={"user_input": "olá"})
+    assert resp.status_code == 200
+    assert resp.get_json()["response"] == "echo: olá"

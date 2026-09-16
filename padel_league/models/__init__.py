@@ -17,6 +17,7 @@ from .order_lines import OrderLine
 from .backend_apps import Backend_App
 from .sponsors import Sponsor
 from .sponsor_clicks import SponsorClick
+from .chatbot_logs import ChatbotLog
 from .Association_PlayerDivision import Association_PlayerDivision
 from .Association_PlayerMatch import Association_PlayerMatch
 from .Association_PlayerShuffleTournament import Association_PlayerShuffleTournament
@@ -46,6 +47,7 @@ MODELS = {
     "OrderLine": OrderLine,
     "Sponsor": Sponsor,
     "SponsorClick": SponsorClick,
+    "ChatbotLog": ChatbotLog,
     "Association_PlayerDivision": Association_PlayerDivision,
     "Association_PlayerMatch": Association_PlayerMatch,
     "Association_PlayerShuffleTournament": Association_PlayerShuffleTournament,
