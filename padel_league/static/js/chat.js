@@ -90,7 +90,7 @@ async function sendMessage() {
     const loadingElement = addLoadingMessage();
 
     try {
-        const response = await fetch('chatbot_api/chat', {
+        const response = await fetch('/api/v1/chatbot/chat', {
             method: 'POST',
             body: new URLSearchParams({ user_input: userInput }),
         });
