@@ -89,8 +89,14 @@ class Division(db.Model, model.Model):
         ]
 
     def players_relations_classification(self, update_places=None):
-        sorted_by_points = self.players_relations
-        sorted_by_points.sort(key=lambda x: x.points, reverse=True)
+        sorted_by_points = sorted(
+            self.players_relations,
+            key=lambda rel: (
+                -(rel.points or 0),  # 1) Pontos
+                -(rel.appearances or 0),  # 2) Presenças
+                -((rel.games_won or 0) - (rel.games_lost or 0)),  # 3) Diferença jogos
+            ),
+        )
         if update_places:
             for index, rel in enumerate(sorted_by_points):
                 rel.place = index + 1

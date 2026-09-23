@@ -287,3 +287,46 @@ def test_standings_preserve_existing_points_based_ordering(app):
         ]
         assert [row["player"]["name"] for row in rows] == ["Winner", "Loser"]
         assert rows[0]["points"] > rows[1]["points"]
+
+
+def test_standings_break_points_ties_by_appearances_then_games_difference(app):
+    """Players level on points are ordered by presenças (more first), then by
+    games difference — not by the order they were added to the division."""
+    with app.app_context():
+        division = Division(name="Division 3")
+        db.session.add(division)
+        db.session.flush()
+
+        # Added in the "wrong" order so the tie-break has to do the work.
+        rare, regular, big_margin, small_margin = (
+            _make_player(name)
+            for name in ("Rare", "Regular", "BigMargin", "SmallMargin")
+        )
+        substitute = _make_player("Substitute")  # not in the division
+        db.session.flush()
+        for player in (rare, regular, big_margin, small_margin):
+            _add_player_to_division(player, division)
+        db.session.commit()
+
+        # Rare: 1 win (3 pts, 1 presença). Regular: 1 win + 1 loss (3 pts, 2).
+        _make_match(division, 1, True, 6, 5, 1, home=(rare,), away=(small_margin,))
+        _make_match(division, 1, True, 6, 5, 1, home=(regular,), away=(big_margin,))
+        # BigMargin/SmallMargin: 1 win + 1 loss each (3 pts, 2 presenças),
+        # but BigMargin wins 6-0 → better games difference.
+        _make_match(division, 2, True, 6, 0, 1, home=(big_margin,), away=(regular,))
+        _make_match(
+            division, 2, True, 6, 5, 1, home=(small_margin,), away=(substitute,)
+        )
+        _make_match(division, 3, False, home=(rare,), away=(regular,))
+        db.session.commit()
+
+        division.update_table(force_update=True)
+
+        ordered = division.players_relations_classification()
+        assert [rel.player.name for rel in ordered] == [
+            "BigMargin",  # 3 pts, 2 presenças, +5
+            "SmallMargin",  # 3 pts, 2 presenças, 0
+            "Regular",  # 3 pts, 2 presenças, -5
+            "Rare",  # 3 pts, 1 presença, +1 — presenças outrank difference
+        ]
+        assert [rel.place for rel in ordered] == [1, 2, 3, 4]
