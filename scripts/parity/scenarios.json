@@ -1,12 +1,12 @@
 [
  {"key": "edit_score_ended_division", "steps": [
-   {"method": "POST", "path": "/api/v1/matches/3189/edit", "json": {"homeGames": 5, "awayGames": 7}},
+   {"method": "POST", "path": "/api/v1/matches/3189/edit", "json": {"homeGames": 5, "awayGames": 7}, "user_id": 1},
    {"method": "GET", "path": "/api/v1/tournaments/77"},
    {"method": "GET", "path": "/api/v1/players/108"},
    {"method": "GET", "path": "/api/v1/players/ranking"}
  ]},
  {"key": "edit_score_and_eliminate", "steps": [
-   {"method": "POST", "path": "/api/v1/matches/3189/edit", "json": {"homeGames": 9, "awayGames": 4, "playersEliminated": [{"playerId": 104}]}},
+   {"method": "POST", "path": "/api/v1/matches/3189/edit", "json": {"homeGames": 9, "awayGames": 4, "playersEliminated": [{"playerId": 104}]}, "user_id": 1},
    {"method": "GET", "path": "/api/v1/tournaments/77"},
    {"method": "GET", "path": "/api/v1/calendar/77?month=2026-10"}
  ]},
@@ -20,11 +20,11 @@
    {"method": "GET", "path": "/api/v1/tournaments/69"}
  ]},
  {"key": "edit_shuffle_score", "steps": [
-   {"method": "POST", "path": "/api/v1/matches/325/edit_shuffle", "json": {"homeGames": 9, "awayGames": 2}},
+   {"method": "POST", "path": "/api/v1/matches/325/edit_shuffle", "json": {"homeGames": 9, "awayGames": 2}, "user_id": 1},
    {"method": "GET", "path": "/api/v1/shuffle_tournament"}
  ]},
  {"key": "edit_field_only", "steps": [
-   {"method": "POST", "path": "/api/v1/matches/3188/edit", "json": {"field": "Campo 7"}},
+   {"method": "POST", "path": "/api/v1/matches/3188/edit", "json": {"field": "Campo 7"}, "user_id": 1},
    {"method": "GET", "path": "/api/v1/calendar/77?month=2026-10"}
  ]}
 ]

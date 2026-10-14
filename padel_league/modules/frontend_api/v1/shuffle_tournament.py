@@ -3,6 +3,7 @@ from flask_jwt_extended import jwt_required
 from sqlalchemy.orm import joinedload
 
 from padel_league.sql_db import db
+from padel_league.tools.auth_tools import admin_required_jwt
 from padel_league.models import (
     Association_PlayerMatch,
     Association_PlayerShuffleMatch,
@@ -310,7 +311,7 @@ def remove_player_from_matchweek():
 
 
 @bp.route("/calculate_divisions", methods=["POST"])
-@jwt_required()
+@admin_required_jwt(super_admin=True)
 def calculate_divisions():
     shuffle_tournament, _, error_response = _get_tournament_from_payload()
     if error_response:
@@ -346,7 +347,7 @@ def calculate_divisions():
 
 
 @bp.route("/undo_calculate_divisions", methods=["POST"])
-@jwt_required()
+@admin_required_jwt(super_admin=True)
 def undo_calculate_divisions():
     shuffle_tournament, _, error_response = _get_tournament_from_payload()
     if error_response:
@@ -395,7 +396,7 @@ def undo_calculate_divisions():
 
 
 @bp.route("/generate_matchweek", methods=["POST"])
-@jwt_required()
+@admin_required_jwt(super_admin=True)
 def generate_matchweek():
     shuffle_tournament, _, error_response = _get_tournament_from_payload()
     if error_response:
@@ -484,7 +485,7 @@ def generate_matchweek():
 
 
 @bp.route("/delete_last_matchweek", methods=["POST"])
-@jwt_required()
+@admin_required_jwt(super_admin=True)
 def delete_last_matchweek():
     shuffle_tournament, _, error_response = _get_tournament_from_payload()
     if error_response:
@@ -546,7 +547,7 @@ def delete_last_matchweek():
 
 
 @bp.route("/create", methods=["POST"])
-@jwt_required()
+@admin_required_jwt(super_admin=True)
 def create():
     data = request.get_json() or {}
     required_fields = [

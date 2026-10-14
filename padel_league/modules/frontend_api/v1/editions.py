@@ -1,8 +1,8 @@
 from flask import Blueprint, jsonify, request
-from flask_jwt_extended import jwt_required
 from sqlalchemy.exc import IntegrityError
 
 from padel_league.sql_db import db
+from padel_league.tools.auth_tools import admin_required_jwt
 from padel_league.models import Edition, League
 from padel_league.modules.frontend_api.v1.serializers import serialize_edition
 
@@ -24,7 +24,7 @@ def list_editions():
 
 @bp.route("", methods=["POST"])
 @bp.route("/", methods=["POST"])
-@jwt_required()
+@admin_required_jwt()
 def create_edition():
     data = request.get_json() or {}
 

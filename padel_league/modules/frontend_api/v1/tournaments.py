@@ -13,6 +13,7 @@ from padel_league.modules.frontend_api.v1.player_comparison import (
 )
 from padel_league.services import results
 from padel_league.sql_db import db
+from padel_league.tools.auth_tools import admin_required_jwt
 from padel_league.modules.frontend_api.v1.serializers import (
     _serialize_division_player_relation,
     serialize_division,
@@ -249,7 +250,7 @@ def remove_player_from_matchweek(id):
 
 
 @bp.route("/<int:id>/refresh_standings", methods=["POST"])
-@jwt_required()
+@admin_required_jwt()
 def refresh_standings(id):
     """Force a full recompute of the division's standings.
 

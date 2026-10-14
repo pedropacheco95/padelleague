@@ -2,10 +2,10 @@ import datetime
 import re
 
 from flask import Blueprint, jsonify, request
-from flask_jwt_extended import jwt_required
 from sqlalchemy.exc import IntegrityError
 
 from padel_league.sql_db import db
+from padel_league.tools.auth_tools import admin_required_jwt
 from padel_league.models import (
     Association_PlayerDivision,
     Division,
@@ -193,6 +193,7 @@ def _replace_division_players(division_id: int, players_payload):
 
 @bp.route("", methods=["POST"])
 @bp.route("/", methods=["POST"])
+@admin_required_jwt()
 def create_division():
     data = request.get_json() or {}
 
@@ -223,6 +224,7 @@ def create_division():
 
 
 @bp.route("/<int:id>", methods=["PUT"])
+@admin_required_jwt()
 def update_division(id):
     division = Division.query.filter_by(id=id).first_or_404()
     data = request.get_json() or {}
@@ -312,7 +314,7 @@ def last_played_players():
 
 
 @bp.route("/<int:id>/generate_matches", methods=["POST"])
-@jwt_required()
+@admin_required_jwt()
 def generate_matches(id):
     division = Division.query.filter_by(id=id).first_or_404()
     data = request.get_json(silent=True) or {}

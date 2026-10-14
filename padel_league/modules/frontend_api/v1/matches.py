@@ -2,7 +2,7 @@ import datetime
 
 from flask import Blueprint, current_app, jsonify, request
 
-from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request
+from flask_jwt_extended import get_jwt_identity, jwt_required, verify_jwt_in_request
 
 from padel_league.models import Division, Match, ShuffleMatch
 from padel_league.models.v2 import CompetitionGroup
@@ -40,6 +40,7 @@ def for_edit():
 
 
 @bp.route("/<int:id>/edit", methods=["POST"])
+@jwt_required()
 def edit_match(id):
     match = Match.query.filter_by(id=id).first_or_404()
     data = request.get_json() or {}
@@ -73,6 +74,7 @@ def edit_match(id):
 
 
 @bp.route("/<id>/edit_shuffle", methods=["POST"])
+@jwt_required()
 def edit_shuffle_match(id):
     shuffle_match = ShuffleMatch.query.filter_by(id=int(id)).first_or_404()
     data = request.get_json() or {}
