@@ -1,3 +1,5 @@
+from datetime import datetime, time
+
 from flask import url_for
 from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
@@ -10,7 +12,7 @@ from padel_league.tools.input_tools import Block, Field, Form
 
 class Division(db.Model, model.Model):
     __tablename__ = "divisions"
-    __table_args__ = {"extend_existing": True}
+    __table_args__ = {"extend_existing": True, "schema": "compat"}  # v2: read-only view, see migrations/sql/v2_compat.sql
     page_title = "Divisões"
     model_name = "Division"
 
@@ -23,7 +25,7 @@ class Division(db.Model, model.Model):
     has_ended = Column(Boolean, default=False)
     open_division = Column(Boolean, default=False)
     standings_up_to_date = Column(Boolean, default=True)
-    edition_id = Column(Integer, ForeignKey("editions.id"))
+    edition_id = Column(Integer, ForeignKey("compat.editions.id"))
 
     logo_image_id = Column(Integer, ForeignKey("images.id", ondelete="SET NULL"))
     logo_image = relationship("Image", foreign_keys=[logo_image_id])
@@ -158,7 +160,11 @@ class Division(db.Model, model.Model):
             last_played_date = (
                 sorted_matches[0].date_hour.date() if sorted_matches else None
             )
-            self.end_date = last_played_date
+            # The column is a timestamp in the database; keep the in-memory
+            # value the same type so read-only requests serialise it as before.
+            self.end_date = (
+                datetime.combine(last_played_date, time()) if last_played_date else None
+            )
             self.save()
         return True
 

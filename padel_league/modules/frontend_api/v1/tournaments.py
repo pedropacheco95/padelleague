@@ -1,8 +1,7 @@
-from flask import Blueprint, current_app, jsonify, request
-from flask_jwt_extended import jwt_required
+from flask import Blueprint, jsonify, request
+from flask_jwt_extended import get_jwt_identity, jwt_required
 
 from padel_league.models import (
-    Association_PlayerMatch,
     Association_PlayerShuffleMatch,
     Division,
     ShuffleMatch,
@@ -12,6 +11,8 @@ from padel_league.modules.frontend_api.v1.player_comparison import (
     compute_head_to_head_totals,
     compute_player_comparison_stats,
 )
+from padel_league.services import results
+from padel_league.sql_db import db
 from padel_league.modules.frontend_api.v1.serializers import (
     _serialize_division_player_relation,
     serialize_division,
@@ -234,41 +235,15 @@ def remove_player_from_matchweek(id):
     except (TypeError, ValueError):
         return jsonify({"error": "playerId and matchweek must be integers"}), 400
 
-    removed_count = 0
-    standings_affected = False
-    for match in division.matches:
-        if match.matchweek != matchweek:
-            continue
-
-        assoc = Association_PlayerMatch.query.filter_by(
-            match_id=match.id, player_id=player_id
-        ).first()
-        if assoc:
-            match_was_played = match.played
-            assoc.delete()
-            removed_count += 1
-            if match_was_played:
-                standings_affected = True
-
-    # The player's Association_PlayerMatch rows changed, so the denormalised
-    # standings columns must be recomputed from scratch — otherwise the
-    # removed player keeps showing stale points/appearances until the
-    # matchweek advances (update_table's read-time recompute is gated on
-    # matchweek changing). Only worth doing when a PLAYED match was
-    # affected — get_match_relations_played() (used by update_table) ignores
-    # unplayed matches, so removing a player from one changes nothing.
-    if standings_affected:
-        division.standings_up_to_date = False
-        division.save()
-        try:
-            division.update_table(force_update=True)
-        except Exception as exc:  # noqa: BLE001
-            current_app.logger.exception(
-                "[admin-action] remove_player_from_matchweek update_table failed"
-                " division=%s: %s",
-                division.id,
-                exc,
-            )
+    identity = get_jwt_identity()
+    removed_count, _ = results.mark_absent(
+        division.id,
+        matchweek,
+        player_id,
+        actor_user_id=int(identity) if identity else None,
+        substitute_player_id=data.get("substitutePlayerId"),
+    )
+    db.session.commit()
 
     return jsonify({"removedAssociations": removed_count})
 
@@ -282,7 +257,12 @@ def refresh_standings(id):
     automatic recalculation.
     """
     division = Division.query.filter_by(id=id).first_or_404()
-    division.update_table(force_update=True)
+    # v2: live standings are computed from the matches; refreshing means
+    # dropping any frozen rows so the group is recomputed from scratch.
+    results.unfreeze_group_standings(division.id)
+    db.session.commit()
+    db.session.expire_all()
+    division = Division.query.filter_by(id=id).first_or_404()
 
     standings = [
         serialize_standings_row(rel, position)

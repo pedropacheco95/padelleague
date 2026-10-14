@@ -12,7 +12,7 @@ from padel_league.tools.input_tools import Block, Field, Form
 
 class ShuffleTournament(db.Model, model.Model):
     __tablename__ = "shuffle_tournaments"
-    __table_args__ = {"extend_existing": True}
+    __table_args__ = {"extend_existing": True, "schema": "compat"}  # v2: read-only view, see migrations/sql/v2_compat.sql
     page_title = "Shuffle Tournaments"
     model_name = "ShuffleTournament"
 
@@ -141,7 +141,9 @@ class ShuffleTournament(db.Model, model.Model):
             rel.games_won = 0
             rel.games_lost = 0
 
-    def recalculate_player_stats(self):
+    def recalculate_player_stats(self, persist=False):
+        # v2: stats are computed by the compat view; this recomputes them in
+        # memory for the response and never writes (`persist` is ignored).
         self.reset_player_stats()
 
         for match in self.matches:
@@ -196,5 +198,4 @@ class ShuffleTournament(db.Model, model.Model):
         for idx, rel in enumerate(ordered, start=1):
             rel.position = idx
 
-        self.save()
         return True

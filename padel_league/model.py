@@ -7,6 +7,7 @@ from sqlalchemy import BigInteger, Boolean, Column, ForeignKey, Integer, String,
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import class_mapper, relationship
 
+from .read_only import WriteDuringReadOnlyRequest, is_read_only
 from .sql_db import db
 
 GCS_BUCKET = os.environ.get("GCS_UPLOADS_BUCKET")
@@ -36,6 +37,8 @@ class Model:
             )
 
     def create(self):
+        if is_read_only():
+            raise WriteDuringReadOnlyRequest(f"create {self.__class__.__name__} during a GET request")
         if hasattr(self, "_sa_instance_state"):
             self._sa_instance_state.key = None
         if inspect(self).key is not None:
@@ -49,11 +52,15 @@ class Model:
         return True
 
     def delete(self):
+        if is_read_only():
+            raise WriteDuringReadOnlyRequest(f"delete {self.__class__.__name__} during a GET request")
         db.session.delete(self)
         db.session.commit()
         return True
 
     def save(self):
+        if is_read_only():
+            return True
         db.session.commit()
         return True
 

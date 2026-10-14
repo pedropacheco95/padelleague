@@ -8,7 +8,7 @@ from padel_league.tools.input_tools import Block, Field, Form
 
 class Edition(db.Model, model.Model):
     __tablename__ = "editions"
-    __table_args__ = {"extend_existing": True}
+    __table_args__ = {"extend_existing": True, "schema": "compat"}  # v2: read-only view, see migrations/sql/v2_compat.sql
     page_title = "Edições"
     model_name = "Edition"
 

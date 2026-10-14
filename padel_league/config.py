@@ -43,6 +43,9 @@ class Config:
 class DevConfig(Config):
     DEBUG = True
     POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
+    # The base class builds its URI with the production host as fallback;
+    # rebuild it here so development really defaults to localhost.
+    SQLALCHEMY_DATABASE_URI = f"postgresql://{Config.POSTGRES_USER}:{Config.POSTGRES_PW or ''}@{POSTGRES_HOST}:{Config.POSTGRES_PORT}/{Config.POSTGRES_DB}"
 
 
 class DevConfigProdDB(Config):

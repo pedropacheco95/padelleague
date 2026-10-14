@@ -6,38 +6,38 @@ from padel_league.sql_db import db
 
 
 class SQLClient:
-    """Thin wrapper around SQLAlchemy to run raw SQL and return dicts."""
+    """Run the chatbot's SQL and return rows as dicts.
+
+    Queries run on their own connection inside a READ ONLY transaction that is
+    always rolled back, so generated SQL can never change data. The search
+    path puts schema `compat` first, so the pre-v2 table names the chatbot's
+    schema description uses (divisions, matches, players_in_match...) resolve
+    to views with the same shape over the v2 tables.
+    """
+
+    SEARCH_PATH = "compat, public"
 
     def __init__(self, session=None):
-        """
-        Args:
-            session: Optional SQLAlchemy session. Defaults to `db.session`.
-        """
         self.session = session or db.session
 
-    def fetch_all(
-        self, query: str, params: Optional[Dict[str, Any]] = None
-    ) -> List[Dict[str, Any]]:
-        """
-        Run a SELECT query and return all rows as a list of dicts.
-        """
-        result = self.session.execute(text(query), params or {})
-        # mappings() → RowMapping objects (behave like dicts)
-        return [dict(row) for row in result.mappings().all()]
+    def _run(self, query: str, params: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+        with db.engine.connect() as conn:
+            trans = conn.begin()
+            try:
+                conn.execute(text("SET TRANSACTION READ ONLY"))
+                conn.execute(text(f"SET LOCAL search_path TO {self.SEARCH_PATH}"))
+                result = conn.execute(text(query), params or {})
+                rows = [dict(row) for row in result.mappings().all()] if result.returns_rows else []
+            finally:
+                trans.rollback()
+        return rows
 
-    def fetch_one(
-        self, query: str, params: Optional[Dict[str, Any]] = None
-    ) -> Optional[Dict[str, Any]]:
-        """
-        Run a SELECT query and return a single row as a dict (or None).
-        """
-        result = self.session.execute(text(query), params or {})
-        row = result.mappings().first()
-        return dict(row) if row else None
+    def fetch_all(self, query: str, params: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+        return self._run(query, params)
 
-    def execute(self, query: str, params: Optional[Dict[str, Any]] = None) -> None:
-        """
-        Run INSERT/UPDATE/DELETE queries and commit.
-        """
-        result = self.session.execute(text(query), params or {})
-        return [dict(row) for row in result.mappings().all()]
+    def fetch_one(self, query: str, params: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
+        rows = self._run(query, params)
+        return rows[0] if rows else None
+
+    def execute(self, query: str, params: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+        return self._run(query, params)

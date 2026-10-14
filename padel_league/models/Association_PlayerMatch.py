@@ -9,14 +9,14 @@ from padel_league.tools.input_tools import Block, Field, Form
 
 class Association_PlayerMatch(db.Model, model.Model):
     __tablename__ = "players_in_match"
-    __table_args__ = {"extend_existing": True}
+    __table_args__ = {"extend_existing": True, "schema": "compat"}  # v2: read-only view, see migrations/sql/v2_compat.sql
     page_title = "Relação de Jogador Jogo"
     model_name = "Association_PlayerMatch"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
 
     player_id = Column(Integer, ForeignKey("players.id"), primary_key=True)
-    match_id = Column(Integer, ForeignKey("matches.id"), primary_key=True)
+    match_id = Column(Integer, ForeignKey("compat.matches.id"), primary_key=True)
     team = Column(Enum("Home", "Away", name="teams"), primary_key=True)
 
     match = relationship("Match", back_populates="players_relations")

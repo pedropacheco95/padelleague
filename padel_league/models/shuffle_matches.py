@@ -9,19 +9,21 @@ from padel_league.tools.input_tools import Block, Field, Form
 
 class ShuffleMatch(db.Model, model.Model):
     __tablename__ = "shuffle_matches"
-    __table_args__ = {"extend_existing": True}
+    __table_args__ = {"extend_existing": True, "schema": "compat"}  # v2: read-only view, see migrations/sql/v2_compat.sql
     page_title = "Shuffle Matches"
     model_name = "ShuffleMatch"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     shuffle_tournament_id = Column(
-        Integer, ForeignKey("shuffle_tournaments.id"), nullable=False
+        Integer, ForeignKey("compat.shuffle_tournaments.id"), nullable=False
     )
     matchweek = Column(Integer, nullable=False)
     division = Column(Integer, nullable=False)
     score1 = Column(Integer)
     score2 = Column(Integer)
     played = Column(Boolean, nullable=False, default=False)
+    # v2: id of the row in `matches` (compat view column)
+    match_id = Column(Integer)
 
     shuffle_tournament = relationship("ShuffleTournament", back_populates="matches")
     players_relations = relationship(

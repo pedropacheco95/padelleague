@@ -1,0 +1,3158 @@
+[
+ {
+  "key": "main_index",
+  "method": "GET",
+  "path": "/api/v1/main/index",
+  "user_id": null
+ },
+ {
+  "key": "tournaments_list",
+  "method": "GET",
+  "path": "/api/v1/tournaments/",
+  "user_id": null
+ },
+ {
+  "key": "editions_list",
+  "method": "GET",
+  "path": "/api/v1/editions",
+  "user_id": null
+ },
+ {
+  "key": "players_ranking",
+  "method": "GET",
+  "path": "/api/v1/players/ranking",
+  "user_id": null
+ },
+ {
+  "key": "players_short_all",
+  "method": "GET",
+  "path": "/api/v1/players/short/all",
+  "user_id": null
+ },
+ {
+  "key": "players_all",
+  "method": "GET",
+  "path": "/api/v1/players/all",
+  "user_id": null
+ },
+ {
+  "key": "shuffle",
+  "method": "GET",
+  "path": "/api/v1/shuffle_tournament",
+  "user_id": null
+ },
+ {
+  "key": "matches_for_edit",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit",
+  "user_id": null
+ },
+ {
+  "key": "tournament_1",
+  "method": "GET",
+  "path": "/api/v1/tournaments/1",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_1",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=1",
+  "user_id": null
+ },
+ {
+  "key": "tournament_2",
+  "method": "GET",
+  "path": "/api/v1/tournaments/2",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_2",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=2",
+  "user_id": null
+ },
+ {
+  "key": "tournament_3",
+  "method": "GET",
+  "path": "/api/v1/tournaments/3",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_3",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=3",
+  "user_id": null
+ },
+ {
+  "key": "tournament_4",
+  "method": "GET",
+  "path": "/api/v1/tournaments/4",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_4",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=4",
+  "user_id": null
+ },
+ {
+  "key": "tournament_6",
+  "method": "GET",
+  "path": "/api/v1/tournaments/6",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_6",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=6",
+  "user_id": null
+ },
+ {
+  "key": "tournament_7",
+  "method": "GET",
+  "path": "/api/v1/tournaments/7",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_7",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=7",
+  "user_id": null
+ },
+ {
+  "key": "tournament_8",
+  "method": "GET",
+  "path": "/api/v1/tournaments/8",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_8",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=8",
+  "user_id": null
+ },
+ {
+  "key": "tournament_9",
+  "method": "GET",
+  "path": "/api/v1/tournaments/9",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_9",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=9",
+  "user_id": null
+ },
+ {
+  "key": "tournament_10",
+  "method": "GET",
+  "path": "/api/v1/tournaments/10",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_10",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=10",
+  "user_id": null
+ },
+ {
+  "key": "tournament_11",
+  "method": "GET",
+  "path": "/api/v1/tournaments/11",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_11",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=11",
+  "user_id": null
+ },
+ {
+  "key": "tournament_12",
+  "method": "GET",
+  "path": "/api/v1/tournaments/12",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_12",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=12",
+  "user_id": null
+ },
+ {
+  "key": "tournament_13",
+  "method": "GET",
+  "path": "/api/v1/tournaments/13",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_13",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=13",
+  "user_id": null
+ },
+ {
+  "key": "tournament_14",
+  "method": "GET",
+  "path": "/api/v1/tournaments/14",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_14",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=14",
+  "user_id": null
+ },
+ {
+  "key": "tournament_15",
+  "method": "GET",
+  "path": "/api/v1/tournaments/15",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_15",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=15",
+  "user_id": null
+ },
+ {
+  "key": "tournament_16",
+  "method": "GET",
+  "path": "/api/v1/tournaments/16",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_16",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=16",
+  "user_id": null
+ },
+ {
+  "key": "tournament_17",
+  "method": "GET",
+  "path": "/api/v1/tournaments/17",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_17",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=17",
+  "user_id": null
+ },
+ {
+  "key": "tournament_18",
+  "method": "GET",
+  "path": "/api/v1/tournaments/18",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_18",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=18",
+  "user_id": null
+ },
+ {
+  "key": "tournament_19",
+  "method": "GET",
+  "path": "/api/v1/tournaments/19",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_19",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=19",
+  "user_id": null
+ },
+ {
+  "key": "tournament_20",
+  "method": "GET",
+  "path": "/api/v1/tournaments/20",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_20",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=20",
+  "user_id": null
+ },
+ {
+  "key": "tournament_21",
+  "method": "GET",
+  "path": "/api/v1/tournaments/21",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_21",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=21",
+  "user_id": null
+ },
+ {
+  "key": "tournament_22",
+  "method": "GET",
+  "path": "/api/v1/tournaments/22",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_22",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=22",
+  "user_id": null
+ },
+ {
+  "key": "tournament_23",
+  "method": "GET",
+  "path": "/api/v1/tournaments/23",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_23",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=23",
+  "user_id": null
+ },
+ {
+  "key": "tournament_24",
+  "method": "GET",
+  "path": "/api/v1/tournaments/24",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_24",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=24",
+  "user_id": null
+ },
+ {
+  "key": "tournament_25",
+  "method": "GET",
+  "path": "/api/v1/tournaments/25",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_25",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=25",
+  "user_id": null
+ },
+ {
+  "key": "tournament_26",
+  "method": "GET",
+  "path": "/api/v1/tournaments/26",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_26",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=26",
+  "user_id": null
+ },
+ {
+  "key": "tournament_27",
+  "method": "GET",
+  "path": "/api/v1/tournaments/27",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_27",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=27",
+  "user_id": null
+ },
+ {
+  "key": "tournament_28",
+  "method": "GET",
+  "path": "/api/v1/tournaments/28",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_28",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=28",
+  "user_id": null
+ },
+ {
+  "key": "tournament_29",
+  "method": "GET",
+  "path": "/api/v1/tournaments/29",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_29",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=29",
+  "user_id": null
+ },
+ {
+  "key": "tournament_30",
+  "method": "GET",
+  "path": "/api/v1/tournaments/30",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_30",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=30",
+  "user_id": null
+ },
+ {
+  "key": "tournament_31",
+  "method": "GET",
+  "path": "/api/v1/tournaments/31",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_31",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=31",
+  "user_id": null
+ },
+ {
+  "key": "tournament_32",
+  "method": "GET",
+  "path": "/api/v1/tournaments/32",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_32",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=32",
+  "user_id": null
+ },
+ {
+  "key": "tournament_33",
+  "method": "GET",
+  "path": "/api/v1/tournaments/33",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_33",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=33",
+  "user_id": null
+ },
+ {
+  "key": "tournament_34",
+  "method": "GET",
+  "path": "/api/v1/tournaments/34",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_34",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=34",
+  "user_id": null
+ },
+ {
+  "key": "tournament_35",
+  "method": "GET",
+  "path": "/api/v1/tournaments/35",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_35",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=35",
+  "user_id": null
+ },
+ {
+  "key": "tournament_36",
+  "method": "GET",
+  "path": "/api/v1/tournaments/36",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_36",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=36",
+  "user_id": null
+ },
+ {
+  "key": "tournament_37",
+  "method": "GET",
+  "path": "/api/v1/tournaments/37",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_37",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=37",
+  "user_id": null
+ },
+ {
+  "key": "tournament_38",
+  "method": "GET",
+  "path": "/api/v1/tournaments/38",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_38",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=38",
+  "user_id": null
+ },
+ {
+  "key": "tournament_39",
+  "method": "GET",
+  "path": "/api/v1/tournaments/39",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_39",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=39",
+  "user_id": null
+ },
+ {
+  "key": "tournament_40",
+  "method": "GET",
+  "path": "/api/v1/tournaments/40",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_40",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=40",
+  "user_id": null
+ },
+ {
+  "key": "tournament_41",
+  "method": "GET",
+  "path": "/api/v1/tournaments/41",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_41",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=41",
+  "user_id": null
+ },
+ {
+  "key": "tournament_42",
+  "method": "GET",
+  "path": "/api/v1/tournaments/42",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_42",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=42",
+  "user_id": null
+ },
+ {
+  "key": "tournament_43",
+  "method": "GET",
+  "path": "/api/v1/tournaments/43",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_43",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=43",
+  "user_id": null
+ },
+ {
+  "key": "tournament_44",
+  "method": "GET",
+  "path": "/api/v1/tournaments/44",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_44",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=44",
+  "user_id": null
+ },
+ {
+  "key": "tournament_45",
+  "method": "GET",
+  "path": "/api/v1/tournaments/45",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_45",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=45",
+  "user_id": null
+ },
+ {
+  "key": "tournament_46",
+  "method": "GET",
+  "path": "/api/v1/tournaments/46",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_46",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=46",
+  "user_id": null
+ },
+ {
+  "key": "tournament_47",
+  "method": "GET",
+  "path": "/api/v1/tournaments/47",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_47",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=47",
+  "user_id": null
+ },
+ {
+  "key": "tournament_48",
+  "method": "GET",
+  "path": "/api/v1/tournaments/48",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_48",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=48",
+  "user_id": null
+ },
+ {
+  "key": "tournament_49",
+  "method": "GET",
+  "path": "/api/v1/tournaments/49",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_49",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=49",
+  "user_id": null
+ },
+ {
+  "key": "tournament_50",
+  "method": "GET",
+  "path": "/api/v1/tournaments/50",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_50",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=50",
+  "user_id": null
+ },
+ {
+  "key": "tournament_51",
+  "method": "GET",
+  "path": "/api/v1/tournaments/51",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_51",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=51",
+  "user_id": null
+ },
+ {
+  "key": "tournament_52",
+  "method": "GET",
+  "path": "/api/v1/tournaments/52",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_52",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=52",
+  "user_id": null
+ },
+ {
+  "key": "tournament_53",
+  "method": "GET",
+  "path": "/api/v1/tournaments/53",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_53",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=53",
+  "user_id": null
+ },
+ {
+  "key": "tournament_54",
+  "method": "GET",
+  "path": "/api/v1/tournaments/54",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_54",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=54",
+  "user_id": null
+ },
+ {
+  "key": "tournament_55",
+  "method": "GET",
+  "path": "/api/v1/tournaments/55",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_55",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=55",
+  "user_id": null
+ },
+ {
+  "key": "tournament_56",
+  "method": "GET",
+  "path": "/api/v1/tournaments/56",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_56",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=56",
+  "user_id": null
+ },
+ {
+  "key": "tournament_57",
+  "method": "GET",
+  "path": "/api/v1/tournaments/57",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_57",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=57",
+  "user_id": null
+ },
+ {
+  "key": "tournament_58",
+  "method": "GET",
+  "path": "/api/v1/tournaments/58",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_58",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=58",
+  "user_id": null
+ },
+ {
+  "key": "tournament_59",
+  "method": "GET",
+  "path": "/api/v1/tournaments/59",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_59",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=59",
+  "user_id": null
+ },
+ {
+  "key": "tournament_60",
+  "method": "GET",
+  "path": "/api/v1/tournaments/60",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_60",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=60",
+  "user_id": null
+ },
+ {
+  "key": "tournament_61",
+  "method": "GET",
+  "path": "/api/v1/tournaments/61",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_61",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=61",
+  "user_id": null
+ },
+ {
+  "key": "tournament_62",
+  "method": "GET",
+  "path": "/api/v1/tournaments/62",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_62",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=62",
+  "user_id": null
+ },
+ {
+  "key": "tournament_63",
+  "method": "GET",
+  "path": "/api/v1/tournaments/63",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_63",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=63",
+  "user_id": null
+ },
+ {
+  "key": "tournament_64",
+  "method": "GET",
+  "path": "/api/v1/tournaments/64",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_64",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=64",
+  "user_id": null
+ },
+ {
+  "key": "tournament_65",
+  "method": "GET",
+  "path": "/api/v1/tournaments/65",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_65",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=65",
+  "user_id": null
+ },
+ {
+  "key": "tournament_66",
+  "method": "GET",
+  "path": "/api/v1/tournaments/66",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_66",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=66",
+  "user_id": null
+ },
+ {
+  "key": "tournament_67",
+  "method": "GET",
+  "path": "/api/v1/tournaments/67",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_67",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=67",
+  "user_id": null
+ },
+ {
+  "key": "tournament_68",
+  "method": "GET",
+  "path": "/api/v1/tournaments/68",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_68",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=68",
+  "user_id": null
+ },
+ {
+  "key": "tournament_69",
+  "method": "GET",
+  "path": "/api/v1/tournaments/69",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_69",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=69",
+  "user_id": null
+ },
+ {
+  "key": "tournament_70",
+  "method": "GET",
+  "path": "/api/v1/tournaments/70",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_70",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=70",
+  "user_id": null
+ },
+ {
+  "key": "tournament_71",
+  "method": "GET",
+  "path": "/api/v1/tournaments/71",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_71",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=71",
+  "user_id": null
+ },
+ {
+  "key": "tournament_72",
+  "method": "GET",
+  "path": "/api/v1/tournaments/72",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_72",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=72",
+  "user_id": null
+ },
+ {
+  "key": "tournament_73",
+  "method": "GET",
+  "path": "/api/v1/tournaments/73",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_73",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=73",
+  "user_id": null
+ },
+ {
+  "key": "tournament_74",
+  "method": "GET",
+  "path": "/api/v1/tournaments/74",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_74",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=74",
+  "user_id": null
+ },
+ {
+  "key": "tournament_75",
+  "method": "GET",
+  "path": "/api/v1/tournaments/75",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_75",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=75",
+  "user_id": null
+ },
+ {
+  "key": "tournament_76",
+  "method": "GET",
+  "path": "/api/v1/tournaments/76",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_76",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=76",
+  "user_id": null
+ },
+ {
+  "key": "tournament_77",
+  "method": "GET",
+  "path": "/api/v1/tournaments/77",
+  "user_id": null
+ },
+ {
+  "key": "for_edit_div_77",
+  "method": "GET",
+  "path": "/api/v1/matches/for_edit?division_id=77",
+  "user_id": null
+ },
+ {
+  "key": "player_1",
+  "method": "GET",
+  "path": "/api/v1/players/1",
+  "user_id": null
+ },
+ {
+  "key": "player_2",
+  "method": "GET",
+  "path": "/api/v1/players/2",
+  "user_id": null
+ },
+ {
+  "key": "player_3",
+  "method": "GET",
+  "path": "/api/v1/players/3",
+  "user_id": null
+ },
+ {
+  "key": "player_4",
+  "method": "GET",
+  "path": "/api/v1/players/4",
+  "user_id": null
+ },
+ {
+  "key": "player_5",
+  "method": "GET",
+  "path": "/api/v1/players/5",
+  "user_id": null
+ },
+ {
+  "key": "player_6",
+  "method": "GET",
+  "path": "/api/v1/players/6",
+  "user_id": null
+ },
+ {
+  "key": "player_7",
+  "method": "GET",
+  "path": "/api/v1/players/7",
+  "user_id": null
+ },
+ {
+  "key": "player_8",
+  "method": "GET",
+  "path": "/api/v1/players/8",
+  "user_id": null
+ },
+ {
+  "key": "player_9",
+  "method": "GET",
+  "path": "/api/v1/players/9",
+  "user_id": null
+ },
+ {
+  "key": "player_10",
+  "method": "GET",
+  "path": "/api/v1/players/10",
+  "user_id": null
+ },
+ {
+  "key": "player_11",
+  "method": "GET",
+  "path": "/api/v1/players/11",
+  "user_id": null
+ },
+ {
+  "key": "player_12",
+  "method": "GET",
+  "path": "/api/v1/players/12",
+  "user_id": null
+ },
+ {
+  "key": "player_13",
+  "method": "GET",
+  "path": "/api/v1/players/13",
+  "user_id": null
+ },
+ {
+  "key": "player_14",
+  "method": "GET",
+  "path": "/api/v1/players/14",
+  "user_id": null
+ },
+ {
+  "key": "player_15",
+  "method": "GET",
+  "path": "/api/v1/players/15",
+  "user_id": null
+ },
+ {
+  "key": "player_16",
+  "method": "GET",
+  "path": "/api/v1/players/16",
+  "user_id": null
+ },
+ {
+  "key": "player_17",
+  "method": "GET",
+  "path": "/api/v1/players/17",
+  "user_id": null
+ },
+ {
+  "key": "player_18",
+  "method": "GET",
+  "path": "/api/v1/players/18",
+  "user_id": null
+ },
+ {
+  "key": "player_19",
+  "method": "GET",
+  "path": "/api/v1/players/19",
+  "user_id": null
+ },
+ {
+  "key": "player_20",
+  "method": "GET",
+  "path": "/api/v1/players/20",
+  "user_id": null
+ },
+ {
+  "key": "player_21",
+  "method": "GET",
+  "path": "/api/v1/players/21",
+  "user_id": null
+ },
+ {
+  "key": "player_22",
+  "method": "GET",
+  "path": "/api/v1/players/22",
+  "user_id": null
+ },
+ {
+  "key": "player_23",
+  "method": "GET",
+  "path": "/api/v1/players/23",
+  "user_id": null
+ },
+ {
+  "key": "player_24",
+  "method": "GET",
+  "path": "/api/v1/players/24",
+  "user_id": null
+ },
+ {
+  "key": "player_25",
+  "method": "GET",
+  "path": "/api/v1/players/25",
+  "user_id": null
+ },
+ {
+  "key": "player_26",
+  "method": "GET",
+  "path": "/api/v1/players/26",
+  "user_id": null
+ },
+ {
+  "key": "player_27",
+  "method": "GET",
+  "path": "/api/v1/players/27",
+  "user_id": null
+ },
+ {
+  "key": "player_28",
+  "method": "GET",
+  "path": "/api/v1/players/28",
+  "user_id": null
+ },
+ {
+  "key": "player_29",
+  "method": "GET",
+  "path": "/api/v1/players/29",
+  "user_id": null
+ },
+ {
+  "key": "player_30",
+  "method": "GET",
+  "path": "/api/v1/players/30",
+  "user_id": null
+ },
+ {
+  "key": "player_31",
+  "method": "GET",
+  "path": "/api/v1/players/31",
+  "user_id": null
+ },
+ {
+  "key": "player_32",
+  "method": "GET",
+  "path": "/api/v1/players/32",
+  "user_id": null
+ },
+ {
+  "key": "player_33",
+  "method": "GET",
+  "path": "/api/v1/players/33",
+  "user_id": null
+ },
+ {
+  "key": "player_34",
+  "method": "GET",
+  "path": "/api/v1/players/34",
+  "user_id": null
+ },
+ {
+  "key": "player_35",
+  "method": "GET",
+  "path": "/api/v1/players/35",
+  "user_id": null
+ },
+ {
+  "key": "player_36",
+  "method": "GET",
+  "path": "/api/v1/players/36",
+  "user_id": null
+ },
+ {
+  "key": "player_37",
+  "method": "GET",
+  "path": "/api/v1/players/37",
+  "user_id": null
+ },
+ {
+  "key": "player_38",
+  "method": "GET",
+  "path": "/api/v1/players/38",
+  "user_id": null
+ },
+ {
+  "key": "player_39",
+  "method": "GET",
+  "path": "/api/v1/players/39",
+  "user_id": null
+ },
+ {
+  "key": "player_40",
+  "method": "GET",
+  "path": "/api/v1/players/40",
+  "user_id": null
+ },
+ {
+  "key": "player_41",
+  "method": "GET",
+  "path": "/api/v1/players/41",
+  "user_id": null
+ },
+ {
+  "key": "player_42",
+  "method": "GET",
+  "path": "/api/v1/players/42",
+  "user_id": null
+ },
+ {
+  "key": "player_43",
+  "method": "GET",
+  "path": "/api/v1/players/43",
+  "user_id": null
+ },
+ {
+  "key": "player_44",
+  "method": "GET",
+  "path": "/api/v1/players/44",
+  "user_id": null
+ },
+ {
+  "key": "player_45",
+  "method": "GET",
+  "path": "/api/v1/players/45",
+  "user_id": null
+ },
+ {
+  "key": "player_46",
+  "method": "GET",
+  "path": "/api/v1/players/46",
+  "user_id": null
+ },
+ {
+  "key": "player_47",
+  "method": "GET",
+  "path": "/api/v1/players/47",
+  "user_id": null
+ },
+ {
+  "key": "player_48",
+  "method": "GET",
+  "path": "/api/v1/players/48",
+  "user_id": null
+ },
+ {
+  "key": "player_49",
+  "method": "GET",
+  "path": "/api/v1/players/49",
+  "user_id": null
+ },
+ {
+  "key": "player_50",
+  "method": "GET",
+  "path": "/api/v1/players/50",
+  "user_id": null
+ },
+ {
+  "key": "player_51",
+  "method": "GET",
+  "path": "/api/v1/players/51",
+  "user_id": null
+ },
+ {
+  "key": "player_52",
+  "method": "GET",
+  "path": "/api/v1/players/52",
+  "user_id": null
+ },
+ {
+  "key": "player_53",
+  "method": "GET",
+  "path": "/api/v1/players/53",
+  "user_id": null
+ },
+ {
+  "key": "player_54",
+  "method": "GET",
+  "path": "/api/v1/players/54",
+  "user_id": null
+ },
+ {
+  "key": "player_55",
+  "method": "GET",
+  "path": "/api/v1/players/55",
+  "user_id": null
+ },
+ {
+  "key": "player_56",
+  "method": "GET",
+  "path": "/api/v1/players/56",
+  "user_id": null
+ },
+ {
+  "key": "player_57",
+  "method": "GET",
+  "path": "/api/v1/players/57",
+  "user_id": null
+ },
+ {
+  "key": "player_58",
+  "method": "GET",
+  "path": "/api/v1/players/58",
+  "user_id": null
+ },
+ {
+  "key": "player_59",
+  "method": "GET",
+  "path": "/api/v1/players/59",
+  "user_id": null
+ },
+ {
+  "key": "player_60",
+  "method": "GET",
+  "path": "/api/v1/players/60",
+  "user_id": null
+ },
+ {
+  "key": "player_61",
+  "method": "GET",
+  "path": "/api/v1/players/61",
+  "user_id": null
+ },
+ {
+  "key": "player_62",
+  "method": "GET",
+  "path": "/api/v1/players/62",
+  "user_id": null
+ },
+ {
+  "key": "player_63",
+  "method": "GET",
+  "path": "/api/v1/players/63",
+  "user_id": null
+ },
+ {
+  "key": "player_64",
+  "method": "GET",
+  "path": "/api/v1/players/64",
+  "user_id": null
+ },
+ {
+  "key": "player_76",
+  "method": "GET",
+  "path": "/api/v1/players/76",
+  "user_id": null
+ },
+ {
+  "key": "player_77",
+  "method": "GET",
+  "path": "/api/v1/players/77",
+  "user_id": null
+ },
+ {
+  "key": "player_78",
+  "method": "GET",
+  "path": "/api/v1/players/78",
+  "user_id": null
+ },
+ {
+  "key": "player_79",
+  "method": "GET",
+  "path": "/api/v1/players/79",
+  "user_id": null
+ },
+ {
+  "key": "player_80",
+  "method": "GET",
+  "path": "/api/v1/players/80",
+  "user_id": null
+ },
+ {
+  "key": "player_83",
+  "method": "GET",
+  "path": "/api/v1/players/83",
+  "user_id": null
+ },
+ {
+  "key": "player_84",
+  "method": "GET",
+  "path": "/api/v1/players/84",
+  "user_id": null
+ },
+ {
+  "key": "player_86",
+  "method": "GET",
+  "path": "/api/v1/players/86",
+  "user_id": null
+ },
+ {
+  "key": "player_87",
+  "method": "GET",
+  "path": "/api/v1/players/87",
+  "user_id": null
+ },
+ {
+  "key": "player_88",
+  "method": "GET",
+  "path": "/api/v1/players/88",
+  "user_id": null
+ },
+ {
+  "key": "player_90",
+  "method": "GET",
+  "path": "/api/v1/players/90",
+  "user_id": null
+ },
+ {
+  "key": "player_91",
+  "method": "GET",
+  "path": "/api/v1/players/91",
+  "user_id": null
+ },
+ {
+  "key": "player_92",
+  "method": "GET",
+  "path": "/api/v1/players/92",
+  "user_id": null
+ },
+ {
+  "key": "player_95",
+  "method": "GET",
+  "path": "/api/v1/players/95",
+  "user_id": null
+ },
+ {
+  "key": "player_96",
+  "method": "GET",
+  "path": "/api/v1/players/96",
+  "user_id": null
+ },
+ {
+  "key": "player_97",
+  "method": "GET",
+  "path": "/api/v1/players/97",
+  "user_id": null
+ },
+ {
+  "key": "player_98",
+  "method": "GET",
+  "path": "/api/v1/players/98",
+  "user_id": null
+ },
+ {
+  "key": "player_99",
+  "method": "GET",
+  "path": "/api/v1/players/99",
+  "user_id": null
+ },
+ {
+  "key": "player_100",
+  "method": "GET",
+  "path": "/api/v1/players/100",
+  "user_id": null
+ },
+ {
+  "key": "player_102",
+  "method": "GET",
+  "path": "/api/v1/players/102",
+  "user_id": null
+ },
+ {
+  "key": "player_103",
+  "method": "GET",
+  "path": "/api/v1/players/103",
+  "user_id": null
+ },
+ {
+  "key": "player_104",
+  "method": "GET",
+  "path": "/api/v1/players/104",
+  "user_id": null
+ },
+ {
+  "key": "player_105",
+  "method": "GET",
+  "path": "/api/v1/players/105",
+  "user_id": null
+ },
+ {
+  "key": "player_106",
+  "method": "GET",
+  "path": "/api/v1/players/106",
+  "user_id": null
+ },
+ {
+  "key": "player_107",
+  "method": "GET",
+  "path": "/api/v1/players/107",
+  "user_id": null
+ },
+ {
+  "key": "player_108",
+  "method": "GET",
+  "path": "/api/v1/players/108",
+  "user_id": null
+ },
+ {
+  "key": "player_109",
+  "method": "GET",
+  "path": "/api/v1/players/109",
+  "user_id": null
+ },
+ {
+  "key": "player_110",
+  "method": "GET",
+  "path": "/api/v1/players/110",
+  "user_id": null
+ },
+ {
+  "key": "player_111",
+  "method": "GET",
+  "path": "/api/v1/players/111",
+  "user_id": null
+ },
+ {
+  "key": "player_112",
+  "method": "GET",
+  "path": "/api/v1/players/112",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2022-01",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2022-01",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2022-02",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2022-02",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2022-03",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2022-03",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2022-04",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2022-04",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2022-05",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2022-05",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2022-06",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2022-06",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2022-07",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2022-07",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2022-08",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2022-08",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2022-09",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2022-09",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2022-10",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2022-10",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2022-11",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2022-11",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2022-12",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2022-12",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2023-01",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2023-01",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2023-02",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2023-02",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2023-03",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2023-03",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2023-04",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2023-04",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2023-05",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2023-05",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2023-06",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2023-06",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2023-07",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2023-07",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2023-08",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2023-08",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2023-09",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2023-09",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2023-10",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2023-10",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2023-11",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2023-11",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2023-12",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2023-12",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2024-01",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2024-01",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2024-02",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2024-02",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2024-03",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2024-03",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2024-04",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2024-04",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2024-05",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2024-05",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2024-06",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2024-06",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2024-07",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2024-07",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2024-08",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2024-08",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2024-09",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2024-09",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2024-10",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2024-10",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2024-11",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2024-11",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2024-12",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2024-12",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2025-01",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2025-01",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2025-02",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2025-02",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2025-03",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2025-03",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2025-04",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2025-04",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2025-05",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2025-05",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2025-06",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2025-06",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2025-07",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2025-07",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2025-08",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2025-08",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2025-09",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2025-09",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2025-10",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2025-10",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2025-11",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2025-11",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2025-12",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2025-12",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2026-01",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2026-01",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2026-02",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2026-02",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2026-03",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2026-03",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2026-04",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2026-04",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2026-05",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2026-05",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2026-06",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2026-06",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2026-07",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2026-07",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2026-08",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2026-08",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2026-09",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2026-09",
+  "user_id": null
+ },
+ {
+  "key": "calendar_2026-10",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=2026-10",
+  "user_id": null
+ },
+ {
+  "key": "calendar_bad_month",
+  "method": "GET",
+  "path": "/api/v1/calendar?month=bad",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_1_2022-01",
+  "method": "GET",
+  "path": "/api/v1/calendar/1?month=2022-01",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_1_2022-02",
+  "method": "GET",
+  "path": "/api/v1/calendar/1?month=2022-02",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_2_2022-01",
+  "method": "GET",
+  "path": "/api/v1/calendar/2?month=2022-01",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_2_2022-02",
+  "method": "GET",
+  "path": "/api/v1/calendar/2?month=2022-02",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_3_2022-03",
+  "method": "GET",
+  "path": "/api/v1/calendar/3?month=2022-03",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_3_2022-04",
+  "method": "GET",
+  "path": "/api/v1/calendar/3?month=2022-04",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_4_2022-03",
+  "method": "GET",
+  "path": "/api/v1/calendar/4?month=2022-03",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_4_2022-04",
+  "method": "GET",
+  "path": "/api/v1/calendar/4?month=2022-04",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_6_2022-10",
+  "method": "GET",
+  "path": "/api/v1/calendar/6?month=2022-10",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_6_2022-11",
+  "method": "GET",
+  "path": "/api/v1/calendar/6?month=2022-11",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_7_2022-10",
+  "method": "GET",
+  "path": "/api/v1/calendar/7?month=2022-10",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_7_2022-11",
+  "method": "GET",
+  "path": "/api/v1/calendar/7?month=2022-11",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_8_2023-01",
+  "method": "GET",
+  "path": "/api/v1/calendar/8?month=2023-01",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_8_2023-02",
+  "method": "GET",
+  "path": "/api/v1/calendar/8?month=2023-02",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_8_2023-03",
+  "method": "GET",
+  "path": "/api/v1/calendar/8?month=2023-03",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_9_2023-01",
+  "method": "GET",
+  "path": "/api/v1/calendar/9?month=2023-01",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_9_2023-02",
+  "method": "GET",
+  "path": "/api/v1/calendar/9?month=2023-02",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_9_2023-03",
+  "method": "GET",
+  "path": "/api/v1/calendar/9?month=2023-03",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_10_2023-04",
+  "method": "GET",
+  "path": "/api/v1/calendar/10?month=2023-04",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_10_2023-05",
+  "method": "GET",
+  "path": "/api/v1/calendar/10?month=2023-05",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_11_2023-04",
+  "method": "GET",
+  "path": "/api/v1/calendar/11?month=2023-04",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_11_2023-05",
+  "method": "GET",
+  "path": "/api/v1/calendar/11?month=2023-05",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_12_2023-05",
+  "method": "GET",
+  "path": "/api/v1/calendar/12?month=2023-05",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_12_2023-06",
+  "method": "GET",
+  "path": "/api/v1/calendar/12?month=2023-06",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_12_2023-07",
+  "method": "GET",
+  "path": "/api/v1/calendar/12?month=2023-07",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_13_2023-05",
+  "method": "GET",
+  "path": "/api/v1/calendar/13?month=2023-05",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_13_2023-06",
+  "method": "GET",
+  "path": "/api/v1/calendar/13?month=2023-06",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_13_2023-07",
+  "method": "GET",
+  "path": "/api/v1/calendar/13?month=2023-07",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_14_2023-09",
+  "method": "GET",
+  "path": "/api/v1/calendar/14?month=2023-09",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_14_2023-10",
+  "method": "GET",
+  "path": "/api/v1/calendar/14?month=2023-10",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_15_2023-09",
+  "method": "GET",
+  "path": "/api/v1/calendar/15?month=2023-09",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_15_2023-10",
+  "method": "GET",
+  "path": "/api/v1/calendar/15?month=2023-10",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_16_2023-11",
+  "method": "GET",
+  "path": "/api/v1/calendar/16?month=2023-11",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_16_2023-12",
+  "method": "GET",
+  "path": "/api/v1/calendar/16?month=2023-12",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_17_2023-11",
+  "method": "GET",
+  "path": "/api/v1/calendar/17?month=2023-11",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_17_2023-12",
+  "method": "GET",
+  "path": "/api/v1/calendar/17?month=2023-12",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_18_2024-01",
+  "method": "GET",
+  "path": "/api/v1/calendar/18?month=2024-01",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_18_2024-02",
+  "method": "GET",
+  "path": "/api/v1/calendar/18?month=2024-02",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_19_2024-01",
+  "method": "GET",
+  "path": "/api/v1/calendar/19?month=2024-01",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_19_2024-02",
+  "method": "GET",
+  "path": "/api/v1/calendar/19?month=2024-02",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_20_2024-01",
+  "method": "GET",
+  "path": "/api/v1/calendar/20?month=2024-01",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_20_2024-02",
+  "method": "GET",
+  "path": "/api/v1/calendar/20?month=2024-02",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_21_2024-02",
+  "method": "GET",
+  "path": "/api/v1/calendar/21?month=2024-02",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_21_2024-03",
+  "method": "GET",
+  "path": "/api/v1/calendar/21?month=2024-03",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_21_2024-04",
+  "method": "GET",
+  "path": "/api/v1/calendar/21?month=2024-04",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_22_2024-02",
+  "method": "GET",
+  "path": "/api/v1/calendar/22?month=2024-02",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_22_2024-03",
+  "method": "GET",
+  "path": "/api/v1/calendar/22?month=2024-03",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_22_2024-04",
+  "method": "GET",
+  "path": "/api/v1/calendar/22?month=2024-04",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_23_2024-02",
+  "method": "GET",
+  "path": "/api/v1/calendar/23?month=2024-02",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_23_2024-03",
+  "method": "GET",
+  "path": "/api/v1/calendar/23?month=2024-03",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_23_2024-04",
+  "method": "GET",
+  "path": "/api/v1/calendar/23?month=2024-04",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_24_2024-04",
+  "method": "GET",
+  "path": "/api/v1/calendar/24?month=2024-04",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_24_2024-05",
+  "method": "GET",
+  "path": "/api/v1/calendar/24?month=2024-05",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_25_2024-04",
+  "method": "GET",
+  "path": "/api/v1/calendar/25?month=2024-04",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_25_2024-05",
+  "method": "GET",
+  "path": "/api/v1/calendar/25?month=2024-05",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_26_2024-04",
+  "method": "GET",
+  "path": "/api/v1/calendar/26?month=2024-04",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_26_2024-05",
+  "method": "GET",
+  "path": "/api/v1/calendar/26?month=2024-05",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_27_2024-06",
+  "method": "GET",
+  "path": "/api/v1/calendar/27?month=2024-06",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_27_2024-07",
+  "method": "GET",
+  "path": "/api/v1/calendar/27?month=2024-07",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_28_2024-06",
+  "method": "GET",
+  "path": "/api/v1/calendar/28?month=2024-06",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_28_2024-07",
+  "method": "GET",
+  "path": "/api/v1/calendar/28?month=2024-07",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_29_2024-06",
+  "method": "GET",
+  "path": "/api/v1/calendar/29?month=2024-06",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_29_2024-07",
+  "method": "GET",
+  "path": "/api/v1/calendar/29?month=2024-07",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_30_2024-09",
+  "method": "GET",
+  "path": "/api/v1/calendar/30?month=2024-09",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_30_2024-10",
+  "method": "GET",
+  "path": "/api/v1/calendar/30?month=2024-10",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_31_2024-09",
+  "method": "GET",
+  "path": "/api/v1/calendar/31?month=2024-09",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_31_2024-10",
+  "method": "GET",
+  "path": "/api/v1/calendar/31?month=2024-10",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_32_2024-09",
+  "method": "GET",
+  "path": "/api/v1/calendar/32?month=2024-09",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_32_2024-10",
+  "method": "GET",
+  "path": "/api/v1/calendar/32?month=2024-10",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_33_2024-09",
+  "method": "GET",
+  "path": "/api/v1/calendar/33?month=2024-09",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_33_2024-10",
+  "method": "GET",
+  "path": "/api/v1/calendar/33?month=2024-10",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_34_2024-11",
+  "method": "GET",
+  "path": "/api/v1/calendar/34?month=2024-11",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_34_2024-12",
+  "method": "GET",
+  "path": "/api/v1/calendar/34?month=2024-12",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_35_2024-11",
+  "method": "GET",
+  "path": "/api/v1/calendar/35?month=2024-11",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_35_2024-12",
+  "method": "GET",
+  "path": "/api/v1/calendar/35?month=2024-12",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_36_2024-11",
+  "method": "GET",
+  "path": "/api/v1/calendar/36?month=2024-11",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_36_2024-12",
+  "method": "GET",
+  "path": "/api/v1/calendar/36?month=2024-12",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_37_2024-11",
+  "method": "GET",
+  "path": "/api/v1/calendar/37?month=2024-11",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_37_2024-12",
+  "method": "GET",
+  "path": "/api/v1/calendar/37?month=2024-12",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_38_2025-01",
+  "method": "GET",
+  "path": "/api/v1/calendar/38?month=2025-01",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_38_2025-02",
+  "method": "GET",
+  "path": "/api/v1/calendar/38?month=2025-02",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_39_2025-01",
+  "method": "GET",
+  "path": "/api/v1/calendar/39?month=2025-01",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_39_2025-02",
+  "method": "GET",
+  "path": "/api/v1/calendar/39?month=2025-02",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_40_2025-01",
+  "method": "GET",
+  "path": "/api/v1/calendar/40?month=2025-01",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_40_2025-02",
+  "method": "GET",
+  "path": "/api/v1/calendar/40?month=2025-02",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_41_2025-01",
+  "method": "GET",
+  "path": "/api/v1/calendar/41?month=2025-01",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_41_2025-02",
+  "method": "GET",
+  "path": "/api/v1/calendar/41?month=2025-02",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_42_2025-02",
+  "method": "GET",
+  "path": "/api/v1/calendar/42?month=2025-02",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_42_2025-03",
+  "method": "GET",
+  "path": "/api/v1/calendar/42?month=2025-03",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_42_2025-04",
+  "method": "GET",
+  "path": "/api/v1/calendar/42?month=2025-04",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_43_2025-02",
+  "method": "GET",
+  "path": "/api/v1/calendar/43?month=2025-02",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_43_2025-03",
+  "method": "GET",
+  "path": "/api/v1/calendar/43?month=2025-03",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_43_2025-04",
+  "method": "GET",
+  "path": "/api/v1/calendar/43?month=2025-04",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_44_2025-02",
+  "method": "GET",
+  "path": "/api/v1/calendar/44?month=2025-02",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_44_2025-03",
+  "method": "GET",
+  "path": "/api/v1/calendar/44?month=2025-03",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_44_2025-04",
+  "method": "GET",
+  "path": "/api/v1/calendar/44?month=2025-04",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_45_2025-02",
+  "method": "GET",
+  "path": "/api/v1/calendar/45?month=2025-02",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_45_2025-03",
+  "method": "GET",
+  "path": "/api/v1/calendar/45?month=2025-03",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_45_2025-04",
+  "method": "GET",
+  "path": "/api/v1/calendar/45?month=2025-04",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_46_2025-04",
+  "method": "GET",
+  "path": "/api/v1/calendar/46?month=2025-04",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_46_2025-05",
+  "method": "GET",
+  "path": "/api/v1/calendar/46?month=2025-05",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_46_2025-06",
+  "method": "GET",
+  "path": "/api/v1/calendar/46?month=2025-06",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_47_2025-04",
+  "method": "GET",
+  "path": "/api/v1/calendar/47?month=2025-04",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_47_2025-05",
+  "method": "GET",
+  "path": "/api/v1/calendar/47?month=2025-05",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_47_2025-06",
+  "method": "GET",
+  "path": "/api/v1/calendar/47?month=2025-06",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_48_2025-04",
+  "method": "GET",
+  "path": "/api/v1/calendar/48?month=2025-04",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_48_2025-05",
+  "method": "GET",
+  "path": "/api/v1/calendar/48?month=2025-05",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_48_2025-06",
+  "method": "GET",
+  "path": "/api/v1/calendar/48?month=2025-06",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_49_2025-04",
+  "method": "GET",
+  "path": "/api/v1/calendar/49?month=2025-04",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_49_2025-05",
+  "method": "GET",
+  "path": "/api/v1/calendar/49?month=2025-05",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_49_2025-06",
+  "method": "GET",
+  "path": "/api/v1/calendar/49?month=2025-06",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_50_2025-04",
+  "method": "GET",
+  "path": "/api/v1/calendar/50?month=2025-04",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_50_2025-05",
+  "method": "GET",
+  "path": "/api/v1/calendar/50?month=2025-05",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_50_2025-06",
+  "method": "GET",
+  "path": "/api/v1/calendar/50?month=2025-06",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_51_2025-09",
+  "method": "GET",
+  "path": "/api/v1/calendar/51?month=2025-09",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_51_2025-10",
+  "method": "GET",
+  "path": "/api/v1/calendar/51?month=2025-10",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_52_2025-09",
+  "method": "GET",
+  "path": "/api/v1/calendar/52?month=2025-09",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_52_2025-10",
+  "method": "GET",
+  "path": "/api/v1/calendar/52?month=2025-10",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_53_2025-09",
+  "method": "GET",
+  "path": "/api/v1/calendar/53?month=2025-09",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_53_2025-10",
+  "method": "GET",
+  "path": "/api/v1/calendar/53?month=2025-10",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_54_2025-09",
+  "method": "GET",
+  "path": "/api/v1/calendar/54?month=2025-09",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_54_2025-10",
+  "method": "GET",
+  "path": "/api/v1/calendar/54?month=2025-10",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_55_2025-09",
+  "method": "GET",
+  "path": "/api/v1/calendar/55?month=2025-09",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_55_2025-10",
+  "method": "GET",
+  "path": "/api/v1/calendar/55?month=2025-10",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_56_2025-10",
+  "method": "GET",
+  "path": "/api/v1/calendar/56?month=2025-10",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_56_2025-11",
+  "method": "GET",
+  "path": "/api/v1/calendar/56?month=2025-11",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_56_2025-12",
+  "method": "GET",
+  "path": "/api/v1/calendar/56?month=2025-12",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_57_2025-10",
+  "method": "GET",
+  "path": "/api/v1/calendar/57?month=2025-10",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_57_2025-11",
+  "method": "GET",
+  "path": "/api/v1/calendar/57?month=2025-11",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_57_2025-12",
+  "method": "GET",
+  "path": "/api/v1/calendar/57?month=2025-12",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_58_2025-10",
+  "method": "GET",
+  "path": "/api/v1/calendar/58?month=2025-10",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_58_2025-11",
+  "method": "GET",
+  "path": "/api/v1/calendar/58?month=2025-11",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_58_2025-12",
+  "method": "GET",
+  "path": "/api/v1/calendar/58?month=2025-12",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_59_2025-10",
+  "method": "GET",
+  "path": "/api/v1/calendar/59?month=2025-10",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_59_2025-11",
+  "method": "GET",
+  "path": "/api/v1/calendar/59?month=2025-11",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_59_2025-12",
+  "method": "GET",
+  "path": "/api/v1/calendar/59?month=2025-12",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_60_2025-10",
+  "method": "GET",
+  "path": "/api/v1/calendar/60?month=2025-10",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_60_2025-11",
+  "method": "GET",
+  "path": "/api/v1/calendar/60?month=2025-11",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_60_2025-12",
+  "method": "GET",
+  "path": "/api/v1/calendar/60?month=2025-12",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_61_2026-01",
+  "method": "GET",
+  "path": "/api/v1/calendar/61?month=2026-01",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_61_2026-02",
+  "method": "GET",
+  "path": "/api/v1/calendar/61?month=2026-02",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_62_2026-01",
+  "method": "GET",
+  "path": "/api/v1/calendar/62?month=2026-01",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_62_2026-02",
+  "method": "GET",
+  "path": "/api/v1/calendar/62?month=2026-02",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_63_2026-01",
+  "method": "GET",
+  "path": "/api/v1/calendar/63?month=2026-01",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_63_2026-02",
+  "method": "GET",
+  "path": "/api/v1/calendar/63?month=2026-02",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_64_2026-01",
+  "method": "GET",
+  "path": "/api/v1/calendar/64?month=2026-01",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_64_2026-02",
+  "method": "GET",
+  "path": "/api/v1/calendar/64?month=2026-02",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_65_2026-01",
+  "method": "GET",
+  "path": "/api/v1/calendar/65?month=2026-01",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_65_2026-02",
+  "method": "GET",
+  "path": "/api/v1/calendar/65?month=2026-02",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_66_2026-05",
+  "method": "GET",
+  "path": "/api/v1/calendar/66?month=2026-05",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_66_2026-06",
+  "method": "GET",
+  "path": "/api/v1/calendar/66?month=2026-06",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_67_2026-05",
+  "method": "GET",
+  "path": "/api/v1/calendar/67?month=2026-05",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_67_2026-06",
+  "method": "GET",
+  "path": "/api/v1/calendar/67?month=2026-06",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_68_2026-05",
+  "method": "GET",
+  "path": "/api/v1/calendar/68?month=2026-05",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_68_2026-06",
+  "method": "GET",
+  "path": "/api/v1/calendar/68?month=2026-06",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_69_2026-05",
+  "method": "GET",
+  "path": "/api/v1/calendar/69?month=2026-05",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_69_2026-06",
+  "method": "GET",
+  "path": "/api/v1/calendar/69?month=2026-06",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_70_2026-05",
+  "method": "GET",
+  "path": "/api/v1/calendar/70?month=2026-05",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_70_2026-06",
+  "method": "GET",
+  "path": "/api/v1/calendar/70?month=2026-06",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_71_2026-05",
+  "method": "GET",
+  "path": "/api/v1/calendar/71?month=2026-05",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_71_2026-06",
+  "method": "GET",
+  "path": "/api/v1/calendar/71?month=2026-06",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_72_2026-09",
+  "method": "GET",
+  "path": "/api/v1/calendar/72?month=2026-09",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_72_2026-10",
+  "method": "GET",
+  "path": "/api/v1/calendar/72?month=2026-10",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_73_2026-09",
+  "method": "GET",
+  "path": "/api/v1/calendar/73?month=2026-09",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_73_2026-10",
+  "method": "GET",
+  "path": "/api/v1/calendar/73?month=2026-10",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_74_2026-09",
+  "method": "GET",
+  "path": "/api/v1/calendar/74?month=2026-09",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_74_2026-10",
+  "method": "GET",
+  "path": "/api/v1/calendar/74?month=2026-10",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_75_2026-09",
+  "method": "GET",
+  "path": "/api/v1/calendar/75?month=2026-09",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_75_2026-10",
+  "method": "GET",
+  "path": "/api/v1/calendar/75?month=2026-10",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_76_2026-09",
+  "method": "GET",
+  "path": "/api/v1/calendar/76?month=2026-09",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_76_2026-10",
+  "method": "GET",
+  "path": "/api/v1/calendar/76?month=2026-10",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_77_2026-09",
+  "method": "GET",
+  "path": "/api/v1/calendar/77?month=2026-09",
+  "user_id": null
+ },
+ {
+  "key": "calendar_div_77_2026-10",
+  "method": "GET",
+  "path": "/api/v1/calendar/77?month=2026-10",
+  "user_id": null
+ },
+ {
+  "key": "last_played_players_1",
+  "method": "GET",
+  "path": "/api/v1/divisions/last_played_players?edition_id=1",
+  "user_id": null
+ },
+ {
+  "key": "last_played_players_2",
+  "method": "GET",
+  "path": "/api/v1/divisions/last_played_players?edition_id=2",
+  "user_id": null
+ },
+ {
+  "key": "last_played_players_3",
+  "method": "GET",
+  "path": "/api/v1/divisions/last_played_players?edition_id=3",
+  "user_id": null
+ },
+ {
+  "key": "last_played_players_5",
+  "method": "GET",
+  "path": "/api/v1/divisions/last_played_players?edition_id=5",
+  "user_id": null
+ },
+ {
+  "key": "last_played_players_6",
+  "method": "GET",
+  "path": "/api/v1/divisions/last_played_players?edition_id=6",
+  "user_id": null
+ },
+ {
+  "key": "last_played_players_7",
+  "method": "GET",
+  "path": "/api/v1/divisions/last_played_players?edition_id=7",
+  "user_id": null
+ },
+ {
+  "key": "last_played_players_8",
+  "method": "GET",
+  "path": "/api/v1/divisions/last_played_players?edition_id=8",
+  "user_id": null
+ },
+ {
+  "key": "last_played_players_9",
+  "method": "GET",
+  "path": "/api/v1/divisions/last_played_players?edition_id=9",
+  "user_id": null
+ },
+ {
+  "key": "last_played_players_10",
+  "method": "GET",
+  "path": "/api/v1/divisions/last_played_players?edition_id=10",
+  "user_id": null
+ },
+ {
+  "key": "last_played_players_11",
+  "method": "GET",
+  "path": "/api/v1/divisions/last_played_players?edition_id=11",
+  "user_id": null
+ },
+ {
+  "key": "last_played_players_13",
+  "method": "GET",
+  "path": "/api/v1/divisions/last_played_players?edition_id=13",
+  "user_id": null
+ },
+ {
+  "key": "last_played_players_14",
+  "method": "GET",
+  "path": "/api/v1/divisions/last_played_players?edition_id=14",
+  "user_id": null
+ },
+ {
+  "key": "last_played_players_15",
+  "method": "GET",
+  "path": "/api/v1/divisions/last_played_players?edition_id=15",
+  "user_id": null
+ },
+ {
+  "key": "last_played_players_16",
+  "method": "GET",
+  "path": "/api/v1/divisions/last_played_players?edition_id=16",
+  "user_id": null
+ },
+ {
+  "key": "last_played_players_17",
+  "method": "GET",
+  "path": "/api/v1/divisions/last_played_players?edition_id=17",
+  "user_id": null
+ },
+ {
+  "key": "last_played_players_18",
+  "method": "GET",
+  "path": "/api/v1/divisions/last_played_players?edition_id=18",
+  "user_id": null
+ },
+ {
+  "key": "last_played_players_19",
+  "method": "GET",
+  "path": "/api/v1/divisions/last_played_players?edition_id=19",
+  "user_id": null
+ },
+ {
+  "key": "last_played_players_20",
+  "method": "GET",
+  "path": "/api/v1/divisions/last_played_players?edition_id=20",
+  "user_id": null
+ },
+ {
+  "key": "last_played_players_21",
+  "method": "GET",
+  "path": "/api/v1/divisions/last_played_players?edition_id=21",
+  "user_id": null
+ },
+ {
+  "key": "last_played_players_22",
+  "method": "GET",
+  "path": "/api/v1/divisions/last_played_players?edition_id=22",
+  "user_id": null
+ },
+ {
+  "key": "last_played_players_23",
+  "method": "GET",
+  "path": "/api/v1/divisions/last_played_players?edition_id=23",
+  "user_id": null
+ },
+ {
+  "key": "last_played_players_24",
+  "method": "GET",
+  "path": "/api/v1/divisions/last_played_players?edition_id=24",
+  "user_id": null
+ },
+ {
+  "key": "last_played_players_25",
+  "method": "GET",
+  "path": "/api/v1/divisions/last_played_players?edition_id=25",
+  "user_id": null
+ },
+ {
+  "key": "comparison_77_31_99",
+  "method": "GET",
+  "path": "/api/v1/tournaments/77/player_comparison?player1Id=31&player2Id=99",
+  "user_id": null
+ },
+ {
+  "key": "comparison_77_99_104",
+  "method": "GET",
+  "path": "/api/v1/tournaments/77/player_comparison?player1Id=99&player2Id=104",
+  "user_id": null
+ },
+ {
+  "key": "comparison_77_104_105",
+  "method": "GET",
+  "path": "/api/v1/tournaments/77/player_comparison?player1Id=104&player2Id=105",
+  "user_id": null
+ },
+ {
+  "key": "comparison_77_105_106",
+  "method": "GET",
+  "path": "/api/v1/tournaments/77/player_comparison?player1Id=105&player2Id=106",
+  "user_id": null
+ },
+ {
+  "key": "comparison_77_106_107",
+  "method": "GET",
+  "path": "/api/v1/tournaments/77/player_comparison?player1Id=106&player2Id=107",
+  "user_id": null
+ },
+ {
+  "key": "comparison_77_107_108",
+  "method": "GET",
+  "path": "/api/v1/tournaments/77/player_comparison?player1Id=107&player2Id=108",
+  "user_id": null
+ },
+ {
+  "key": "comparison_77_108_109",
+  "method": "GET",
+  "path": "/api/v1/tournaments/77/player_comparison?player1Id=108&player2Id=109",
+  "user_id": null
+ },
+ {
+  "key": "shuffle_comparison_3_4",
+  "method": "GET",
+  "path": "/api/v1/shuffle_tournament/player_comparison?tournamentId=1&player1Id=3&player2Id=4",
+  "user_id": null
+ },
+ {
+  "key": "shuffle_comparison_4_7",
+  "method": "GET",
+  "path": "/api/v1/shuffle_tournament/player_comparison?tournamentId=1&player1Id=4&player2Id=7",
+  "user_id": null
+ },
+ {
+  "key": "shuffle_comparison_7_10",
+  "method": "GET",
+  "path": "/api/v1/shuffle_tournament/player_comparison?tournamentId=1&player1Id=7&player2Id=10",
+  "user_id": null
+ },
+ {
+  "key": "shuffle_comparison_10_11",
+  "method": "GET",
+  "path": "/api/v1/shuffle_tournament/player_comparison?tournamentId=1&player1Id=10&player2Id=11",
+  "user_id": null
+ },
+ {
+  "key": "shuffle_comparison_11_13",
+  "method": "GET",
+  "path": "/api/v1/shuffle_tournament/player_comparison?tournamentId=1&player1Id=11&player2Id=13",
+  "user_id": null
+ },
+ {
+  "key": "shuffle_comparison_13_14",
+  "method": "GET",
+  "path": "/api/v1/shuffle_tournament/player_comparison?tournamentId=1&player1Id=13&player2Id=14",
+  "user_id": null
+ },
+ {
+  "key": "shuffle_comparison_14_16",
+  "method": "GET",
+  "path": "/api/v1/shuffle_tournament/player_comparison?tournamentId=1&player1Id=14&player2Id=16",
+  "user_id": null
+ },
+ {
+  "key": "auth_me_1",
+  "method": "GET",
+  "path": "/api/v1/auth/me",
+  "user_id": 1
+ },
+ {
+  "key": "auth_me_2",
+  "method": "GET",
+  "path": "/api/v1/auth/me",
+  "user_id": 2
+ },
+ {
+  "key": "auth_me_3",
+  "method": "GET",
+  "path": "/api/v1/auth/me",
+  "user_id": 3
+ }
+]

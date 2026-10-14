@@ -9,7 +9,7 @@ from padel_league.tools.input_tools import Block, Field, Form
 
 class Match(db.Model, model.Model):
     __tablename__ = "matches"
-    __table_args__ = {"extend_existing": True}
+    __table_args__ = {"extend_existing": True, "schema": "compat"}  # v2: read-only view, see migrations/sql/v2_compat.sql
     page_title = "Jogos"
     model_name = "Match"
 
@@ -22,7 +22,7 @@ class Match(db.Model, model.Model):
     matchweek = Column(Integer, nullable=False)
     field = Column(Text)
     played = Column(Boolean, nullable=False)
-    division_id = Column(Integer, ForeignKey("divisions.id"))
+    division_id = Column(Integer, ForeignKey("compat.divisions.id"))
 
     division = relationship("Division", back_populates="matches")
     players_relations = relationship("Association_PlayerMatch", back_populates="match")

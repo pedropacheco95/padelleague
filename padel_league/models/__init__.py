@@ -27,6 +27,8 @@ from .Association_ProductProductAttributeValue import (
     Association_ProductProductAttributeValue,
 )
 
+from . import v2  # noqa: E402,F401  (v2 competition model)
+
 MODELS = {
     "Backend_App": Backend_App,
     "League": League,

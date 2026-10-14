@@ -2,7 +2,12 @@ import datetime
 
 from flask import Blueprint, current_app, jsonify, request
 
-from padel_league.models import Association_PlayerMatch, Division, Match, ShuffleMatch
+from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request
+
+from padel_league.models import Division, Match, ShuffleMatch
+from padel_league.models.v2 import CompetitionGroup
+from padel_league.services import results
+from padel_league.sql_db import db
 
 from .serializers import serialize_division, serialize_match, serialize_shuffle_match
 
@@ -37,68 +42,34 @@ def for_edit():
 @bp.route("/<int:id>/edit", methods=["POST"])
 def edit_match(id):
     match = Match.query.filter_by(id=id).first_or_404()
-    data = request.get_json()
+    data = request.get_json() or {}
+    actor = _current_user_id()
 
-    # Remove player from ALL matches in this matchweek in this division
-    players_eliminated = False
+    # Remove eliminated players from every match of this matchweek in this
+    # division, recording the absence.
     for item in data.get("playersEliminated", []):
         player_id = item.get("playerId")
-        if not player_id:
-            continue
-        for mw_match in match.division.matches:
-            if mw_match.matchweek == match.matchweek:
-                assoc = Association_PlayerMatch.query.filter_by(
-                    match_id=mw_match.id, player_id=player_id
-                ).first()
-                if assoc:
-                    match_was_played = mw_match.played
-                    assoc.delete()
-                    if match_was_played:
-                        players_eliminated = True
+        if player_id:
+            results.mark_absent(match.division_id, match.matchweek, int(player_id), actor_user_id=actor)
 
-    home_games = data.get("homeGames")
-    away_games = data.get("awayGames")
-    field = data.get("field")
+    results.record_result(
+        match.id,
+        data.get("homeGames"),
+        data.get("awayGames"),
+        court=data.get("field"),
+        actor_user_id=actor,
+    )
+    db.session.commit()
 
-    if home_games is not None:
-        match.games_home_team = int(home_games)
-    if away_games is not None:
-        match.games_away_team = int(away_games)
-    if field is not None:
-        match.field = field
+    group = db.session.get(CompetitionGroup, match.division_id)
+    try:
+        results.after_result_commit(group)
+    except Exception as exc:  # noqa: BLE001
+        db.session.rollback()
+        current_app.logger.exception("[match-edit] close-out failed division=%s: %s", group.id, exc)
 
-    if home_games is not None and away_games is not None:
-        h, a = int(home_games), int(away_games)
-        match.winner = 1 if h > a else (-1 if a > h else 0)
-        if not match.played:
-            match.played = True
-
-    match.save()
-
-    # Always recompute the division standings from scratch so re-edits to
-    # an already-played match update points/wins/games. add_match_to_table
-    # was incremental and gated on first-time edits, leaving classification
-    # stale on every subsequent edit. Also recompute when a player was
-    # eliminated/substituted from an already-played match, even if no score
-    # was submitted in this call — otherwise the removed player keeps their
-    # stale points until a later score edit happens to also be present.
-    # players_eliminated is only True when the removal affected a PLAYED
-    # match — get_match_relations_played() (used by update_table) ignores
-    # unplayed matches, so removing a player from one changes nothing.
-    if (home_games is not None and away_games is not None) or players_eliminated:
-        match.division.standings_up_to_date = False
-        match.division.save()
-        try:
-            match.division.update_table(force_update=True)
-        except Exception as exc:  # noqa: BLE001
-            current_app.logger.exception(
-                "[match-edit] update_table failed division=%s match=%s: %s",
-                match.division_id,
-                match.id,
-                exc,
-            )
-
-    return jsonify(serialize_match(match))
+    db.session.expire_all()
+    return jsonify(serialize_match(Match.query.filter_by(id=id).first()))
 
 
 @bp.route("/<id>/edit_shuffle", methods=["POST"])
@@ -106,20 +77,30 @@ def edit_shuffle_match(id):
     shuffle_match = ShuffleMatch.query.filter_by(id=int(id)).first_or_404()
     data = request.get_json() or {}
 
-    home_games = data.get("homeGames")
-    away_games = data.get("awayGames")
+    results.record_result(
+        shuffle_match.match_id,
+        data.get("homeGames"),
+        data.get("awayGames"),
+        actor_user_id=_current_user_id(),
+    )
+    db.session.commit()
+    db.session.expire_all()
 
-    if home_games is not None:
-        shuffle_match.score1 = int(home_games)
-    if away_games is not None:
-        shuffle_match.score2 = int(away_games)
+    shuffle_match = ShuffleMatch.query.filter_by(id=int(id)).first()
+    # Stats and positions are recomputed in memory only; discard them after
+    # building the response (they live in read-only views).
+    with db.session.no_autoflush:
+        if shuffle_match.shuffle_tournament:
+            shuffle_match.shuffle_tournament.recalculate_player_stats(persist=False)
+        response = jsonify(serialize_shuffle_match(shuffle_match))
+    db.session.rollback()
+    return response
 
-    if home_games is not None and away_games is not None:
-        shuffle_match.played = True
 
-    shuffle_match.save()
-
-    if shuffle_match.shuffle_tournament:
-        shuffle_match.shuffle_tournament.recalculate_player_stats()
-
-    return jsonify(serialize_shuffle_match(shuffle_match))
+def _current_user_id():
+    try:
+        verify_jwt_in_request(optional=True)
+        identity = get_jwt_identity()
+        return int(identity) if identity else None
+    except Exception:  # noqa: BLE001
+        return None

@@ -9,7 +9,25 @@ from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from .auth import register_jwt_handlers
 
-from . import cli, context, mail, modules, sql_db
+from . import cli, context, mail, modules, read_only, sql_db
+
+
+LOCAL_DB_HOSTS = {"localhost", "127.0.0.1", "::1", ""}
+
+
+def _refuse_remote_db_outside_production(app):
+    """Development must never reach the production database by accident.
+
+    Set ALLOW_REMOTE_DB=1 to opt in deliberately.
+    """
+    from sqlalchemy.engine import make_url
+
+    host = make_url(app.config["SQLALCHEMY_DATABASE_URI"]).host or ""
+    if host not in LOCAL_DB_HOSTS and os.getenv("ALLOW_REMOTE_DB") != "1":
+        raise RuntimeError(
+            f"Refusing to start in development against database host {host!r}. "
+            "Set POSTGRES_HOST=localhost, or ALLOW_REMOTE_DB=1 to override."
+        )
 
 
 def create_app(test_config=None):
@@ -41,6 +59,9 @@ def create_app(test_config=None):
         from .config import DevConfig
 
         app.config.from_object(DevConfig)
+        _refuse_remote_db_outside_production(app)
+
+    read_only.init_app(app)
 
     # Ensure responses aren't cached
     @app.after_request
