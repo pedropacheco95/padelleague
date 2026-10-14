@@ -1,13 +1,51 @@
+import csv
+import io
 import json
 
-from flask import Blueprint, abort, jsonify, redirect, render_template, request, url_for
+from flask import (
+    Blueprint,
+    Response,
+    abort,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
+from flask_login import current_user
 from sqlalchemy.orm import joinedload
 
 from padel_league.model import Image
 from padel_league.models import Division, Match, OrderLine, Player, MODELS
-from padel_league.tools import tools
+from padel_league.tools import auth_tools, tools
 
 bp = Blueprint("api", __name__, url_prefix="/api")
+
+# Read-only endpoints used by public Jinja pages. Everything else in this
+# blueprint is the admin editor's backend and needs a logged-in admin.
+PUBLIC_ENDPOINTS = {
+    "api.calendar",
+    "api.points_by_matchweek",
+    "api.image_by_id",
+}
+# A user's own cart deletes its order lines; ownership is checked in the view.
+LOGGED_IN_ENDPOINTS = {"api.delete_order_line"}
+
+# Columns never written to a CSV export.
+CSV_EXCLUDED_COLUMNS = {"password"}
+
+
+def _allow():
+    return None
+
+
+@bp.before_request
+def require_admin():
+    if request.endpoint in PUBLIC_ENDPOINTS:
+        return None
+    if request.endpoint in LOGGED_IN_ENDPOINTS:
+        return auth_tools.login_required(_allow)()
+    return auth_tools.admin_required(_allow)()
 
 
 @bp.route("/calendar", methods=("GET", "POST"))
@@ -51,12 +89,15 @@ def points_by_matchweek(division_id):
 
 @bp.route("/delete_order_line/<id>", methods=("GET", "POST"))
 def delete_order_line(id):
-    order_line = OrderLine.query.filter_by(id=id).first()
+    order_line = OrderLine.query.filter_by(id=id).first_or_404()
+    order = order_line.order
+    if not current_user.is_admin and (order is None or order.user_id != current_user.id):
+        abort(403)
     order_line.delete()
     return True
 
 
-@bp.route("/delete_player/<id>", methods=("GET", "POST"))
+@bp.route("/delete_player/<id>", methods=["POST"])
 def delete_player(id):
     player = Player.query.filter_by(id=id).first()
     for association in player.divisions_relations:
@@ -65,7 +106,7 @@ def delete_player(id):
     return True
 
 
-@bp.route("/delete_tournament/<id>", methods=("GET", "POST"))
+@bp.route("/delete_tournament/<id>", methods=["POST"])
 def delete_tournament(id):
     division = Division.query.filter_by(id=id).first()
     for association in division.players_relations:
@@ -88,11 +129,9 @@ def edit(model, id):
     if not obj:
         return jsonify(success=False, error=f"{model} with id {id} not found"), 404
 
-    methods = []
     if request.is_json:
         data = request.get_json() or {}
         values = data.get("values", {})
-        methods = data.get("methods", [])
     else:
         form = obj.get_edit_form()
         values = form.set_values(request)
@@ -100,12 +139,6 @@ def edit(model, id):
     if values:
         obj.update_with_dict(values)
         obj.save()
-
-    for method_name in methods:
-        if hasattr(obj, method_name):
-            getattr(obj, method_name)()
-        else:
-            return jsonify(success=False, error=f"Method {method_name} not found"), 400
 
     return jsonify(success=True, id=obj.id)
 
@@ -131,7 +164,7 @@ def query(model):
     return jsonify(instances)
 
 
-@bp.route("/remove_relationship", methods=("GET", "POST"))
+@bp.route("/remove_relationship", methods=["POST"])
 def remove_relationship():
     data = request.get_json()
 
@@ -171,13 +204,36 @@ def modal_create_page(model):
 
 @bp.route("/download_csv/<model>", methods=["GET", "POST"])
 def download_csv(model):
-    model_name = model
-    model = MODELS[model_name]
-    filepath = tools.create_csv_for_model(model)
-    return filepath
+    # The editor fetches this, then downloads the URL it returns. The CSV used
+    # to be written under static/ (publicly served); it is now built in memory
+    # by csv_file, behind the same admin check.
+    if model not in MODELS:
+        abort(404)
+    return url_for("api.csv_file", model=model)
 
 
-@bp.route("/upload_csv_to_db/<model>", methods=["GET", "POST"])
+@bp.get("/csv/<model>.csv")
+def csv_file(model):
+    model_cls = MODELS.get(model)
+    if not model_cls:
+        abort(404)
+    rows = [
+        {k: v for k, v in instance.get_dict().items() if k not in CSV_EXCLUDED_COLUMNS}
+        for instance in model_cls.query.all()
+    ]
+    out = io.StringIO()
+    if rows:
+        writer = csv.DictWriter(out, fieldnames=list(rows[0].keys()))
+        writer.writeheader()
+        writer.writerows(rows)
+    return Response(
+        out.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={model}.csv"},
+    )
+
+
+@bp.route("/upload_csv_to_db/<model>", methods=["POST"])
 def upload_csv_to_db(model):
     model_name = model
     model = MODELS[model_name]
