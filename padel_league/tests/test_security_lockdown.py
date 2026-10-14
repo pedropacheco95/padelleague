@@ -143,7 +143,7 @@ JINJA_WRITES = [
     ("GET", "/matches/for_edit"),
     ("GET", "/tournaments/edit/1"),
     ("POST", "/tournaments/delete/1"),
-    ("POST", "/tournaments/1/recalculate"),
+    ("GET", "/tournaments/1/recalculate"),
     ("GET", "/editions/create"),
     ("POST", "/editions/create"),
     ("POST", "/editions/delete/1"),
@@ -184,6 +184,14 @@ def test_jinja_writes_redirect_anonymous_to_login(client, method, path):
 )
 def test_deletes_are_post_only(client, path):
     assert client.get(path).status_code == 405
+
+
+@pytest.mark.parametrize(
+    "path", ["/tournaments/1", "/tournaments/1/recalculate", "/tournaments/1/x"]
+)
+def test_tournament_page_refuses_post(client, path):
+    # A POST used to persist a recomputed table for anyone.
+    assert client.post(path).status_code == 405
 
 
 def test_export_db_to_csv_is_gone(client):

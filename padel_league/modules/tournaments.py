@@ -28,15 +28,17 @@ def tournaments():
     )
 
 
-@bp.route("/<id>", methods=("GET", "POST"))
-@bp.route("/<id>/<recalculate>", methods=("GET", "POST"))
+# GET only: the page is read-only, and update_table() would otherwise persist
+# a recomputed table for any anonymous POST.
+@bp.route("/<id>", methods=["GET"])
+@bp.route("/<id>/<recalculate>", methods=["GET"])
 def tournament(id, recalculate=False):
-    if recalculate == "recalculate":
-        # Recomputes and stores the table on POST: admin only.
+    recalculate = recalculate == "recalculate"
+    if recalculate:
+        # Forced table recompute: admin only.
         denied = auth_tools.admin_required(lambda: None)()
         if denied is not None:
             return denied
-        recalculate = True
     division = Division.query.filter_by(id=id).first()
     division.update_table(recalculate)
     players = [rel.player for rel in division.players_relations]
