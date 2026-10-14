@@ -29,9 +29,10 @@ resource "google_compute_firewall" "allow-postgres" {
     ports    = ["5432"]
   }
 
-  #source_ranges = ["2.80.118.223/32"]
-  source_ranges = ["0.0.0.0/0"]
-  description   = "Allow external access to PostgreSQL"
+  # The app reaches Postgres over the Docker bridge (172.17.0.1), not through
+  # this rule; only admin clients (psql, notebooks) need it.
+  source_ranges = var.postgres_allowed_cidrs
+  description   = "Allow PostgreSQL from the owner's IPs only"
 }
 
 resource "google_compute_address" "static_ip" {
