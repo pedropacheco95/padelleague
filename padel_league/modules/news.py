@@ -12,11 +12,13 @@ from flask import (
 )
 
 from padel_league.models import Division, News, Player
+from padel_league.tools import auth_tools
 
 bp = Blueprint("news", __name__, url_prefix="/news")
 
 
 @bp.route("/create", methods=("GET", "POST"))
+@auth_tools.admin_required
 def create():
     if request.method == "POST":
         title = request.form["title"]
@@ -64,7 +66,8 @@ def news(news_id):
     return render_template("news/news.html", news=news)
 
 
-@bp.route("/delete/<news_id>", methods=("GET", "POST"))
+@bp.route("/delete/<news_id>", methods=["POST"])
+@auth_tools.admin_required
 def delete(news_id):
     news = News.query.filter_by(id=news_id).first()
     news.delete()
@@ -72,6 +75,7 @@ def delete(news_id):
 
 
 @bp.route("/new_prompt", methods=("GET", "POST"))
+@auth_tools.admin_required
 def new_prompt():
     prompt = News.create_matchweek_prompt(Division, Player)
 
@@ -87,6 +91,7 @@ def new_prompt():
 
 
 @bp.route("/test_prompt", methods=("GET", "POST"))
+@auth_tools.admin_required
 def test_prompt():
     prompt = News.get_all_jornalists_inputs(Division)
 

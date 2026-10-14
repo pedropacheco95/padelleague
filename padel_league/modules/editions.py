@@ -1,8 +1,15 @@
 from flask import Blueprint, redirect, render_template, request, url_for
 
 from padel_league.models import Edition, League
+from padel_league.tools import auth_tools
 
 bp = Blueprint("editions", __name__, url_prefix="/editions")
+
+
+@bp.before_request
+@auth_tools.admin_required
+def before_request():
+    pass
 
 
 @bp.route("/create", methods=("GET", "POST"))
@@ -17,7 +24,7 @@ def create():
     return render_template("editions/edition_create.html", leagues=leagues)
 
 
-@bp.route("/delete/<id>", methods=("GET", "POST"))
+@bp.route("/delete/<id>", methods=["POST"])
 def delete(id):
     edition = Edition.query.get(id)
     edition.delete()

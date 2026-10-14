@@ -1,11 +1,13 @@
 from flask import Blueprint, redirect, render_template, session, url_for
 
 from padel_league.models import Edition, Registration
+from padel_league.tools import auth_tools
 
 bp = Blueprint("registrations", __name__, url_prefix="/registrations")
 
 
 @bp.route("/create/<edition_id>", methods=("GET", "POST"))
+@auth_tools.login_required
 def create(edition_id):
     if "user" not in session.keys():
         return render_template("registrations/no_user.html")
@@ -25,6 +27,7 @@ def create(edition_id):
 
 
 @bp.route("/", methods=("GET", "POST"))
+@auth_tools.admin_required
 def registrations():
     registrations = Registration.query.all()
     return render_template(
@@ -32,7 +35,8 @@ def registrations():
     )
 
 
-@bp.route("/delete/<id>", methods=("GET", "POST"))
+@bp.route("/delete/<id>", methods=["POST"])
+@auth_tools.admin_required
 def delete(id):
     registration = Registration.query.filter_by(id=id).first()
     registration.delete()

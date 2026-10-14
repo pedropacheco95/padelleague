@@ -1,4 +1,3 @@
-import csv
 import datetime
 import os
 
@@ -16,11 +15,21 @@ from padel_league.models import (
     Registration,
     User,
 )
+from padel_league.tools import auth_tools
 
 bp = Blueprint("uploads", __name__, url_prefix="/uploads")
 
+# The /uploads/export_db_to_csv route was removed: it dumped every table,
+# password hashes included, into the publicly served static/data/csv folder.
 
-@bp.route("/upload_csv_to_db", methods=["GET", "POST"])
+
+@bp.before_request
+@auth_tools.admin_required
+def before_request():
+    pass
+
+
+@bp.route("/upload_csv_to_db", methods=["POST"])
 def upload_csv_to_db():
 
     leagues = dict()
@@ -253,48 +262,6 @@ def upload_csv_to_db():
             registration.create()
     f.close()
 
-    return redirect(url_for("main.index"))
-
-
-@bp.route("/export_db_to_csv", methods=["GET", "POST"])
-def export_db_to_csv():
-    models = User.query.first().all_tables_object()
-    instances = User.query.first().get_all_tables()
-    for model in models.keys():
-        models[model] = models[model].__table__.columns.keys()
-    for model in instances.keys():
-        instances[model] = instances[model].all()
-
-    values = {}
-    for model in models.keys():
-        values[model] = []
-        for instance in instances[model]:
-            instance_values = []
-            for field in models[model]:
-                instance_values.append(getattr(instance, field))
-            values[model].append(instance_values)
-
-    for model in models.keys():
-        if model != "news":
-            file = os.path.join("padel_league/static/data/csv", "%s.csv" % model)
-            fields = models[model]
-            rows = values[model]
-
-            with open(file, "w") as f:
-                write = csv.writer(f)
-
-                write.writerow(fields)
-                write.writerows(rows)
-        else:
-            file = os.path.join("padel_league/static/data/csv", "%s.csv" % model)
-            fields = models[model]
-            rows = values[model]
-
-            with open(file, "w") as f:
-                write = csv.writer(f, delimiter="|")
-
-                write.writerow(fields)
-                write.writerows(rows)
     return redirect(url_for("main.index"))
 
 

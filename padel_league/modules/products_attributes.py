@@ -2,7 +2,15 @@ from flask import Blueprint, redirect, render_template, request, url_for
 
 from padel_league.models import ProductAttribute, ProductAttributeValue
 
+from padel_league.tools import auth_tools
+
 bp = Blueprint("products_attributes", __name__, url_prefix="/products_attributes")
+
+
+@bp.before_request
+@auth_tools.admin_required
+def before_request():
+    pass
 
 
 @bp.route("/create", methods=("GET", "POST"))
@@ -62,7 +70,7 @@ def edit(id=None):
     )
 
 
-@bp.route("/delete/<id>", methods=("GET", "POST"))
+@bp.route("/delete/<id>", methods=["POST"])
 def delete(id):
     product_attribute = ProductAttribute.query.get(id)
     for value in product_attribute.values:
