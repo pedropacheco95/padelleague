@@ -2,12 +2,13 @@ import datetime
 import os
 
 import unidecode
-from flask import Blueprint, redirect, render_template, request, session, url_for
+from flask import Blueprint, abort, redirect, render_template, request, session, url_for
+from flask_login import current_user
 from werkzeug.security import generate_password_hash
 
 from padel_league.model import Image
 from padel_league.models import League, Player
-from padel_league.tools import image_tools
+from padel_league.tools import auth_tools, image_tools
 
 bp = Blueprint("players", __name__, url_prefix="/players")
 
@@ -15,6 +16,11 @@ bp = Blueprint("players", __name__, url_prefix="/players")
 @bp.route("/ranking", methods=("GET", "POST"))
 @bp.route("/ranking/<recalculate>", methods=("GET", "POST"))
 def players(recalculate=None):
+    if recalculate == "recalculate":
+        # Writes the stored ranking: admin only.
+        denied = auth_tools.admin_required(lambda: None)()
+        if denied is not None:
+            return denied
     league = League.query.first()
     if recalculate == "recalculate":
         league.update_rankings()
@@ -30,8 +36,13 @@ def player(id):
 
 
 @bp.route("/edit/<id>", methods=("GET", "POST"))
+@auth_tools.login_required
 def edit(id):
-    player = Player.query.filter_by(id=id).first()
+    player = Player.query.filter_by(id=id).first_or_404()
+    # Only the player themself or an admin may change the player and the
+    # linked account (username / email / password).
+    if not current_user.is_admin and current_user.player_id != player.id:
+        abort(403)
     if request.method == "POST":
         user = player.user
         user_info = {

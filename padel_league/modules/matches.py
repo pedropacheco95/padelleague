@@ -11,6 +11,7 @@ from flask import (
 )
 
 from padel_league.models import Association_PlayerMatch, Division, Match, Player
+from padel_league.tools import auth_tools
 
 bp = Blueprint("matches", __name__, url_prefix="/matches")
 
@@ -38,6 +39,7 @@ def by_matchweek(matchweek, division=None):
 
 @bp.route("/for_edit", methods=("GET", "POST"))
 @bp.route("/for_edit/<division_id>", methods=("GET", "POST"))
+@auth_tools.admin_required
 def for_edit(division_id=None):
     division = None
     if division_id:
@@ -93,6 +95,7 @@ def player(player_id, type=None, division_id=None):
 
 
 @bp.route("/edit/<id>", methods=("GET", "POST"))
+@auth_tools.admin_required
 def edit(id):
     match = Match.query.filter_by(id=id).first()
     if request.method == "POST":
@@ -150,6 +153,7 @@ def edit(id):
 
 
 @bp.route("/create/<division_id>", methods=("GET", "POST"))
+@auth_tools.admin_required
 def create(division_id):
     division = Division.query.filter_by(id=division_id).first()
     players = [rel.player for rel in division.players_relations]

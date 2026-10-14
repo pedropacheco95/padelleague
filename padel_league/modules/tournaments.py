@@ -1,6 +1,7 @@
 from flask import Blueprint, redirect, render_template, request, url_for
 
 from padel_league.models import Division
+from padel_league.tools import auth_tools
 
 bp = Blueprint("tournaments", __name__, url_prefix="/tournaments")
 
@@ -31,6 +32,10 @@ def tournaments():
 @bp.route("/<id>/<recalculate>", methods=("GET", "POST"))
 def tournament(id, recalculate=False):
     if recalculate == "recalculate":
+        # Recomputes and stores the table on POST: admin only.
+        denied = auth_tools.admin_required(lambda: None)()
+        if denied is not None:
+            return denied
         recalculate = True
     division = Division.query.filter_by(id=id).first()
     division.update_table(recalculate)
@@ -41,11 +46,13 @@ def tournament(id, recalculate=False):
 
 
 @bp.route("/edit/<id>", methods=("GET", "POST"))
+@auth_tools.admin_required
 def edit(id):
     return render_template("tournaments/edit_tournament.html")
 
 
-@bp.route("/delete/<division_id>", methods=("GET", "POST"))
+@bp.route("/delete/<division_id>", methods=["POST"])
+@auth_tools.admin_required
 def delete(division_id):
     division = Division.query.filter_by(id=division_id).first()
     for match in division.matches:

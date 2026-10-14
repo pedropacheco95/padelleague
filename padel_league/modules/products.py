@@ -13,12 +13,13 @@ from padel_league.models import (
     ProductAttributeValue,
     ProductImage,
 )
-from padel_league.tools import image_tools
+from padel_league.tools import auth_tools, image_tools
 
 bp = Blueprint("products", __name__, url_prefix="/products")
 
 
 @bp.route("/create", methods=("GET", "POST"))
+@auth_tools.admin_required
 def create():
     if request.method == "POST":
 
@@ -142,7 +143,8 @@ def show(id):
     return render_template("products/product.html", product=product)
 
 
-@bp.route("/delete/<id>", methods=("GET", "POST"))
+@bp.route("/delete/<id>", methods=["POST"])
+@auth_tools.admin_required
 def delete(id):
     product = Product.query.get(id)
     product.delete()
