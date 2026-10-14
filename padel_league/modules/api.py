@@ -31,8 +31,8 @@ PUBLIC_ENDPOINTS = {
 # A user's own cart deletes its order lines; ownership is checked in the view.
 LOGGED_IN_ENDPOINTS = {"api.delete_order_line"}
 
-# Columns never written to a CSV export.
-CSV_EXCLUDED_COLUMNS = {"password"}
+# Credentials (password hash, reset code) are never written to a CSV export.
+CSV_EXCLUDED_COLUMNS = {"password", "generated_code"}
 
 
 def _allow():
