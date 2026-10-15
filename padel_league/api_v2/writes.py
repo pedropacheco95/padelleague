@@ -155,7 +155,7 @@ def post_absence(round_id):
     from padel_league.models import Player
 
     substitute = db.session.get(Player, substitute_id) if substitute_id else None
-    return jsonify(ser.absence(absence, group_id, substitute)), 201
+    return jsonify(ser.absence(absence, group_id, substitute, user.player)), 201
 
 
 @bp.route("/absences/<int:absence_id>", methods=["DELETE"])
