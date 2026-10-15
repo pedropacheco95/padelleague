@@ -46,7 +46,7 @@ def main():
     parser.add_argument("--scenarios", action="store_true", help="replay scenarios.json (writes) instead of urls.json")
     args = parser.parse_args()
 
-    run_db = args.run_db or f"{args.template}_run"
+    run_db = args.run_db or f"{os.environ.get('TEST_DB_PREFIX', 'parity')}_{args.template}_run"
     os.environ.update(
         FLASK_ENV="development",
         POSTGRES_HOST="localhost",

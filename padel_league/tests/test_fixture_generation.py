@@ -52,6 +52,8 @@ def app():
     app = create_app(
         {
             "TESTING": True,
+            # Old-model unit test on SQLite: compat is a real schema here.
+            "ALLOW_COMPAT_WRITES": True,
             "SQLALCHEMY_DATABASE_URI": f"sqlite:///{db_path}",
             "SQLALCHEMY_TRACK_MODIFICATIONS": False,
             # create_app bypasses the Config class when given a test config,

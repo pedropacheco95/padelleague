@@ -13,7 +13,7 @@ response is unchanged, but nothing is persisted:
 Endpoints that must write on GET are listed in `_writes_on_get`.
 """
 
-from flask import request
+from flask import current_app, has_app_context, request
 from sqlalchemy import event
 
 from .sql_db import db
@@ -76,6 +76,9 @@ def _is_compat(obj):
 def init_compat_guard():
     @event.listens_for(db.session, "before_flush")
     def _refuse_compat_writes(session, flush_context, instances):
+        # Unit tests of the old models run on SQLite, where compat is a real schema.
+        if has_app_context() and current_app.config.get("ALLOW_COMPAT_WRITES"):
+            return
         offenders = [o for o in list(session.new) + list(session.dirty) + list(session.deleted) if _is_compat(o)]
         # Only objects with real column changes count; touched relationships alone do not.
         offenders = [o for o in offenders if o in session.new or o in session.deleted or session.is_modified(o)]

@@ -5,7 +5,6 @@ migration applied (template database `teams_template`); they are skipped when
 it is not there. Each test gets a fresh copy.
 """
 
-import subprocess
 from collections import Counter
 from datetime import datetime, timedelta
 
@@ -43,72 +42,32 @@ def test_auto_pairs_refuses_an_odd_count():
 
 
 # --- API --------------------------------------------------------------------
-
-TEMPLATE = "teams_template"
-
-
-def _psql(*args):
-    return subprocess.run(["psql", "-h", "localhost", "-U", "postgres", "-Atc", *args], capture_output=True, text=True)
-
-
-def _template_exists():
-    out = _psql(f"select 1 from pg_database where datname='{TEMPLATE}'", "postgres")
-    return out.stdout.strip() == "1"
+# Runs on the session's clone of v2_template (see conftest.pg); every test is rolled back.
 
 
 @pytest.fixture
-def app():
-    if not _template_exists():
-        pytest.skip(f"local template database {TEMPLATE} not found")
-    name = "teams_pytest"
-    subprocess.run(["dropdb", "-h", "localhost", "-U", "postgres", "--if-exists", name], check=True)
-    subprocess.run(["createdb", "-h", "localhost", "-U", "postgres", "-T", TEMPLATE, name], check=True)
-
-    from padel_league import create_app
-    from padel_league.modules import chatbot_api
-
-    chatbot_api.orchestrator_agent = chatbot_api.orchestrator_agent or object()
-    app = create_app(
-        {
-            "TESTING": True,
-            "SQLALCHEMY_DATABASE_URI": f"postgresql://postgres@localhost:5432/{name}",
-            "SQLALCHEMY_TRACK_MODIFICATIONS": False,
-            "SECRET_KEY": "test",
-            "JWT_SECRET_KEY": "test-jwt-secret-of-at-least-32-bytes",
-            "JWT_TOKEN_LOCATION": ["headers"],
-            "JWT_HEADER_TYPE": "Bearer",
-        }
-    )
-    yield app
-    from padel_league.sql_db import db
-
-    with app.app_context():
-        db.session.remove()
-        db.engine.dispose()
-    subprocess.run(["dropdb", "-h", "localhost", "-U", "postgres", "--if-exists", name])
+def app(pg):
+    return pg
 
 
 def _roster_users(app, n):
     """(user_id, player_id) of the first n roster players that have a login."""
     from padel_league.models import User
-    from padel_league.models.teams import TeamsPlayer
+    from padel_league.services import teams_pairing
 
-    with app.app_context():
-        roster = {r.player_id for r in TeamsPlayer.query.all()}
-        users = User.query.filter(User.player_id.in_(roster)).order_by(User.player_id).limit(n).all()
-        return [(u.id, u.player_id) for u in users]
+    roster = teams_pairing.roster_ids(teams_pairing.current_mini_tournament())
+    users = User.query.filter(User.player_id.in_(roster)).order_by(User.player_id).limit(n).all()
+    return [(u.id, u.player_id) for u in users]
 
 
 def _as(app, user_id):
-    with app.app_context():
-        return {"Authorization": f"Bearer {create_access_token(identity=str(user_id))}"}
+    return {"Authorization": f"Bearer {create_access_token(identity=str(user_id))}"}
 
 
 def _admin(app):
     from padel_league.models import User
 
-    with app.app_context():
-        return _as(app, User.query.filter_by(super_admin=True).first().id)
+    return _as(app, User.query.filter_by(super_admin=True).first().id)
 
 
 def test_state_is_public_and_lists_the_roster(app):
@@ -151,12 +110,11 @@ def test_choices_need_a_login(app):
 
 
 def test_choices_close_at_the_deadline(app):
-    from padel_league.models.teams import TeamsMiniTournament
+    from padel_league.services import teams_pairing
     from padel_league.sql_db import db
 
-    with app.app_context():
-        TeamsMiniTournament.query.first().pairing_deadline = datetime.utcnow() - timedelta(minutes=1)
-        db.session.commit()
+    teams_pairing.current_mini_tournament().pairing_deadline = datetime.utcnow() - timedelta(minutes=1)
+    db.session.commit()
     (ua, _), (_, pb) = _roster_users(app, 2)
     response = app.test_client().post("/api/v1/teams/partner", json={"partnerId": pb}, headers=_as(app, ua))
     assert response.status_code == 400
@@ -164,18 +122,20 @@ def test_choices_close_at_the_deadline(app):
 
 
 def test_fourth_time_with_the_same_partner_is_refused(app):
-    from padel_league.models.teams import TeamsMiniTournament, TeamsPair
+    from padel_league.models.v2 import Entry, Pair, Stage
+    from padel_league.services import teams_pairing
     from padel_league.sql_db import db
 
     (ua, pa), (_, pb) = _roster_users(app, 2)
-    with app.app_context():
-        for number in (2, 3, 4):
-            db.session.add(TeamsMiniTournament(number=number, pairing_deadline=datetime.utcnow() + timedelta(days=1)))
-        db.session.flush()
-        for mt in TeamsMiniTournament.query.filter(TeamsMiniTournament.number < 4):
-            a, b = sorted((pa, pb))
-            db.session.add(TeamsPair(mini_tournament_id=mt.id, player_a_id=a, player_b_id=b, source="admin"))
-        db.session.commit()
+    comp_id = teams_pairing.current_competition().id
+    entries = {e.player_id: e.id for e in Entry.query.filter_by(competition_id=comp_id)}
+    a, b = sorted((entries[pa], entries[pb]))
+    for stage in Stage.query.filter_by(competition_id=comp_id).order_by(Stage.number):
+        if stage.number < 4:
+            db.session.add(Pair(stage_id=stage.id, entry_a_id=a, entry_b_id=b, formed_by="manual"))
+        else:
+            stage.pairing_deadline = datetime.utcnow() + timedelta(days=1)
+    db.session.commit()
 
     client = app.test_client()
     state = client.get("/api/v1/teams/", headers=_as(app, ua)).get_json()
@@ -206,10 +166,9 @@ def test_close_pairs_everyone_left_by_ranking(app):
 def test_refresh_token_renews_the_session(app):
     from padel_league.models import User
 
-    with app.app_context():
-        user = User.query.first()
-        refresh = create_refresh_token(identity=str(user.id))
-        access = create_access_token(identity=str(user.id))
+    user = User.query.first()
+    refresh = create_refresh_token(identity=str(user.id))
+    access = create_access_token(identity=str(user.id))
     client = app.test_client()
     body = client.post("/api/v1/auth/refresh", headers={"Authorization": f"Bearer {refresh}"}).get_json()
     assert body["access_token"] and body["refresh_token"]
@@ -223,11 +182,10 @@ def _player_user(app):
     from padel_league.models import User
     from padel_league.sql_db import db
 
-    with app.app_context():
-        user = User.query.filter(User.player_id.isnot(None), User.super_admin.isnot(True)).order_by(User.id).first()
-        code = user.new_code()
-        db.session.commit()
-        return user.id, user.player_id, code
+    user = User.query.filter(User.player_id.isnot(None), User.super_admin.isnot(True)).order_by(User.id).first()
+    code = user.new_code()
+    db.session.commit()
+    return user.id, user.player_id, code
 
 
 def test_reset_code_signs_in_and_allows_a_new_password(app):
@@ -243,8 +201,7 @@ def test_reset_code_signs_in_and_allows_a_new_password(app):
     headers = {"Authorization": f"Bearer {body['access_token']}"}
     response = client.put(f"/api/v1/players/{player_id}", data={"password": "nova-password-1"}, headers=headers)
     assert response.status_code == 200, response.get_json()
-    with app.app_context():
-        assert check_password_hash(User.query.get(user_id).password, "nova-password-1")
+    assert check_password_hash(User.query.get(user_id).password, "nova-password-1")
 
 
 def test_a_normal_login_still_needs_the_current_password(app):
@@ -268,12 +225,11 @@ def test_reset_code_dies_after_five_wrong_guesses(app):
 
 def test_admin_adds_and_removes_roster_players(app):
     from padel_league.models import Player
-    from padel_league.models.teams import TeamsPlayer
+    from padel_league.services import teams_pairing
 
-    with app.app_context():
-        roster = {r.player_id for r in TeamsPlayer.query.all()}
-        outsider = Player.query.filter(~Player.id.in_(roster)).order_by(Player.id).first().id
-        insider = sorted(roster)[0]
+    roster = teams_pairing.roster_ids(teams_pairing.current_mini_tournament())
+    outsider = Player.query.filter(~Player.id.in_(roster)).order_by(Player.id).first().id
+    insider = sorted(roster)[0]
     client = app.test_client()
     added = client.post(f"/api/v1/teams/roster/{outsider}", headers=_admin(app)).get_json()
     assert len(added["players"]) == 49
