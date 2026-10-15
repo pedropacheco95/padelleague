@@ -50,7 +50,13 @@ Do not start without these. Ask for anything missing:
    fill the vacancies from the bottom division up, in the order given; a newcomer
    can be placed straight into a division (e.g. a Golden Ticket into the 1ª).
    `players.ranking_points` can inform the suggestion, but the owner decides.
-3. **Edition name** (e.g. "23ª Edição") and **division base name** (e.g. "Inverno 2027").
+3. **Edition name** and **division base name** (e.g. "Inverno 2027"). Editions
+   are numbered in **one running sequence across every format** — the Shuffle
+   was the 20ª, Masters de Outono the 22ª, Teams 2026/27 the 23ª — so the next
+   competition of any format is max "Nª" + 1 (24ª as of 2026-10-15). Leave
+   `--name` out and the commands use `"<N>ª Edição"` from
+   `services.editions.next_edition_number()`; pass a name only for a suffix
+   (e.g. "24ª Edição Powered by …"). Competition names are unique across formats.
    Division names are `<Base> - Nª Divisão` and must be unique.
 4. **Start date, weekday and hour** — e.g. Tuesdays 21:30 → `2027-01-12T21:30:00`.
 5. **Confirm the promotion rule**: default is top 2 up, bottom 2 down at every
@@ -97,7 +103,7 @@ export POSTGRES_PW="$(awk -F: '$1=="35.205.246.86"{print $5}' ~/.pgpass)"
 export ALLOW_REMOTE_DB=1
 
 .venv/bin/flask --app app:run_app propose-edition \
-  --previous <last_id> --name "23ª Edição" --start 2027-01-12T21:30:00 \
+  --previous <last_id> [--name "24ª Edição"] --start 2027-01-12T21:30:00 \
   --prefix "Inverno 2027" \
   --withdrawals 12,40 --new 131,132 \
   [--placed '{"1": [133]}'] [--season 2026/27] [--event-slot classica-2] \
@@ -113,7 +119,7 @@ The plan it writes:
 
 ```json
 {
-  "edition_name": "23ª Edição",
+  "edition_name": "24ª Edição",
   "beginning_datetime": "2027-01-12T21:30:00",
   "divisions": [
     {"name": "Inverno 2027 - 1ª Divisão", "rating": 2000, "players": [45, 27, 28, 18, 32, 16, 13, 7]}

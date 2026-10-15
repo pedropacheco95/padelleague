@@ -155,7 +155,31 @@ def test_rejects_unknown_player(pg):
 
 def test_rejects_duplicate_edition_name(pg):
     with pytest.raises(EditionPlanError, match="already exists"):
-        validate_plan(_plan(_players(), edition_name="22ª Edição"))
+        validate_plan(_plan(_players(), edition_name="22ª Edição Masters de Outono"))
+    # names are unique across formats, not only among Clássicas
+    with pytest.raises(EditionPlanError, match="already exists"):
+        validate_plan(_plan(_players(), edition_name="23ª Edição Teams 2026/27"))
+
+
+def test_next_edition_number_runs_across_every_format(pg):
+    from padel_league.services.editions import edition_number, next_edition_number
+
+    assert edition_number("20ª Edição Shuffle Edition") == 20
+    assert edition_number("Play Off") is None
+    assert next_edition_number() == 24  # 23ª is Teams 2026/27, not a Clássica
+    f.competition(name="30ª Edição Shuffle", format="shuffle")
+    assert next_edition_number() == 31
+
+
+def test_edition_name_defaults_to_the_next_number(pg):
+    from padel_league.services.editions import preview_plan
+
+    plan = _plan(_players())
+    del plan["edition_name"]
+    assert preview_plan(plan)["edition_name"] == "24ª Edição"
+    result = create_edition_from_plan(plan, rng=random.Random(1))
+    assert db.session.get(Competition, result["edition_id"]).name == "24ª Edição"
+    assert validate_plan(_plan(_players(), edition_name=""))["edition_name"] == "25ª Edição"
 
 
 def test_rejects_division_name_already_used(pg):
@@ -222,4 +246,4 @@ def test_preview_plan_shows_the_groups_and_writes_nothing(pg):
     ]
     assert preview["divisions"][0]["players"] == player_ids[8:16]
     with pytest.raises(EditionPlanError):
-        preview_plan(_plan(player_ids, edition_name="22ª Edição"))
+        preview_plan(_plan(player_ids, edition_name="22ª Edição Masters de Outono"))

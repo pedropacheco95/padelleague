@@ -9,10 +9,13 @@ On v2 an edition is a classica competition with one stage (seeded by
 promotion, emits awards) whose groups are the divisions; every player gets an
 entry in the competition and a member row in their group. Optional plan keys:
 ``season`` (name, otherwise the season containing ``beginning_datetime``) and
-``event_slot`` (key such as ``classica-2``; never inferred).
+``event_slot`` (key such as ``classica-2``; never inferred). Without an
+``edition_name`` the edition is called ``"<N>ª Edição"``, N from
+``next_edition_number()``.
 """
 
 import datetime
+import re
 
 from padel_league.model import Image
 from padel_league.models import League, Player
@@ -38,6 +41,29 @@ class EditionPlanError(Exception):
     """The plan is not valid, or conflicts with what is already in the database."""
 
 
+_EDITION_NUMBER = re.compile(r"^\s*(\d+)\s*ª")
+
+
+def edition_number(name):
+    """The leading "Nª" of a competition name as an int, or None."""
+    match = _EDITION_NUMBER.match(name or "")
+    return int(match.group(1)) if match else None
+
+
+def next_edition_number():
+    """One more than the highest "Nª" over every competition, of any format.
+
+    Editions are numbered in a single running sequence across Clássica, Shuffle,
+    Masters and Teams (the Shuffle is the 20ª, Teams 2026/27 the 23ª).
+    """
+    numbers = [edition_number(name) for (name,) in db.session.query(Competition.name)]
+    return max((n for n in numbers if n is not None), default=0) + 1
+
+
+def default_edition_name():
+    return f"{next_edition_number()}ª Edição"
+
+
 def _parse_datetime(value):
     try:
         return datetime.datetime.fromisoformat(str(value))
@@ -56,10 +82,8 @@ def validate_plan(plan):
     if not isinstance(plan, dict):
         raise EditionPlanError("plan must be a JSON object")
 
-    edition_name = (plan.get("edition_name") or "").strip()
-    if not edition_name:
-        raise EditionPlanError("edition_name is required")
-    if Competition.query.filter_by(name=edition_name, format="classica").first():
+    edition_name = (plan.get("edition_name") or "").strip() or default_edition_name()
+    if Competition.query.filter_by(name=edition_name).first():
         raise EditionPlanError(f"an edition named {edition_name!r} already exists")
 
     league_id = plan.get("league_id")
