@@ -41,7 +41,13 @@ def create_app(test_config=None):
                     "http://localhost:8080",
                     "http://35.205.246.86",
                 ]
-            }
+            },
+            r"/api/v2/*": {
+                "origins": [
+                    "http://localhost:8080",
+                    "http://35.205.246.86",
+                ]
+            },
         },
         supports_credentials=False,
         allow_headers=["Content-Type", "Authorization"],

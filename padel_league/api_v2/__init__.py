@@ -1,0 +1,10 @@
+"""/api/v2 — the JSON API on the v2 data model (contract: docs/v2/api/openapi.yaml)."""
+
+from . import auth, competitions, teams
+
+BLUEPRINTS = (auth.bp, competitions.bp, teams.bp)
+
+
+def register_v2_blueprints(app):
+    for bp in BLUEPRINTS:
+        app.register_blueprint(bp)
