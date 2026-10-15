@@ -146,6 +146,13 @@ def test_fourth_time_with_the_same_partner_is_refused(app):
 
 
 def test_close_pairs_everyone_left_by_ranking(app):
+    from padel_league.services import closeout
+    from padel_league.sql_db import db
+
+    # Cut-over step: Shuffle 2025/26 awards + ranking snapshot mirrored into players.*,
+    # so the live ranking that seeds the pairing equals the order the API lists.
+    closeout.close_shuffle(26)
+    db.session.commit()
     client = app.test_client()
     (ua, pa), (ub, pb) = _roster_users(app, 2)
     client.post("/api/v1/teams/partner", json={"partnerId": pb}, headers=_as(app, ua))
