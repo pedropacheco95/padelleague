@@ -1,8 +1,8 @@
 """Competition creation (admin): POST /competitions/preview and POST /competitions.
 
-Clássica: next edition's divisions from the previous competition's standings via
-services.promotion (2 up / 2 down, withdrawals cascade), newcomers fill the bottom,
-then S5's services.editions.create_edition_from_plan writes groups, entries and fixtures.
+Clássica: S1's services.classica_builder plans the next edition from the previous one
+(promotion, withdrawals, newcomers); S5's services.editions.create_edition_from_plan
+writes groups, entries and fixtures.
 Shuffle / Teams builders are not written yet (409 not_available).
 """
 
@@ -10,18 +10,13 @@ import inspect
 from datetime import date, datetime, time
 
 from flask import Blueprint, jsonify
-from sqlalchemy import func
-
 from padel_league.models import Player
-from padel_league.models.v2 import FORMATS, CompetitionGroup, MatchParticipant, Season, Stage
+from padel_league.models.v2 import FORMATS, Season
 from padel_league.services import editions as editions_service
-from padel_league.services import promotion
 from padel_league.sql_db import db
 
-from . import _domain
 from . import serializers as ser
 from ._http import bad_request, conflict, int_arg, json_body, register_error_handlers, role_required
-from .cards import current_stage
 from .competitions import competition_detail, get_competition
 
 bp = Blueprint("api_v2_builders", __name__, url_prefix="/api/v2")
@@ -68,7 +63,17 @@ def parse_body():
         "withdrawals": _ids(data.get("withdrawals"), "withdrawals"),
         "new_players": _ids(data.get("newPlayerIds"), "newPlayerIds"),
         "player_ids": _ids(data.get("playerIds"), "playerIds"),
+        "placed": _placed(data.get("placedNewPlayers")),
     }
+
+
+def _placed(value):
+    """placedNewPlayers: {tier: [player ids]} (Golden Ticket straight into a division)."""
+    if value is None:
+        return None
+    if not isinstance(value, dict):
+        raise bad_request("placedNewPlayers tem de ser um objeto {divisão: [jogadores]}.", "invalid_input")
+    return {int_arg(t, "placedNewPlayers", required=True): _ids(ids, "placedNewPlayers") for t, ids in value.items()}
 
 
 def _ratings(n, previous=()):
@@ -83,74 +88,55 @@ def _ratings(n, previous=()):
     return out
 
 
-def _career_appearances(player_ids):
-    rows = (
-        db.session.query(MatchParticipant.player_id, func.count(MatchParticipant.id))
-        .filter(MatchParticipant.player_id.in_(player_ids))
-        .group_by(MatchParticipant.player_id)
-    )
-    return dict(rows)
-
-
-def classica_divisions(body):
-    """[(tier, rating, [player_id] )], notes — nothing written."""
+def fresh_divisions(body):
+    """A first edition (no previous one): playerIds then newPlayerIds, 8 per division."""
     notes = []
-    if body["from_id"] is None:
-        players = body["player_ids"] + [p for p in body["new_players"] if p not in body["player_ids"]]
-        chunks = [players[i : i + DIVISION_SIZE] for i in range(0, len(players), DIVISION_SIZE)]
-        ratings = _ratings(len(chunks))
-        if chunks and len(chunks[-1]) < DIVISION_SIZE:
-            notes.append(f"A última divisão tem {len(chunks[-1])} jogadores; precisa de {DIVISION_SIZE}.")
-        return [(i + 1, ratings[i], chunk) for i, chunk in enumerate(chunks)], notes
-
-    previous = get_competition(body["from_id"])
-    if previous.format != "classica":
-        raise bad_request("fromCompetitionId tem de ser uma Clássica.", "invalid_input")
-    stage = current_stage(Stage.query.filter_by(competition_id=previous.id).all())
-    groups = (
-        CompetitionGroup.query.filter_by(stage_id=stage.id).order_by(CompetitionGroup.tier).all() if stage else []
-    )
-    if not groups:
-        raise conflict("A competição anterior não tem divisões.", "no_previous_groups")
-
-    standings = []
-    for g in groups:
-        for row in _domain.group_standings(g.id).rows:
-            standings.append(
-                {"player_id": row.player_id, "division": g.tier, "place": row.place, "appearances": row.appearances}
-            )
-    career = _career_appearances([s["player_id"] for s in standings])
-    for s in standings:
-        s["career_appearances"] = career.get(s["player_id"], 0)
-    try:
-        layout, decisions = promotion.next_edition_layout(standings, withdrawn=body["withdrawals"], size=DIVISION_SIZE)
-    except promotion.PromotionError as exc:
-        raise conflict(str(exc), "promotion_failed")
-
-    names = {p.id: p.name for p in Player.query.filter(Player.id.in_([d["player_id"] for d in decisions]))}
-    for d in decisions:
-        notes.append(f"{names.get(d['player_id'], d['player_id'])} → {d['division']}ª: {d['role']} ({d['reason']})")
-
-    newcomers = [p for p in body["new_players"] if all(p not in v for v in layout.values())]
-    tiers = sorted(layout)
-    for tier in tiers:  # holes cascade to the bottom; fill top-down anyway
-        while len(layout[tier]) < DIVISION_SIZE and newcomers:
-            layout[tier].append(newcomers.pop(0))
-    while len(newcomers) >= DIVISION_SIZE:
-        tiers.append(tiers[-1] + 1)
-        layout[tiers[-1]], newcomers = newcomers[:DIVISION_SIZE], newcomers[DIVISION_SIZE:]
-        notes.append(f"Nova {tiers[-1]}ª divisão com {DIVISION_SIZE} estreantes.")
-    if newcomers:
-        notes.append(f"{len(newcomers)} estreante(s) sem lugar (não chegam para uma divisão).")
-    for tier in tiers:
-        if len(layout[tier]) < DIVISION_SIZE:
-            notes.append(f"{tier}ª divisão: faltam {DIVISION_SIZE - len(layout[tier])} jogadores.")
-    ratings = _ratings(len(tiers), [g.rating for g in groups])
-    return [(tier, ratings[i], layout[tier]) for i, tier in enumerate(tiers)], notes
+    players = body["player_ids"] + [p for p in body["new_players"] if p not in body["player_ids"]]
+    chunks = [players[i : i + DIVISION_SIZE] for i in range(0, len(players), DIVISION_SIZE)]
+    ratings = _ratings(len(chunks))
+    if chunks and len(chunks[-1]) < DIVISION_SIZE:
+        notes.append(f"A última divisão tem {len(chunks[-1])} jogadores; precisa de {DIVISION_SIZE}.")
+    return [(i + 1, ratings[i], chunk) for i, chunk in enumerate(chunks)], notes
 
 
 def division_name(competition_name, tier):
     return f"{competition_name} - {tier}ª Divisão"
+
+
+def _s1_plan(body, strict=True):
+    """S1's services.classica_builder.next_classica_plan → (S5 plan, notes): the verified
+    port of the league's rollover (2 up / 2 down, withdrawals cascade, newcomers fill)."""
+    from padel_league.services.classica_builder import next_classica_plan
+
+    if body["from_id"] is None:
+        return None
+    if get_competition(body["from_id"]).format != "classica":
+        raise bad_request("fromCompetitionId tem de ser uma Clássica.", "invalid_input")
+    # A dry run needs no real date (the preview shows groups only); create requires startsOn.
+    starts_on = body["starts_on"] or date.today()
+    return next_classica_plan(
+        body["from_id"],
+        body["name"],
+        datetime.combine(starts_on, DEFAULT_KICKOFF).isoformat(),
+        withdrawals=body["withdrawals"],
+        new_player_ids=body["new_players"],
+        placed_new_players=body["placed"],
+        season=body["season"].name,
+        event_slot=body["event_slot"],
+        # Lenient for the preview (short divisions become notes); strict for create.
+        **({"strict": strict} if "strict" in inspect.signature(next_classica_plan).parameters else {}),
+    )
+
+
+def _plan_and_notes(body, strict=True):
+    """(plan divisions as [(tier, rating, player_ids, name)], notes, plan or None)."""
+    s1 = _s1_plan(body, strict)
+    if s1 is not None:
+        plan, notes = s1
+        divisions = [(i, d["rating"], d["players"], d["name"]) for i, d in enumerate(plan["divisions"], 1)]
+        return divisions, list(notes), plan
+    divisions, notes = fresh_divisions(body)
+    return [(t, r, ids, division_name(body["name"], t)) for t, r, ids in divisions], notes, None
 
 
 def preview(body):
@@ -159,19 +145,19 @@ def preview(body):
             "groups": [],
             "notes": ["Os grupos da Shuffle e da Teams formam-se em cada etapa, não na criação."],
         }
-    divisions, notes = classica_divisions(body)
+    divisions, notes, _ = _plan_and_notes(body, strict=False)
     players = {
-        p.id: p for p in Player.query.filter(Player.id.in_([pid for _, _, ids in divisions for pid in ids]))
+        p.id: p for p in Player.query.filter(Player.id.in_([pid for _, _, ids, _ in divisions for pid in ids]))
     }
     return {
         "groups": [
             {
-                "name": division_name(body["name"], tier),
+                "name": name,
                 "tier": tier,
                 "rating": rating,
                 "players": [ser.player_ref(players[pid]) for pid in ids if pid in players],
             }
-            for tier, rating, ids in divisions
+            for tier, rating, ids, name in divisions
         ],
         "notes": notes,
     }
@@ -200,18 +186,16 @@ def create_competition():
         raise conflict("A criação deste formato ainda não está disponível.", "not_available")
     if not body["starts_on"]:
         raise bad_request("startsOn em falta.", "missing_parameter")
-    divisions, _ = classica_divisions(body)
-    plan = {
-        "edition_name": body["name"],
-        "season": body["season"].name,
-        "beginning_datetime": datetime.combine(body["starts_on"], DEFAULT_KICKOFF).isoformat(),
-        "divisions": [
-            {"name": division_name(body["name"], tier), "rating": rating, "players": ids}
-            for tier, rating, ids in divisions
-        ],
-    }
-    if body["event_slot"]:
-        plan["event_slot"] = body["event_slot"]
+    divisions, _, plan = _plan_and_notes(body)
+    if plan is None:
+        plan = {
+            "edition_name": body["name"],
+            "season": body["season"].name,
+            "beginning_datetime": datetime.combine(body["starts_on"], DEFAULT_KICKOFF).isoformat(),
+            "divisions": [{"name": name, "rating": rating, "players": ids} for _, rating, ids, name in divisions],
+        }
+        if body["event_slot"]:
+            plan["event_slot"] = body["event_slot"]
     try:
         result = editions_service.create_edition_from_plan(plan, actor_user_id=user.id)
     except editions_service.EditionPlanError as exc:

@@ -71,6 +71,17 @@ def season(s, today=None):
     }
 
 
+CLASSICA_MATCHES_PER_ROUND = 3
+
+
+def presences(fmt, appearances):
+    """StandingRow.played = presenças (jornadas). Clássica stores one appearance per
+    match, three per jornada; v1 shows int(appearances / 3), and so do we."""
+    if appearances is None:
+        return None
+    return int(appearances / CLASSICA_MATCHES_PER_ROUND) if fmt == "classica" else appearances
+
+
 def round_(r):
     return {"id": r.id, "number": r.number, "date": iso_date(r.date)}
 

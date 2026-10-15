@@ -129,7 +129,14 @@ def history(player_id):
     for entry_id, member_id, group_id, name, number in groups:
         if entry_id not in latest or number > latest[entry_id][3]:
             latest[entry_id] = (member_id, group_id, name, number)
-    snaps = {s.group_member_id: s for s in StandingSnapshot.query.filter(StandingSnapshot.entry_id.in_(entry_ids))}
+    # A snapshot belongs to its group member; 48 legacy rows have no member and are
+    # matched by their own entry only (never through a missing member id).
+    by_member, by_entry = {}, {}
+    for snap in StandingSnapshot.query.filter(StandingSnapshot.entry_id.in_(entry_ids)):
+        if snap.group_member_id is not None:
+            by_member[snap.group_member_id] = snap
+        else:
+            by_entry[snap.entry_id] = snap
     award_points = defaultdict(float)
     for a in Award.query.filter(Award.entry_id.in_(entry_ids)):
         award_points[a.entry_id] += a.total
@@ -137,7 +144,7 @@ def history(player_id):
     for e in entries:
         comp = by_comp[e.competition_id]
         member_id, group_id, group_name, _ = latest.get(e.id, (None, None, None, None))
-        snap = snaps.get(member_id)
+        snap = by_member.get(member_id) if member_id is not None else by_entry.get(e.id)
         rows.append(
             {
                 "competition": card(comp, data),
@@ -145,7 +152,7 @@ def history(player_id):
                 "groupName": group_name,
                 "place": snap.place if snap else e.final_place,
                 "points": snap.points if snap else None,
-                "played": snap.appearances if snap else None,
+                "played": ser.presences(comp.format, snap.appearances) if snap else None,
                 "wins": snap.wins if snap else None,
                 "draws": snap.draws if snap else None,
                 "losses": snap.losses if snap else None,
@@ -305,14 +312,6 @@ def compare():
 # --- rankings ------------------------------------------------------------------------
 
 
-# ranking_rules.name is English in the database; the site speaks Portuguese.
-RULE_NAMES = {
-    "legacy-last-4-by-id": "Últimas 4 edições (regra até 2026)",
-    "transitional-2026-27": "Últimas 3 terminadas + a atual (2026/27)",
-    "per-slot": "Cada evento substitui o homólogo (a partir de 2027/28)",
-}
-
-
 def ranking_json(snapshot):
     table = ranking_table(snapshot)
     previous = (
@@ -331,7 +330,7 @@ def ranking_json(snapshot):
     }
     return {
         "snapshotId": snapshot.id,
-        "rule": {"key": snapshot.rule.key, "name": RULE_NAMES.get(snapshot.rule.key, snapshot.rule.name)},
+        "rule": {"key": snapshot.rule.key, "name": snapshot.rule.name},
         "computedAt": ser.iso_datetime(snapshot.computed_at),
         "entries": [
             {

@@ -227,9 +227,10 @@ def _teams_edition_rows(competition):
 
 def _shuffle_overall_rows(competition):
     """Overall Shuffle table, from the matches: 3 × group multiplier a win,
-    1 × a draw (as compat.players_in_shuffle_tournament); order by points,
-    presences, games difference. When the final places were stored (the
-    competition-level standing rows), place and next group come from them."""
+    1 × a draw (as compat.players_in_shuffle_tournament), ordered by the
+    Shuffle rule (services.shuffle.overall_order). When the final places were
+    stored (the competition-level standing rows), place and next group come
+    from them."""
     from padel_league.models.v2 import Stage
 
     entries = Entry.query.filter_by(competition_id=competition.id).all()
@@ -246,9 +247,9 @@ def _shuffle_overall_rows(competition):
             row.points += multiplier * (3 * r.wins + r.draws)
             for k in ("appearances", "wins", "draws", "losses", "games_won", "games_lost"):
                 setattr(row, k, getattr(row, k) + getattr(r, k))
-    ordered = sorted(rows.values(), key=lambda r: (-r.points, -r.appearances, -r.games_difference, r.order))
-    for place, row in enumerate(ordered, start=1):
-        row.place = place
+    from padel_league.services import shuffle
+
+    ordered = shuffle.overall_order(competition, list(rows.values()))
 
     stored = {
         s.entry_id: s

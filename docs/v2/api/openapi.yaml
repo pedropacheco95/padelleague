@@ -70,6 +70,7 @@ paths:
         "403": { $ref: "#/components/responses/Error" }
         "401": { $ref: "#/components/responses/Error" }
         "409": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
 
   /competitions/preview:
     post:
@@ -105,6 +106,7 @@ paths:
         "401": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
         "409": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
 
   /competitions/current:
     get:
@@ -156,6 +158,8 @@ paths:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Competition" } } } }
         "401": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
     delete:
       tags: [admin]
       summary: Shuffle — delete the last (unplayed) round
@@ -165,6 +169,7 @@ paths:
         "409": { $ref: "#/components/responses/Error" }
         "401": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
 
   /competitions/{competitionId}/standings:
     parameters: [{ $ref: "#/components/parameters/competitionId" }]
@@ -508,6 +513,12 @@ paths:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/NewsDetail" } } } }
         "404": { $ref: "#/components/responses/Error" }
 
+  /sponsors:
+    get:
+      tags: [site]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/Sponsor" } } } } }
+
   /auth/login:
     post:
       tags: [auth]
@@ -629,6 +640,7 @@ components:
         fromCompetitionId: { type: [integer, "null"], description: Clássica built from the previous one via promotion }
         withdrawals: { type: array, items: { type: integer } }
         newPlayerIds: { type: array, items: { type: integer } }
+        placedNewPlayers: { type: object, additionalProperties: { type: array, items: { type: integer } }, description: "tier → newcomer ids placed straight into that division (Golden Ticket)" }
         playerIds: { type: array, items: { type: integer }, description: Shuffle / Teams roster }
 
     Stage:
@@ -699,6 +711,19 @@ components:
         rankingPlacePoints: { type: [number, "null"], description: Award place points once awarded / projected }
         rankingBonusPoints: { type: [number, "null"] }
         nextGroupTier: { type: [integer, "null"], description: Shuffle next placement }
+        stages:
+          type: array
+          description: Competition standings only — per stage (Teams mini-tournament / Shuffle round) breakdown
+          items:
+            type: object
+            required: [stageNumber]
+            properties:
+              stageNumber: { type: integer }
+              groupId: { type: [integer, "null"] }
+              tier: { type: [integer, "null"] }
+              place: { type: [integer, "null"] }
+              points: { type: [number, "null"], description: Ranking points awarded for that stage (null while its group is live) }
+              setPoints: { type: [number, "null"], description: Teams set points in that mini-tournament }
 
     PlayerRef:
       type: object
@@ -887,7 +912,7 @@ components:
                 required: [rankingPoints, rankingPosition, paired, allowedForMe]
                 properties:
                   rankingPoints: { type: number }
-                  rankingPosition: { type: integer }
+                  rankingPosition: { type: [integer, "null"], description: null when unranked under the current rule }
                   paired: { type: boolean }
                   allowedForMe: { type: boolean }
         pairs:
@@ -910,6 +935,16 @@ components:
             choseMe: { type: array, items: { type: integer } }
             pairId: { type: [integer, "null"] }
             isAdmin: { type: boolean }
+
+    Sponsor:
+      type: object
+      required: [id, name, website, clickUrl]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        website: { type: string, description: The sponsor's site }
+        clickUrl: { type: string, description: "Relative URL of the click-counting redirect (/sponsors/sponsor_click/{id}); link here, not to website" }
+        image: { oneOf: [{ $ref: "#/components/schemas/Image" }, { type: "null" }] }
 
     NewsSummary:
       type: object

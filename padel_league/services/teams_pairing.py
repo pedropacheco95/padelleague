@@ -18,6 +18,7 @@ from datetime import datetime
 
 from padel_league.models import Player
 from padel_league.models.v2 import Competition, Entry, Pair, PartnerRequest, Stage
+from padel_league.domain.errors import DomainError
 from padel_league.services import ranking as ranking_svc
 from padel_league.sql_db import db
 
@@ -272,7 +273,10 @@ def close(stage, positions=None):
     paired = {pid for p in stage_pairs(stage) for pid in pair_players(stage, p)}
     left = Player.query.filter(Player.id.in_(roster_ids(stage) - paired)).all()
     if positions is None:
-        positions = ranking_svc.seeding(stage.competition.season.league_id)[1]
+        try:
+            positions = ranking_svc.seeding(stage.competition.season.league_id)[1]
+        except DomainError as exc:  # e.g. ranking_missing_awards: readable, not a 500
+            raise PairingError(exc.message) from exc
     if not positions:
         order = [p.id for p in sorted(left, key=ranking_key)]
     else:

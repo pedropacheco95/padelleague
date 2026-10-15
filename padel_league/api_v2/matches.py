@@ -121,7 +121,7 @@ def _awards(group_id):
     return {a.entry_id: a for a in rows}
 
 
-def standing_rows(group_id, players):
+def standing_rows(group_id, players, fmt):
     standings = _domain.group_standings(group_id)
     awards = _awards(group_id)
     rows = []
@@ -132,7 +132,7 @@ def standing_rows(group_id, players):
                 "place": r.place,
                 "player": ser.player_ref(players.get(r.player_id) or Player.query.get(r.player_id)),
                 "points": r.points,
-                "played": r.appearances,
+                "played": ser.presences(fmt, r.appearances),
                 "wins": r.wins,
                 "draws": r.draws,
                 "losses": r.losses,
@@ -161,7 +161,7 @@ def group_detail(group):
         .all()
     )
     players = {p.id: p for p in members}
-    frozen, standings = standing_rows(group.id, players)
+    frozen, standings = standing_rows(group.id, players, comp.format)
     rounds = Round.query.filter_by(stage_id=stage.id).order_by(Round.number).all()
     matches = match_query().filter(CompetitionMatch.group_id == group.id).all()
 
@@ -250,17 +250,19 @@ def calendar():
 
 @bp.route("/competitions/<int:competition_id>/standings", methods=["GET"])
 def competition_standings(competition_id):
-    """Shuffle overall / Teams edition total — S1's services.standings.competition_standings.
-    Empty until that service lands."""
+    """Shuffle overall / Teams edition total (S1 services.standings.competition_standings).
+
+    Clássica has none: S1 raises NotFound 'no_competition_standings' → 404."""
+    from padel_league.services.standings import competition_standings as service
+
     from .competitions import get_competition
 
     get_competition(competition_id)
-    service = _domain._service("standings", "competition_standings")
-    if service is None:
-        return jsonify([])
-    result = service(competition_id)
-    rows = getattr(result, "rows", result)
-    players = {p.id: p for p in Player.query.options(joinedload(Player.picture)).filter(Player.id.in_([r.player_id for r in rows]))}
+    rows = service(competition_id).rows
+    players = {
+        p.id: p
+        for p in Player.query.options(joinedload(Player.picture)).filter(Player.id.in_([r.player_id for r in rows]))
+    }
     return jsonify(
         [
             {
@@ -271,12 +273,25 @@ def competition_standings(competition_id):
                 "wins": r.wins,
                 "draws": r.draws,
                 "losses": r.losses,
-                "gamesWon": getattr(r, "games_won", None),
-                "gamesLost": getattr(r, "games_lost", None),
-                "setsWon": getattr(r, "sets_won", None),
-                "setsDrawn": getattr(r, "sets_drawn", None),
-                "attendancePct": getattr(r, "attendance_pct", None),
-                "nextGroupTier": getattr(r, "next_group_tier", None),
+                "gamesWon": r.games_won,
+                "gamesLost": r.games_lost,
+                "setsWon": r.sets_won,
+                "setsDrawn": r.sets_drawn,
+                "attendancePct": r.attendance_pct,
+                "rankingPlacePoints": r.ranking_place_points,
+                "rankingBonusPoints": r.ranking_bonus_points,
+                "nextGroupTier": r.next_group_tier,
+                # Teams: one line per mini-tournament played
+                "stages": [
+                    {
+                        "stageNumber": st.get("stage_number"),
+                        "groupId": st.get("group_id"),
+                        "tier": st.get("tier"),
+                        "place": st.get("place"),
+                        "points": st.get("points"),
+                    }
+                    for st in (r.stages or [])
+                ],
             }
             for r in rows
         ]
