@@ -22,12 +22,9 @@ from padel_league.models.v2 import (
 )
 from padel_league.sql_db import db
 
-# FLAGGED ASSUMPTION (S0, 2026-10-15): the 2025/26 Shuffle (competition 26) has
-# no dates and status 'running' in the data although all 10 jornadas ended.
-# S0 fixes the status in a migration; its months are pending Pedro's answer.
-# Treated as ended, between the 19ª and 21ª (its name, "20ª"). Today's window
-# (last 3 completed) is the same whichever side of the 21ª it falls.
-COMPETITION_OVERRIDES = {26: {"status": "ended", "ends_on": date(2026, 4, 30)}}
+# In-memory corrections of competition facts, {competition_id: {"status": .., "ends_on": ..}}.
+# Empty: comp 26 (Shuffle 2025/26) got status/ends_on in migration f2b6c8d4a3e9.
+COMPETITION_OVERRIDES = {}
 
 
 def _fact(c):
@@ -170,3 +167,30 @@ def mirror_into_players(result):
 def explain(player_id, league_id=1):
     """Every award of the player and whether it counts now, with the reason."""
     return compute(league_id).explain.get(player_id, [])
+
+
+def bootstrap(league_id=1):
+    """Cut-over step, idempotent: award every ended Shuffle that has no awards,
+    then write a ranking snapshot (and mirror players.*) unless the latest one
+    already reflects the latest award event. Returns a short report."""
+    from padel_league.services import closeout
+
+    report = []
+    shuffles = (
+        Competition.query.join(Season, Season.id == Competition.season_id)
+        .filter(Season.league_id == league_id, Competition.format == "shuffle", Competition.status == "ended")
+        .all()
+    )
+    for comp in shuffles:
+        if not AwardEvent.query.filter_by(competition_id=comp.id).first():
+            closeout.close_shuffle(comp.id, recompute_ranking=False)
+            report.append(f"awarded shuffle {comp.id}")
+    last_event = db.session.query(db.func.max(AwardEvent.id)).scalar()
+    latest = latest_snapshot(league_id)
+    rule = rule_for(league_id)
+    if latest and latest.rule_id == rule.id and latest.after_award_event_id == last_event:
+        report.append(f"ranking snapshot {latest.id} already current")
+        return report
+    snap = recompute(league_id, after_award_event_id=last_event, note="bootstrap-ranking")
+    report.append(f"ranking snapshot {snap.id} written ({len(snap.entries)} players, rule {rule.key})")
+    return report

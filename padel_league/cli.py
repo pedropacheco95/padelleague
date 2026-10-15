@@ -5,6 +5,19 @@ from werkzeug.security import generate_password_hash
 
 
 def register_cli(app):
+    v2 = click.Group("v2", help="v2 data-model maintenance.")
+    app.cli.add_command(v2)
+
+    @v2.command("bootstrap-ranking")
+    def bootstrap_ranking():
+        """Award the ended Shuffle(s) and write the current ranking snapshot (idempotent)."""
+        from padel_league.services import ranking
+        from padel_league.sql_db import db
+
+        for line in ranking.bootstrap():
+            click.echo(line)
+        db.session.commit()
+
     @app.cli.command("generate-fixtures")
     @click.option("--division-id", type=int, required=True)
     @click.option(

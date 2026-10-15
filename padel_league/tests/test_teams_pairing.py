@@ -146,12 +146,12 @@ def test_fourth_time_with_the_same_partner_is_refused(app):
 
 
 def test_close_pairs_everyone_left_by_ranking(app):
-    from padel_league.services import closeout
+    from padel_league.services import ranking
     from padel_league.sql_db import db
 
-    # Cut-over step: Shuffle 2025/26 awards + ranking snapshot mirrored into players.*,
-    # so the live ranking that seeds the pairing equals the order the API lists.
-    closeout.close_shuffle(26)
+    # Cut-over step (flask v2 bootstrap-ranking; a no-op on a bootstrapped template):
+    # the live ranking that seeds the pairing then equals the order the API lists.
+    ranking.bootstrap()
     db.session.commit()
     client = app.test_client()
     (ua, pa), (ub, pb) = _roster_users(app, 2)
