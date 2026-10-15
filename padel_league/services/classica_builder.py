@@ -64,6 +64,7 @@ def next_classica_plan(
     season=None,
     event_slot=None,
     division_prefix=None,
+    strict=True,
 ):
     """Returns (plan, notes). Nothing is written.
 
@@ -71,8 +72,9 @@ def next_classica_plan(
     division (e.g. a Golden Ticket into the 1ª); those slots are not cascaded.
     The rest of `new_player_ids` fill the remaining vacancies bottom-up.
     The plan has the previous edition's ratings per tier and group names
-    "<prefix> - Nª Divisão". Raises InvalidInput when the newcomers do not
-    exactly fill the vacancies.
+    "<prefix> - Nª Divisão". With strict (for creating), raises InvalidInput
+    when the newcomers do not exactly fill the vacancies; with strict=False
+    (for a preview) short divisions or leftover newcomers become notes.
     """
     placed = {int(t): [int(p) for p in ids] for t, ids in (placed_new_players or {}).items()}
     groups, standings = previous_standings(previous_competition_id)
@@ -95,7 +97,7 @@ def next_classica_plan(
     open_slots = {t: n for t, n in promotion.vacancies(layout, size=DIVISION_SIZE).items() if n > 0}
     queue = [p for p in newcomers if p not in {x for ids in placed.values() for x in ids}]
     needed = sum(open_slots.values())
-    if needed != len(queue):
+    if strict and needed != len(queue):
         raise InvalidInput(
             f"Há {needed} vagas e {len(queue)} jogadores novos; têm de ser iguais.", "vacancies_mismatch"
         )
@@ -104,9 +106,16 @@ def next_classica_plan(
         notes += [f"jogador novo {pid} entra diretamente na {tier}ª divisão" for pid in ids]
     for tier in sorted(open_slots, reverse=True):
         for _ in range(open_slots[tier]):
+            if not queue:
+                break
             pid = queue.pop(0)
             layout[tier].append(pid)
             notes.append(f"jogador novo {pid} entra na {tier}ª divisão")
+    for tier in sorted(layout):
+        if len(layout[tier]) < DIVISION_SIZE:
+            notes.append(f"{tier}ª divisão: faltam {DIVISION_SIZE - len(layout[tier])} jogadores.")
+    if queue:
+        notes.append(f"{len(queue)} jogador(es) novo(s) sem vaga: {queue}.")
 
     prefix = division_prefix or edition_name
     rating = {g.tier: g.rating for g in groups}
