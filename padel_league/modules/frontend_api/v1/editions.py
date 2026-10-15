@@ -48,12 +48,22 @@ def create_edition():
         if not League.query.filter_by(id=league_id).first():
             return _json_error(f"league_id {league_id} was not found", 404)
 
-    edition = Edition(name=name, league_id=league_id)
-    db.session.add(edition)
+    from flask_jwt_extended import get_jwt_identity
+
+    from padel_league.services.editions import EditionPlanError, create_classica_competition
+
+    identity = get_jwt_identity()
     try:
+        competition = create_classica_competition(
+            name, league_id, actor_user_id=int(identity) if identity is not None else None
+        )
         db.session.commit()
+    except EditionPlanError as exc:
+        db.session.rollback()
+        return _json_error(str(exc), 400)
     except IntegrityError:
         db.session.rollback()
         return _json_error("An edition with this name already exists", 409)
 
-    return jsonify(serialize_edition(edition, short=True)), 201
+    db.session.expire_all()
+    return jsonify(serialize_edition(Edition.query.get(competition.id), short=True)), 201

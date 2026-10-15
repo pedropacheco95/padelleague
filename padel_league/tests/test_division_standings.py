@@ -1,334 +1,111 @@
-import itertools
-import os
-import tempfile
-from datetime import datetime, timedelta
+"""Live division standings as the v1 API serves them (compat views over v2 rows).
 
-import pytest
+The old tests drove Division.update_table on SQLite; on v2 the standings are
+computed by `compat.players_in_division`, so these build v2 rows and read the
+division through the same path the API uses.
+"""
 
-from padel_league import create_app
-from padel_league.models import (
-    Association_PlayerDivision,
-    Association_PlayerMatch,
-    Division,
-    Match,
-    Player,
-)
+from datetime import datetime
+
+from padel_league.models import Division
 from padel_league.modules.frontend_api.v1.serializers import serialize_standings_row
-from padel_league.sql_db import db, init_db
-
-# The shared `app` fixture in conftest.py runs `db.create_all()` against the
-# full metadata, which fails on SQLite: several association tables
-# (e.g. `players_in_match`, `players_in_division`, and unrelated
-# `product_attributes_in_product`) declare an autoincrement `id` alongside a
-# composite primary key, a pattern Postgres (the real backend) accepts but
-# SQLite's DDL compiler rejects outright ("SQLite does not support
-# autoincrement for composite primary keys"). Rather than touch those model
-# definitions (used in prod via Alembic migrations, never via create_all),
-# this fixture creates only the tables this test suite needs and disables
-# the `autoincrement` flag on the two composite-pk association tables just
-# for SQLite DDL purposes, restoring it afterwards. Rows on those two tables
-# are given an explicit `id` in this file's helpers since SQLite won't
-# auto-assign one for a composite primary key.
-_COMPOSITE_PK_TABLES_WITH_AUTOINCREMENT = [
-    Association_PlayerMatch.__table__,
-    Association_PlayerDivision.__table__,
-]
+from padel_league.sql_db import db
+from padel_league.tests import factories as f
 
 
-@pytest.fixture
-def app():
-    db_fd, db_path = tempfile.mkstemp()
+class _Division:
+    def __init__(self, name):
+        self.stage = f.stage(f.competition(name=f"Standings {datetime.utcnow().timestamp()}"))
+        self.group = f.group(self.stage, name=name)
+        self.rounds = {}
+        self.entries = {}
 
-    original_autoincrement = [
-        table.c.id.autoincrement for table in _COMPOSITE_PK_TABLES_WITH_AUTOINCREMENT
-    ]
-    for table in _COMPOSITE_PK_TABLES_WITH_AUTOINCREMENT:
-        table.c.id.autoincrement = False
+    def add(self, name):
+        plr = f.player(name=f"{name} {datetime.utcnow().timestamp()}")
+        ent = f.entry(self.stage.competition, plr)
+        f.member(self.group, ent)
+        self.entries[name] = ent
+        return ent
 
-    app = create_app(
-        {
-            "TESTING": True,
-            # Old-model unit test on SQLite: compat is a real schema here.
-            "ALLOW_COMPAT_WRITES": True,
-            "SQLALCHEMY_DATABASE_URI": f"sqlite:///{db_path}",
-            "SQLALCHEMY_TRACK_MODIFICATIONS": False,
-        }
-    )
+    def entry(self, name):
+        # Players outside the division (substitutes) still need an entry to play.
+        if name not in self.entries:
+            plr = f.player(name=f"{name} {datetime.utcnow().timestamp()}")
+            self.entries[name] = f.entry(self.stage.competition, plr)
+        return self.entries[name]
 
-    with app.app_context():
-        init_db(app)
-        db.metadata.create_all(
-            bind=db.engine,
-            tables=[
-                Division.__table__,
-                Player.__table__,
-                Match.__table__,
-                Association_PlayerMatch.__table__,
-                Association_PlayerDivision.__table__,
-            ],
+    def match(self, matchweek, played, home_games=None, away_games=None, home=(), away=()):
+        if matchweek not in self.rounds:
+            self.rounds[matchweek] = f.round_(self.stage, number=matchweek)
+        sets = [(home_games, away_games)] if home_games is not None else []
+        f.match(
+            self.group,
+            self.rounds[matchweek],
+            home=[self.entry(n) for n in home],
+            away=[self.entry(n) for n in away],
+            sets=sets,
+            status="played" if played else "scheduled",
         )
 
-    yield app
-
-    os.close(db_fd)
-    os.unlink(db_path)
-    for table, value in zip(
-        _COMPOSITE_PK_TABLES_WITH_AUTOINCREMENT, original_autoincrement
-    ):
-        table.c.id.autoincrement = value
-
-
-_assoc_match_id_seq = itertools.count(1)
-_assoc_division_id_seq = itertools.count(1)
-
-
-def _make_player(name):
-    player = Player(name=name)
-    db.session.add(player)
-    return player
-
-
-def _add_player_to_division(player, division):
-    db.session.add(
-        Association_PlayerDivision(
-            id=next(_assoc_division_id_seq),
-            player_id=player.id,
-            division_id=division.id,
-        )
-    )
-
-
-def _make_match(
-    division,
-    matchweek,
-    played,
-    games_home=None,
-    games_away=None,
-    winner=None,
-    home=(),
-    away=(),
-):
-    match = Match(
-        division=division,
-        matchweek=matchweek,
-        played=played,
-        games_home_team=games_home,
-        games_away_team=games_away,
-        winner=winner,
-        date_hour=datetime.now() + timedelta(days=matchweek),
-    )
-    db.session.add(match)
-    db.session.flush()
-
-    for player in home:
-        db.session.add(
-            Association_PlayerMatch(
-                id=next(_assoc_match_id_seq),
-                match_id=match.id,
-                player_id=player.id,
-                team="Home",
-            )
-        )
-    for player in away:
-        db.session.add(
-            Association_PlayerMatch(
-                id=next(_assoc_match_id_seq),
-                match_id=match.id,
-                player_id=player.id,
-                team="Away",
-            )
-        )
-    return match
-
-
-def _standings_by_player_name(division):
-    """Builds {player_name: serialized_row} using the same code path the API uses."""
-    rows = [
-        serialize_standings_row(rel, position)
-        for position, rel in enumerate(
-            division.players_relations_classification(), start=1
-        )
-    ]
-    return {row["player"]["name"]: row for row in rows}
-
-
-def test_standings_include_appearances_wins_draws_losses_and_games(app):
-    """A player with a win, a draw and a loss across a matchweek should have
-    correct appearances/wins/draws/losses/games_won/games_lost, and the
-    opposing pair should show the complementary results. A player added to
-    the division but never scheduled in a match should show all zeros
-    (not error / not be missing)."""
-    with app.app_context():
-        division = Division(name="Division 1")
-        db.session.add(division)
-        db.session.flush()
-
-        p1 = _make_player("P1")
-        p2 = _make_player("P2")
-        p3 = _make_player("P3")
-        p4 = _make_player("P4")
-        p5 = _make_player("P5")  # never plays a match
-        db.session.flush()
-
-        for player in (p1, p2, p3, p4, p5):
-            _add_player_to_division(player, division)
-        db.session.commit()
-
-        # Matchweek 1: three matches between the same two pairs -
-        # P1/P2 win one, draw one, lose one. P3/P4 get the complement.
-        _make_match(
-            division,
-            matchweek=1,
-            played=True,
-            games_home=6,
-            games_away=3,
-            winner=1,
-            home=(p1, p2),
-            away=(p3, p4),
-        )
-        _make_match(
-            division,
-            matchweek=1,
-            played=True,
-            games_home=4,
-            games_away=4,
-            winner=0,
-            home=(p1, p2),
-            away=(p3, p4),
-        )
-        _make_match(
-            division,
-            matchweek=1,
-            played=True,
-            games_home=2,
-            games_away=6,
-            winner=-1,
-            home=(p1, p2),
-            away=(p3, p4),
-        )
-        # An unplayed match in a future matchweek keeps the division "in
-        # progress" so update_table doesn't try to close it out / touch
-        # edition.league (division.edition is intentionally None here).
-        _make_match(division, matchweek=2, played=False, home=(p1, p2), away=(p3, p4))
-        db.session.commit()
-
-        division.update_table(force_update=True)
-
-        standings = _standings_by_player_name(division)
-
-        for name in ("P1", "P2"):
-            row = standings[name]
-            assert row["appearances"] == 1  # 3 raw match rows == 1 matchweek
-            assert row["wins"] == 1
-            assert row["draws"] == 1
-            assert row["losts"] == 1
-            assert row["gamesWon"] == 6 + 4 + 2
-            assert row["gamesLost"] == 3 + 4 + 6
-            assert row["points"] == 3 * 1 + 1 * 1
-
-        for name in ("P3", "P4"):
-            row = standings[name]
-            assert row["appearances"] == 1
-            assert row["wins"] == 1
-            assert row["draws"] == 1
-            assert row["losts"] == 1
-            assert row["gamesWon"] == 3 + 4 + 6
-            assert row["gamesLost"] == 6 + 4 + 2
-            assert row["points"] == 3 * 1 + 1 * 1
-
-        # Edge case: player never scheduled in any match for this division.
-        row = standings["P5"]
-        assert row["appearances"] == 0
-        assert row["wins"] == 0
-        assert row["draws"] == 0
-        assert row["losts"] == 0
-        assert row["gamesWon"] == 0
-        assert row["gamesLost"] == 0
-        assert row["points"] == 0
-
-
-def test_standings_preserve_existing_points_based_ordering(app):
-    """Adding the new stat columns must not change the ranking: the row
-    order coming out of players_relations_classification() (points desc,
-    unchanged logic) must match the order the new fields are attached to."""
-    with app.app_context():
-        division = Division(name="Division 2")
-        db.session.add(division)
-        db.session.flush()
-
-        winner = _make_player("Winner")
-        loser = _make_player("Loser")
-        db.session.flush()
-
-        for player in (winner, loser):
-            _add_player_to_division(player, division)
-        db.session.commit()
-
-        _make_match(
-            division,
-            matchweek=1,
-            played=True,
-            games_home=6,
-            games_away=0,
-            winner=1,
-            home=(winner,),
-            away=(loser,),
-        )
-        _make_match(division, matchweek=2, played=False, home=(winner,), away=(loser,))
-        db.session.commit()
-
-        division.update_table(force_update=True)
-
-        ordered_relations = division.players_relations_classification()
-        ordered_names = [rel.player.name for rel in ordered_relations]
-        assert ordered_names == ["Winner", "Loser"]
-
-        rows = [
-            serialize_standings_row(rel, position)
-            for position, rel in enumerate(ordered_relations, start=1)
-        ]
-        assert [row["player"]["name"] for row in rows] == ["Winner", "Loser"]
-        assert rows[0]["points"] > rows[1]["points"]
-
-
-def test_standings_break_points_ties_by_appearances_then_games_difference(app):
-    """Players level on points are ordered by presenças (more first), then by
-    games difference — not by the order they were added to the division."""
-    with app.app_context():
-        division = Division(name="Division 3")
-        db.session.add(division)
-        db.session.flush()
-
-        # Added in the "wrong" order so the tie-break has to do the work.
-        rare, regular, big_margin, small_margin = (
-            _make_player(name)
-            for name in ("Rare", "Regular", "BigMargin", "SmallMargin")
-        )
-        substitute = _make_player("Substitute")  # not in the division
-        db.session.flush()
-        for player in (rare, regular, big_margin, small_margin):
-            _add_player_to_division(player, division)
-        db.session.commit()
-
-        # Rare: 1 win (3 pts, 1 presença). Regular: 1 win + 1 loss (3 pts, 2).
-        _make_match(division, 1, True, 6, 5, 1, home=(rare,), away=(small_margin,))
-        _make_match(division, 1, True, 6, 5, 1, home=(regular,), away=(big_margin,))
-        # BigMargin/SmallMargin: 1 win + 1 loss each (3 pts, 2 presenças),
-        # but BigMargin wins 6-0 → better games difference.
-        _make_match(division, 2, True, 6, 0, 1, home=(big_margin,), away=(regular,))
-        _make_match(
-            division, 2, True, 6, 5, 1, home=(small_margin,), away=(substitute,)
-        )
-        _make_match(division, 3, False, home=(rare,), away=(regular,))
-        db.session.commit()
-
-        division.update_table(force_update=True)
-
+    def standings(self):
+        db.session.expire_all()
+        division = Division.query.get(self.group.id)
         ordered = division.players_relations_classification()
-        assert [rel.player.name for rel in ordered] == [
-            "BigMargin",  # 3 pts, 2 presenças, +5
-            "SmallMargin",  # 3 pts, 2 presenças, 0
-            "Regular",  # 3 pts, 2 presenças, -5
-            "Rare",  # 3 pts, 1 presença, +1 — presenças outrank difference
-        ]
-        assert [rel.place for rel in ordered] == [1, 2, 3, 4]
+        names = {e.player_id: n for n, e in self.entries.items()}
+        rows = [serialize_standings_row(rel, pos) for pos, rel in enumerate(ordered, start=1)]
+        return ordered, {names[rel.player_id]: row for rel, row in zip(ordered, rows)}, names
+
+
+def test_standings_include_appearances_wins_draws_losses_and_games(pg):
+    d = _Division("Division 1")
+    for name in ("P1", "P2", "P3", "P4", "P5"):  # P5 never plays
+        d.add(name)
+    d.match(1, True, 6, 3, home=("P1", "P2"), away=("P3", "P4"))
+    d.match(1, True, 4, 4, home=("P1", "P2"), away=("P3", "P4"))
+    d.match(1, True, 2, 6, home=("P1", "P2"), away=("P3", "P4"))
+    d.match(2, False, home=("P1", "P2"), away=("P3", "P4"))
+
+    _, standings, _ = d.standings()
+    for name, won, lost in (("P1", 12, 13), ("P2", 12, 13), ("P3", 13, 12), ("P4", 13, 12)):
+        row = standings[name]
+        assert row["appearances"] == 1  # 3 raw match rows == 1 matchweek
+        assert (row["wins"], row["draws"], row["losts"]) == (1, 1, 1)
+        assert (row["gamesWon"], row["gamesLost"]) == (won, lost)
+        assert row["points"] == 4
+
+    row = standings["P5"]
+    assert (row["appearances"], row["wins"], row["draws"], row["losts"]) == (0, 0, 0, 0)
+    assert (row["gamesWon"], row["gamesLost"], row["points"]) == (0, 0, 0)
+
+
+def test_standings_preserve_existing_points_based_ordering(pg):
+    d = _Division("Division 2")
+    d.add("Winner")
+    d.add("Loser")
+    d.match(1, True, 6, 0, home=("Winner",), away=("Loser",))
+    d.match(2, False, home=("Winner",), away=("Loser",))
+
+    ordered, standings, names = d.standings()
+    assert [names[rel.player_id] for rel in ordered] == ["Winner", "Loser"]
+    assert standings["Winner"]["points"] > standings["Loser"]["points"]
+
+
+def test_standings_break_points_ties_by_appearances_then_games_difference(pg):
+    d = _Division("Division 3")
+    # Added in the "wrong" order so the tie-break has to do the work.
+    for name in ("Rare", "Regular", "BigMargin", "SmallMargin"):
+        d.add(name)
+    d.match(1, True, 6, 5, home=("Rare",), away=("SmallMargin",))
+    d.match(1, True, 6, 5, home=("Regular",), away=("BigMargin",))
+    d.match(2, True, 6, 0, home=("BigMargin",), away=("Regular",))
+    d.match(2, True, 6, 5, home=("SmallMargin",), away=("Substitute",))
+    d.match(3, False, home=("Rare",), away=("Regular",))
+
+    ordered, _, names = d.standings()
+    assert [names[rel.player_id] for rel in ordered] == [
+        "BigMargin",  # 3 pts, 2 presenças, +5
+        "SmallMargin",  # 3 pts, 2 presenças, 0
+        "Regular",  # 3 pts, 2 presenças, -5
+        "Rare",  # 3 pts, 1 presença, +1 — presenças outrank difference
+    ]
+    assert [rel.place for rel in ordered] == [1, 2, 3, 4]

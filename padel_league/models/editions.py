@@ -20,7 +20,10 @@ class Edition(db.Model, model.Model):
     divisions = relationship("Division", back_populates="edition")
 
     players_relations_registrations = relationship(
-        "Registration", back_populates="edition"
+        "Registration",
+        primaryjoin="Edition.id == Registration.edition_id",
+        foreign_keys="Registration.edition_id",
+        back_populates="edition",
     )
 
     def has_ended(self):
@@ -33,6 +36,9 @@ class Edition(db.Model, model.Model):
         if not self.divisions:
             return "Sem data"
         division = self.divisions[0]
+        # A division created without dates (v1 POST allows it) has no range yet.
+        if division.beginning_datetime is None or division.end_date is None:
+            return "Sem data"
         start_day = division.beginning_datetime.day
         end_day = division.end_date.day
 

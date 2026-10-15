@@ -1,388 +1,240 @@
-import itertools
-import os
-import tempfile
+"""Fixture generation on the v2 model (Postgres, `pg` fixture, no compat writes).
+
+Rows are written as v2 matches/participants; the assertions read them back
+both directly and through the compat views the v1 API still serves.
+"""
+
+import random
 from collections import Counter
 from datetime import datetime, timedelta
 
 import pytest
-from sqlalchemy import event
 
-from padel_league import create_app
-from padel_league.modules import chatbot_api
-from padel_league.models import (
-    User,
-    Association_PlayerDivision,
-    Association_PlayerMatch,
-    Division,
-    Edition,
-    League,
-    Match,
-    Player,
-)
+from padel_league.models import Division, Match
+from padel_league.models.v2 import CompetitionMatch, MatchParticipant, Round
 from padel_league.services.fixtures import (
     FixtureGenerationError,
+    fields_for,
     generate_division_fixtures,
+    generate_group_fixtures,
 )
-from padel_league.sql_db import db, init_db
-
-# Same SQLite workaround as test_division_standings.py: `players_in_match` and
-# `players_in_division` declare an autoincrement `id` inside a composite
-# primary key, which Postgres accepts (the `id` gets a sequence default) but
-# SQLite's DDL compiler rejects. We disable the flag for DDL, and — because the
-# service under test deliberately does not assign ids by hand — install a
-# Python-side default so SQLite still gets a unique id per row.
-_COMPOSITE_PK_TABLES_WITH_AUTOINCREMENT = [
-    Association_PlayerMatch.__table__,
-    Association_PlayerDivision.__table__,
-]
+from padel_league.sql_db import db
+from padel_league.tests import factories as f
 
 START = datetime(2026, 9, 15, 21, 30)
 
 
-@pytest.fixture
-def app():
-    db_fd, db_path = tempfile.mkstemp()
-
-    original_autoincrement = [
-        table.c.id.autoincrement for table in _COMPOSITE_PK_TABLES_WITH_AUTOINCREMENT
-    ]
-    for table in _COMPOSITE_PK_TABLES_WITH_AUTOINCREMENT:
-        table.c.id.autoincrement = False
-
-    app = create_app(
-        {
-            "TESTING": True,
-            # Old-model unit test on SQLite: compat is a real schema here.
-            "ALLOW_COMPAT_WRITES": True,
-            "SQLALCHEMY_DATABASE_URI": f"sqlite:///{db_path}",
-            "SQLALCHEMY_TRACK_MODIFICATIONS": False,
-            # create_app bypasses the Config class when given a test config,
-            # so the JWT settings the API endpoints need have to be spelled out.
-            "JWT_SECRET_KEY": "test-jwt-secret",
-            "JWT_TOKEN_LOCATION": ["headers"],
-            "JWT_HEADER_TYPE": "Bearer",
-        }
-    )
-
-    # chatbot_api registers a `before_app_request` hook that builds the LLM
-    # agents on the first request of *any* endpoint. Mark them as already
-    # initialised so hitting an unrelated API route doesn't need an API key.
-    chatbot_api.orchestrator_agent = chatbot_api.orchestrator_agent or object()
-
-    with app.app_context():
-        init_db(app)
-        db.metadata.create_all(
-            bind=db.engine,
-            tables=[
-                League.__table__,
-                Edition.__table__,
-                Division.__table__,
-                Player.__table__,
-                Match.__table__,
-                Association_PlayerMatch.__table__,
-                Association_PlayerDivision.__table__,
-                User.__table__,
-            ],
-        )
-        # The generate endpoint is admin-only; _auth_header signs in as user 1.
-        db.session.add(User(id=1, username="admin", email="admin@example.com", password="x", is_admin=True))
-        db.session.commit()
-
-    yield app
-
-    os.close(db_fd)
-    os.unlink(db_path)
-    for table, autoincrement in zip(
-        _COMPOSITE_PK_TABLES_WITH_AUTOINCREMENT, original_autoincrement
-    ):
-        table.c.id.autoincrement = autoincrement
+def _group(player_count=8, starts_at=START, stage=None, rating=2000, name=None):
+    if stage is None:
+        stage = f.stage(f.competition(name=f"Fixtures {datetime.utcnow().timestamp()}"))
+    grp = f.group(stage, rating=rating, name=name, starts_at=starts_at)
+    players = []
+    for _ in range(player_count):
+        plr = f.player()
+        f.member(grp, f.entry(stage.competition, plr))
+        players.append(plr.id)
+    db.session.expire(grp, ["members"])
+    return grp, players
 
 
-# SQLite will not auto-assign the composite-pk `id`, and the service under test
-# deliberately leaves it to the database (Postgres has a sequence default), so
-# fill it in on the way to the insert.
-_assoc_ids = itertools.count(1)
+def _matches(grp):
+    return CompetitionMatch.query.filter_by(group_id=grp.id).order_by(CompetitionMatch.id).all()
 
 
-@event.listens_for(Association_PlayerMatch, "before_insert", propagate=True)
-@event.listens_for(Association_PlayerDivision, "before_insert", propagate=True)
-def _assign_assoc_id(_mapper, _connection, target):
-    if target.id is None:
-        target.id = next(_assoc_ids)
-
-
-_division_assoc_id = itertools.count(1)
-
-
-def _make_division(app, player_count=8, beginning=START):
-    """Create a division with `player_count` players and return (id, [player ids])."""
-    with app.app_context():
-        division = Division(
-            name=f"Teste {next(_division_assoc_id)}ª Divisão",
-            beginning_datetime=beginning,
-            rating=2000,
-        )
-        db.session.add(division)
-        db.session.flush()
-
-        player_ids = []
-        for i in range(player_count):
-            player = Player(name=f"Jogador {i + 1}")
-            db.session.add(player)
-            db.session.flush()
-            db.session.add(
-                Association_PlayerDivision(
-                    player_id=player.id, division_id=division.id, place=i + 1
-                )
-            )
-            player_ids.append(player.id)
-
-        db.session.commit()
-        return division.id, player_ids
-
-
-def _generate(app, division_id, **kwargs):
-    with app.app_context():
-        division = Division.query.get(division_id)
-        return generate_division_fixtures(division, **kwargs)
-
-
-def test_generates_seven_matchweeks_of_six_games(app):
-    division_id, _ = _make_division(app)
-    summary = _generate(app, division_id)
+def test_generates_seven_matchweeks_of_six_games(pg):
+    grp, _ = _group()
+    summary = generate_group_fixtures(grp)
 
     assert summary["matches_created"] == 42
-
-    with app.app_context():
-        matches = Match.query.filter_by(division_id=division_id).all()
-        assert len(matches) == 42
-        per_matchweek = Counter(match.matchweek for match in matches)
-        assert per_matchweek == {mw: 6 for mw in range(1, 8)}
-        assert all(match.played is False for match in matches)
+    matches = _matches(grp)
+    assert len(matches) == 42
+    assert Counter(m.round.number for m in matches) == {mw: 6 for mw in range(1, 8)}
+    assert all(m.status == "scheduled" for m in matches)
 
 
-def test_every_match_has_two_home_and_two_away(app):
-    division_id, _ = _make_division(app)
-    _generate(app, division_id)
+def test_rounds_are_shared_by_the_stage(pg):
+    grp_a, _ = _group(rating=2000, name="A")
+    grp_b, _ = _group(stage=grp_a.stage, rating=1000, name="B")
+    generate_group_fixtures(grp_a)
+    generate_group_fixtures(grp_b)
 
-    with app.app_context():
-        for match in Match.query.filter_by(division_id=division_id).all():
-            teams = Counter(rel.team for rel in match.players_relations)
-            assert teams == {"Home": 2, "Away": 2}, f"match {match.id}: {teams}"
-
-
-def test_each_player_partners_every_other_exactly_once(app):
-    division_id, player_ids = _make_division(app)
-    _generate(app, division_id)
-
-    with app.app_context():
-        appearances = Counter()
-        partnerships = Counter()
-        for match in Match.query.filter_by(division_id=division_id).all():
-            for team in ("Home", "Away"):
-                pair = sorted(
-                    rel.player_id for rel in match.players_relations if rel.team == team
-                )
-                partnerships[tuple(pair)] += 1
-                appearances.update(pair)
-
-        # 7 jornadas x 3 jogos each
-        assert appearances == {player_id: 21 for player_id in player_ids}
-        # 4 fixed pairs per jornada x 7 jornadas = all 28 unordered pairs, and
-        # each pair plays the other three pairs once within its own jornada.
-        assert len(partnerships) == 28
-        assert set(partnerships.values()) == {3}
+    rounds = Round.query.filter_by(stage_id=grp_a.stage_id).order_by(Round.number).all()
+    assert [r.number for r in rounds] == list(range(1, 8))
+    assert [r.date for r in rounds] == [(START + timedelta(days=7 * i)).date() for i in range(7)]
+    assert {m.round_id for m in _matches(grp_a)} == {m.round_id for m in _matches(grp_b)}
 
 
-def test_dates_are_weekly_and_fields_alternate(app):
-    division_id, _ = _make_division(app)
-    _generate(app, division_id)
+def test_every_match_has_two_home_and_two_away_members(pg):
+    grp, _ = _group()
+    generate_group_fixtures(grp)
 
-    with app.app_context():
-        matches = (
-            Match.query.filter_by(division_id=division_id)
-            .order_by(Match.matchweek, Match.id)
-            .all()
-        )
-        for match in matches:
-            expected = START + timedelta(days=7 * (match.matchweek - 1))
-            assert match.date_hour == expected
-
-        for matchweek in range(1, 8):
-            fields = [m.field for m in matches if m.matchweek == matchweek]
-            assert fields == ["Campo 1", "Campo 2"] * 3
+    for match in _matches(grp):
+        slots = sorted((p.side, p.slot, p.role) for p in match.participants)
+        assert slots == [("away", 1, "member"), ("away", 2, "member"), ("home", 1, "member"), ("home", 2, "member")]
+        assert all(p.entry_id is not None and p.entry.player_id == p.player_id for p in match.participants)
 
 
-def test_each_division_of_an_edition_gets_its_own_pair_of_courts(app):
-    """All six divisions play at the same time, so 1a..6a take Campos 1..12."""
-    from padel_league.services.fixtures import fields_for
+def test_each_player_partners_every_other_exactly_once(pg):
+    grp, player_ids = _group()
+    generate_group_fixtures(grp)
 
-    with app.app_context():
-        league = League(name="Padel League")
-        db.session.add(league)
-        db.session.flush()
-        edition = Edition(name="22a Edicao", league_id=league.id)
-        db.session.add(edition)
-        db.session.flush()
-        for i in range(6):
-            db.session.add(
-                Division(
-                    name=f"Masters - {i + 1}a Divisao",
-                    rating=2000 // (2**i),
-                    beginning_datetime=START,
-                    edition_id=edition.id,
-                )
-            )
-        db.session.commit()
+    appearances, partnerships = Counter(), Counter()
+    for match in _matches(grp):
+        for side in ("home", "away"):
+            pair = tuple(sorted(p.player_id for p in match.participants if p.side == side))
+            partnerships[pair] += 1
+            appearances.update(pair)
 
-        ladder = sorted(
-            Edition.query.get(edition.id).divisions, key=lambda d: -d.rating
-        )
-        assert [fields_for(d) for d in ladder] == [
-            ("Campo 1", "Campo 2"),
-            ("Campo 3", "Campo 4"),
-            ("Campo 5", "Campo 6"),
-            ("Campo 7", "Campo 8"),
-            ("Campo 9", "Campo 10"),
-            ("Campo 11", "Campo 12"),
-        ]
+    assert appearances == {player_id: 21 for player_id in player_ids}
+    assert len(partnerships) == 28
+    assert set(partnerships.values()) == {3}
 
 
-def test_a_division_with_no_edition_keeps_the_old_courts(app):
-    from padel_league.services.fixtures import fields_for
+def test_dates_are_weekly_and_fields_alternate(pg):
+    grp, _ = _group()
+    generate_group_fixtures(grp)
 
-    division_id, _ = _make_division(app)
-    with app.app_context():
-        assert fields_for(Division.query.get(division_id)) == ("Campo 1", "Campo 2")
+    matches = _matches(grp)
+    for match in matches:
+        assert match.scheduled_at == START + timedelta(days=7 * (match.round.number - 1))
+    for matchweek in range(1, 8):
+        assert [m.court for m in matches if m.round.number == matchweek] == ["Campo 1", "Campo 2"] * 3
 
 
-def test_fields_can_be_overridden_explicitly(app):
-    division_id, _ = _make_division(app)
-    summary = _generate(app, division_id, fields=("Campo 7", "Campo 8"))
+def test_each_group_of_a_stage_gets_its_own_pair_of_courts(pg):
+    stage = f.stage(f.competition(name="Courts"))
+    groups = [f.group(stage, tier=i + 1, rating=2000 // (2**i), name=f"Masters - {i + 1}a") for i in range(6)]
+    db.session.expire(stage, ["groups"])
+    assert [fields_for(g) for g in groups] == [
+        ("Campo 1", "Campo 2"),
+        ("Campo 3", "Campo 4"),
+        ("Campo 5", "Campo 6"),
+        ("Campo 7", "Campo 8"),
+        ("Campo 9", "Campo 10"),
+        ("Campo 11", "Campo 12"),
+    ]
+
+
+def test_fields_can_be_overridden_explicitly(pg):
+    grp, _ = _group()
+    summary = generate_group_fixtures(grp, fields=("Campo 7", "Campo 8"))
     assert summary["fields"] == ["Campo 7", "Campo 8"]
-    with app.app_context():
-        used = {m.field for m in Match.query.filter_by(division_id=division_id)}
-        assert used == {"Campo 7", "Campo 8"}
+    assert {m.court for m in _matches(grp)} == {"Campo 7", "Campo 8"}
 
 
-def test_end_date_is_the_last_matchweek_not_a_week_later(app):
-    division_id, _ = _make_division(app)
-    summary = _generate(app, division_id)
+def test_end_date_is_the_last_matchweek_not_a_week_later(pg):
+    grp, _ = _group()
+    summary = generate_group_fixtures(grp)
 
     expected = (START + timedelta(days=7 * 6)).date()
     assert summary["end_date"] == expected.isoformat()
-    with app.app_context():
-        assert Division.query.get(division_id).end_date == expected
+    assert grp.end_date.date() == expected
 
 
-def test_seats_map_every_player_exactly_once(app):
-    division_id, player_ids = _make_division(app)
-    summary = _generate(app, division_id)
-
-    seats = summary["seats"]
+def test_seats_map_every_player_exactly_once(pg):
+    grp, player_ids = _group()
+    seats = generate_group_fixtures(grp)["seats"]
     assert sorted(seats) == [f"Player {i}" for i in range(1, 9)]
     assert sorted(seats.values()) == sorted(player_ids)
 
 
+def test_same_rng_seed_gives_the_same_draw(pg):
+    grp, _ = _group()
+    first = generate_group_fixtures(grp, rng=random.Random(7))["seats"]
+    second = generate_group_fixtures(grp, rng=random.Random(7), force=True)["seats"]
+    assert first == second
+
+
 @pytest.mark.parametrize("player_count", [0, 7, 9])
-def test_refuses_wrong_player_count(app, player_count):
-    division_id, _ = _make_division(app, player_count=player_count)
+def test_refuses_wrong_player_count(pg, player_count):
+    grp, _ = _group(player_count=player_count)
     with pytest.raises(FixtureGenerationError, match="exactly 8"):
-        _generate(app, division_id)
+        generate_group_fixtures(grp)
 
 
-def test_refuses_without_beginning_datetime(app):
-    division_id, _ = _make_division(app, beginning=None)
+def test_refuses_without_beginning_datetime(pg):
+    grp, _ = _group(starts_at=None)
     with pytest.raises(FixtureGenerationError, match="beginning_datetime"):
-        _generate(app, division_id)
+        generate_group_fixtures(grp)
 
 
-def test_refuses_to_overwrite_existing_matches(app):
-    division_id, _ = _make_division(app)
-    _generate(app, division_id)
-
+def test_refuses_to_overwrite_existing_matches(pg):
+    grp, _ = _group()
+    generate_group_fixtures(grp)
     with pytest.raises(FixtureGenerationError, match="already has 42 matches"):
-        _generate(app, division_id)
+        generate_group_fixtures(grp)
 
 
-def test_force_regenerates_when_nothing_has_been_played(app):
-    division_id, _ = _make_division(app)
-    first = _generate(app, division_id)
-    second = _generate(app, division_id, force=True)
+def test_force_regenerates_when_nothing_has_been_played(pg):
+    grp, _ = _group()
+    generate_group_fixtures(grp)
+    assert generate_group_fixtures(grp, force=True)["matches_created"] == 42
 
-    assert first["matches_created"] == 42
-    assert second["matches_created"] == 42
-    with app.app_context():
-        # replaced, not appended
-        assert Match.query.filter_by(division_id=division_id).count() == 42
-        assert Association_PlayerMatch.query.count() == 42 * 4
+    matches = _matches(grp)
+    assert len(matches) == 42
+    assert MatchParticipant.query.filter(MatchParticipant.match_id.in_([m.id for m in matches])).count() == 42 * 4
 
 
-def test_force_is_refused_once_a_match_has_been_played(app):
-    division_id, _ = _make_division(app)
-    _generate(app, division_id)
-
-    with app.app_context():
-        match = Match.query.filter_by(division_id=division_id).first()
-        match.played = True
-        db.session.commit()
+def test_force_is_refused_once_a_match_has_been_played(pg):
+    grp, _ = _group()
+    generate_group_fixtures(grp)
+    match = _matches(grp)[0]
+    match.set_score(6, 3)
+    match.status = "played"
+    db.session.flush()
 
     with pytest.raises(FixtureGenerationError, match="already been played"):
-        _generate(app, division_id, force=True)
-
-    with app.app_context():
-        assert Match.query.filter_by(division_id=division_id).count() == 42
+        generate_group_fixtures(grp, force=True)
+    assert len(_matches(grp)) == 42
 
 
-def _auth_header(app):
+def test_v1_views_show_the_generated_fixtures(pg):
+    """What the v1 API reads (compat views) matches what the old code wrote."""
+    grp, player_ids = _group()
+    summary = generate_division_fixtures(Division.query.get(grp.id))
+    assert summary["division_id"] == grp.id
+
+    db.session.expire_all()
+    division = Division.query.get(grp.id)
+    matches = Match.query.filter_by(division_id=grp.id).all()
+    assert len(matches) == 42
+    assert Counter(m.matchweek for m in matches) == {mw: 6 for mw in range(1, 8)}
+    assert all(m.played is False and m.winner is None for m in matches)
+    for match in matches:
+        assert Counter(rel.team for rel in match.players_relations) == {"Home": 2, "Away": 2}
+    assert division.end_date == datetime(2026, 10, 27)  # midnight, like the migrated groups
+    assert sorted(rel.player_id for rel in division.players_relations) == sorted(player_ids)
+
+
+def _auth_header(user_id=1):
     from flask_jwt_extended import create_access_token
 
-    with app.app_context():
-        return {"Authorization": f"Bearer {create_access_token(identity='1')}"}
+    return {"Authorization": f"Bearer {create_access_token(identity=str(user_id))}"}
 
 
-def test_endpoint_generates_fixtures_and_names_the_draw(app):
-    division_id, player_ids = _make_division(app)
-
-    response = app.test_client().post(
-        f"/api/v1/divisions/{division_id}/generate_matches",
-        json={},
-        headers=_auth_header(app),
-    )
+def test_endpoint_generates_fixtures_and_names_the_draw(pg):
+    grp, player_ids = _group()
+    response = pg.test_client().post(f"/api/v1/divisions/{grp.id}/generate_matches", json={}, headers=_auth_header())
 
     assert response.status_code == 201, response.get_data(as_text=True)
     body = response.get_json()
     assert body["matches_created"] == 42
     assert sorted(seat["id"] for seat in body["seats"].values()) == sorted(player_ids)
     assert all(seat["name"] for seat in body["seats"].values())
-
-    with app.app_context():
-        assert Match.query.filter_by(division_id=division_id).count() == 42
+    assert len(_matches(grp)) == 42
 
 
-def test_endpoint_requires_authentication(app):
-    division_id, _ = _make_division(app)
-
-    response = app.test_client().post(
-        f"/api/v1/divisions/{division_id}/generate_matches", json={}
-    )
-
+def test_endpoint_requires_authentication(pg):
+    grp, _ = _group()
+    response = pg.test_client().post(f"/api/v1/divisions/{grp.id}/generate_matches", json={})
     assert response.status_code == 401
-    with app.app_context():
-        assert Match.query.filter_by(division_id=division_id).count() == 0
+    assert _matches(grp) == []
 
 
-def test_endpoint_reports_a_conflict_instead_of_crashing(app):
-    division_id, _ = _make_division(app)
-    headers = _auth_header(app)
-    client = app.test_client()
-
-    client.post(
-        f"/api/v1/divisions/{division_id}/generate_matches", json={}, headers=headers
-    )
-    response = client.post(
-        f"/api/v1/divisions/{division_id}/generate_matches", json={}, headers=headers
-    )
-
+def test_endpoint_reports_a_conflict_instead_of_crashing(pg):
+    grp, _ = _group()
+    client, headers = pg.test_client(), _auth_header()
+    client.post(f"/api/v1/divisions/{grp.id}/generate_matches", json={}, headers=headers)
+    response = client.post(f"/api/v1/divisions/{grp.id}/generate_matches", json={}, headers=headers)
     assert response.status_code == 409
     assert "already has 42 matches" in response.get_json()["message"]
