@@ -41,9 +41,8 @@ def parse_body():
     fmt = data.get("format")
     if fmt not in FORMATS:
         raise bad_request("format inválido.", "invalid_input")
-    name = (data.get("name") or "").strip()
-    if not name:
-        raise bad_request("name em falta.", "missing_parameter")
+    # No name: the next number of the one running sequence across every format (S5).
+    name = (data.get("name") or "").strip() or editions_service.default_edition_name()
     season_id = int_arg(data.get("seasonId"), "seasonId", required=True)
     season = db.session.get(Season, season_id)
     if season is None:
@@ -110,7 +109,7 @@ def _s1_plan(body, strict=True):
     if body["from_id"] is None:
         return None
     if get_competition(body["from_id"]).format != "classica":
-        raise bad_request("fromCompetitionId tem de ser uma Clássica.", "invalid_input")
+        raise bad_request("fromCompetitionId tem de ser uma Classic.", "invalid_input")
     # A dry run needs no real date (the preview shows groups only); create requires startsOn.
     starts_on = body["starts_on"] or date.today()
     return next_classica_plan(
@@ -221,7 +220,7 @@ def generate_fixtures(competition_id):
     user = require_user()
     comp = get_competition(competition_id)
     if comp.format != "classica":
-        raise conflict("Só a Clássica gera calendário de uma vez.", "not_classica")
+        raise conflict("Só a Classic gera calendário de uma vez.", "not_classica")
     data = json_body()
     stage_id = int_arg(data.get("stageId"), "stageId")
     stages = Stage.query.filter_by(competition_id=comp.id).all()

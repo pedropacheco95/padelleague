@@ -7,7 +7,7 @@ PREV = 25  # 22ª Edição: 6 divisions of 8
 
 
 def _body(**kw):
-    return {"format": "classica", "name": "23ª Edição", "seasonId": 6, "fromCompetitionId": PREV, **kw}
+    return {"format": "classica", "name": "Edição de teste", "seasonId": 6, "fromCompetitionId": PREV, **kw}
 
 
 def test_preview_needs_admin(client, make_user):
@@ -21,9 +21,19 @@ def test_preview_promotion_keeps_everyone(client, make_user):
     assert [g["tier"] for g in groups] == [1, 2, 3, 4, 5, 6]
     assert [g["rating"] for g in groups] == [2000, 1000, 500, 250, 125, 63]
     assert all(len(g["players"]) == 8 for g in groups)
-    assert groups[0]["name"] == "23ª Edição - 1ª Divisão"
+    assert groups[0]["name"] == "Edição de teste - 1ª Divisão"
     previous = {e.player_id for e in Entry.query.filter_by(competition_id=PREV)}
     assert {p["id"] for g in groups for p in g["players"]} == previous
+
+
+def test_preview_without_name_takes_next_edition_number(client, make_user):
+    """Edition numbers run across every format (Teams 2026/27 is the 23ª), so the next is the 24ª."""
+    body = _body()
+    del body["name"]
+    groups = client.post("/api/v2/competitions/preview", json=body, headers=bearer(make_user(role="admin"))).get_json()[
+        "groups"
+    ]
+    assert groups[0]["name"] == "24ª Edição - 1ª Divisão"
 
 
 def test_preview_withdrawal_filled_by_newcomer(client, make_user):
@@ -50,10 +60,13 @@ def test_preview_bad_input(client, make_user):
 
 def test_create_classica_then_fixtures(client, make_user):
     admin = bearer(make_user(role="admin"))
-    resp = client.post("/api/v2/competitions", json=_body(startsOn="2026-11-03"), headers=admin)
+    body = _body(startsOn="2026-11-03")
+    del body["name"]  # defaults to the next number across every format
+    resp = client.post("/api/v2/competitions", json=body, headers=admin)
     assert resp.status_code == 201, resp.get_json()
     comp = resp.get_json()
     assert comp["format"] == "classica" and comp["groupCount"] == 6 and comp["playerCount"] == 48
+    assert comp["name"] == "24ª Edição" and comp["formatLabel"] == "Classic"
     # S5 creates the fixtures with the edition; regenerating without force is refused
     resp = client.post(f"/api/v2/competitions/{comp['id']}/fixtures", json={}, headers=admin)
     assert resp.status_code == 409 and resp.get_json() == {
