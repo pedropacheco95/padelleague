@@ -55,7 +55,11 @@ def test_live_group_unknown_substitute_and_teams_score(client):
     assert body["standingsFrozen"] is False and len(body["standings"]) == 4
     match = check(client.get(f"/api/v2/matches/{m.id}"), "/matches/{matchId}")
     assert match["participants"][3] == {"side": "away", "slot": 2, "role": "unknown", "player": None}
-    assert (match["homeScore"], match["awayScore"], match["winner"]) == (3, 3, "draw")
+    assert (match["homeScore"], match["awayScore"], match["winner"]) == (4, 4, "draw")
+    wo = f.match(grp, rnd, home=entries[:2], away=entries[2:], status="walkover", walkover_winner="away")
+    persist()
+    body = check(client.get(f"/api/v2/matches/{wo.id}"), "/matches/{matchId}")
+    assert (body["homeScore"], body["awayScore"], body["winner"], body["sets"]) == (0, 9, "away", [])
 
 
 def test_calendar(client):
