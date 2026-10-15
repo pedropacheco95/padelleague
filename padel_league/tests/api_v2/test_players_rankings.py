@@ -3,25 +3,25 @@ from padel_league.tests.api_v2.conftest import check, persist, stop_counting
 
 
 def _ranked_player_id():
-    snap = RankingSnapshot.query.filter_by(is_dry_run=False).first()
-    return RankingEntry.query.filter_by(snapshot_id=snap.id).first().player_id
+    """The leader of the current (non-dry-run) ranking."""
+    from padel_league.services.ranking import current_snapshot
 
-
-def _give_points():
-    """The template's snapshot is all zeros until S1 computes it; give it some order."""
-    snap = RankingSnapshot.query.filter_by(is_dry_run=False).first()
-    for i, e in enumerate(RankingEntry.query.filter_by(snapshot_id=snap.id).order_by(RankingEntry.player_id)):
-        e.points, e.position = 1000.5 - i, i + 1
-    persist()
-    return snap
+    snap = current_snapshot()
+    return (
+        RankingEntry.query.filter(RankingEntry.snapshot_id == snap.id, RankingEntry.points > 0)
+        .order_by(RankingEntry.points.desc())
+        .first()
+        .player_id
+    )
 
 
 def test_players_list(client, count_queries):
-    _give_points()
     counter = count_queries()
     body = check(client.get("/api/v2/players"), "/players")
     assert stop_counting(counter) <= 8  # constant, not per player
-    assert body[0]["rankingPosition"] == 1 and body[0]["rankingPoints"] == 1000.5
+    ranked = [p for p in body if p["rankingPosition"] is not None]
+    assert ranked and ranked[0]["rankingPosition"] == 1 and ranked[0]["id"] == _ranked_player_id()
+    assert [p["rankingPoints"] for p in ranked] == sorted((p["rankingPoints"] for p in ranked), reverse=True)
     assert {p["status"] for p in body} <= {"active", "inactive", "substitute"}
 
 
@@ -54,9 +54,14 @@ def test_compare(client):
 
 
 def test_rankings(client):
-    snap = _give_points()
+    from padel_league.services.ranking import current_snapshot
+
+    snap = current_snapshot()
     body = check(client.get("/api/v2/rankings/current"), "/rankings/current")
-    assert body["snapshotId"] == snap.id and body["entries"][0]["points"] == 1000.5
+    assert body["rule"]["name"].startswith("Últimas 3")  # Portuguese for S3
+    assert body["snapshotId"] == snap.id and body["entries"][0]["player"]["id"] == _ranked_player_id()
+    points = [e["points"] for e in body["entries"]]
+    assert points == sorted(points, reverse=True) and all(p > 0 for p in points)
     assert body["computedAt"].endswith("Z")
     check(client.get(f"/api/v2/rankings/{snap.id}"), "/rankings/{snapshotId}")
     resp = client.get("/api/v2/rankings/99999999")

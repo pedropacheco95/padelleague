@@ -24,10 +24,9 @@ def _spec_routes():
 
 
 # Asked of S0 (spec owner); remove each line once the spec documents it.
-PENDING_SPEC_PATHS = ("/api/v2/news",)
+PENDING_SPEC_PATHS = ()
 PENDING_SPEC_STATUSES = {
-    ("get", "/rankings/players/{playerId}", 409),  # ranking_missing_awards before the bootstrap
-    ("post", "/stages/{stageId}/divisions", 404),
+    ("post", "/competitions", 409),  # not_available until S5's v2 create-edition is merged
 }
 
 
