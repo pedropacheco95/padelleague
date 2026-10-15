@@ -164,12 +164,14 @@ def _s1_plan(body):
         return None
     if body["from_id"] is None:
         return None
-    if not body["starts_on"]:
-        raise bad_request("startsOn em falta.", "missing_parameter")
+    if get_competition(body["from_id"]).format != "classica":
+        raise bad_request("fromCompetitionId tem de ser uma Clássica.", "invalid_input")
+    # A dry run needs no real date (the preview shows groups only); create requires startsOn.
+    starts_on = body["starts_on"] or date.today()
     return next_classica_plan(
         body["from_id"],
         body["name"],
-        datetime.combine(body["starts_on"], DEFAULT_KICKOFF).isoformat(),
+        datetime.combine(starts_on, DEFAULT_KICKOFF).isoformat(),
         withdrawals=body["withdrawals"],
         new_player_ids=body["new_players"],
         season=body["season"].name,
