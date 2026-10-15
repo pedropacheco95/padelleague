@@ -716,7 +716,8 @@ components:
               groupId: { type: [integer, "null"] }
               tier: { type: [integer, "null"] }
               place: { type: [integer, "null"] }
-              points: { type: [number, "null"] }
+              points: { type: [number, "null"], description: Ranking points awarded for that stage (null while its group is live) }
+              setPoints: { type: [number, "null"], description: Teams set points in that mini-tournament }
 
     PlayerRef:
       type: object
