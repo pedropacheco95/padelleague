@@ -5,8 +5,10 @@ Revises: a8d4e2f6c1b7
 Create Date: 2026-10-15 16:00:00.000000
 
 Pedro (2026-10-15): the edition number keeps counting whatever the format
-(the Shuffle was already the 20ª). The 22ª gets its name, and Teams 2026/27 is
-the 23ª. New competitions take the next number (services.editions).
+(the Shuffle was already the 20ª), so Teams 2026/27 is the 23ª. New
+competitions take the next number (services.editions). The 22ª keeps its name:
+its divisions already read "Masters de Outono - Nª Divisão", so pages show
+"22ª Edição Masters de Outono - 1ª Divisão" as it is.
 """
 
 from alembic import op
@@ -17,7 +19,6 @@ branch_labels = None
 depends_on = None
 
 RENAMES = {
-    25: ("22ª Edição", "22ª Edição Masters de Outono"),
     27: ("PPL Teams 2026/27", "23ª Edição Teams 2026/27"),
 }
 
