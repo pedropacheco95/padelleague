@@ -10,6 +10,7 @@ from sqlalchemy import event
 from padel_league import create_app
 from padel_league.modules import chatbot_api
 from padel_league.models import (
+    User,
     Association_PlayerDivision,
     Association_PlayerMatch,
     Division,
@@ -78,8 +79,12 @@ def app():
                 Match.__table__,
                 Association_PlayerMatch.__table__,
                 Association_PlayerDivision.__table__,
+                User.__table__,
             ],
         )
+        # The generate endpoint is admin-only; _auth_header signs in as user 1.
+        db.session.add(User(id=1, username="admin", email="admin@example.com", password="x", is_admin=True))
+        db.session.commit()
 
     yield app
 
