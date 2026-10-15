@@ -6,7 +6,7 @@ pre-loaded (see cards.py) so list endpoints stay one query per table.
 
 from datetime import date, datetime
 
-FORMAT_LABELS = {"classica": "Clássica", "teams": "Teams", "shuffle": "Shuffle", "super_cup": "Super Cup"}
+FORMAT_LABELS = {"classica": "Classic", "teams": "Teams", "shuffle": "Shuffle", "super_cup": "Super Cup"}
 COMPETITION_STATUS = {"planned": "upcoming", "running": "live", "ended": "ended"}
 # Pair.formed_by → TeamsState pair source
 PAIR_SOURCE = {"mutual": "mutual", "ranking": "auto", "draw": "auto", "rotation": "auto", "manual": "admin"}
