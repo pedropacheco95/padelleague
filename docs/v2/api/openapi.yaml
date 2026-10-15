@@ -513,6 +513,12 @@ paths:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/NewsDetail" } } } }
         "404": { $ref: "#/components/responses/Error" }
 
+  /sponsors:
+    get:
+      tags: [site]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/Sponsor" } } } } }
+
   /auth/login:
     post:
       tags: [auth]
@@ -929,6 +935,16 @@ components:
             choseMe: { type: array, items: { type: integer } }
             pairId: { type: [integer, "null"] }
             isAdmin: { type: boolean }
+
+    Sponsor:
+      type: object
+      required: [id, name, website, clickUrl]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        website: { type: string, description: The sponsor's site }
+        clickUrl: { type: string, description: "Relative URL of the click-counting redirect (/sponsors/sponsor_click/{id}); link here, not to website" }
+        image: { oneOf: [{ $ref: "#/components/schemas/Image" }, { type: "null" }] }
 
     NewsSummary:
       type: object
