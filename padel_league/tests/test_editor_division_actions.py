@@ -1,5 +1,6 @@
 """Editor replace-player / readd-player write v2 rows (no compat writes)."""
 
+import pytest
 import random
 from collections import Counter
 from datetime import datetime
@@ -10,6 +11,14 @@ from padel_league.services.fixtures import generate_group_fixtures
 from padel_league.services.results import mark_absent
 from padel_league.sql_db import db
 from padel_league.tests import factories as f
+
+
+@pytest.fixture(autouse=True)
+def _restore_session_interface(pg_app):
+    original = pg_app.session_interface
+    yield
+    pg_app.session_interface = original
+
 
 
 def _group():

@@ -1,5 +1,6 @@
 """Generic editor CRUD / CSV loaders refuse compat models; legacy deletes run on v2."""
 
+import pytest
 import random
 from datetime import datetime
 
@@ -7,6 +8,14 @@ from padel_league.models.v2 import Competition, CompetitionGroup, CompetitionMat
 from padel_league.services.fixtures import generate_group_fixtures
 from padel_league.sql_db import db
 from padel_league.tests import factories as f
+
+
+@pytest.fixture(autouse=True)
+def _restore_session_interface(pg_app):
+    original = pg_app.session_interface
+    yield
+    pg_app.session_interface = original
+
 
 
 def _admin_client(app):
@@ -84,3 +93,24 @@ def test_legacy_edition_create_writes_a_competition(pg):
 
 def test_csv_bootstrap_loader_is_disabled(pg):
     assert _admin_client(pg).post("/uploads/upload_csv_to_db").status_code == 410
+
+
+def test_ranking_recalculate_writes_a_v2_snapshot(pg):
+    from padel_league.models.v2 import RankingSnapshot
+
+    before = RankingSnapshot.query.count()
+    r = _admin_client(pg).get("/players/ranking/recalculate")
+    assert r.status_code == 200, r.get_data(as_text=True)[:300]
+    assert RankingSnapshot.query.count() == before + 1
+    assert RankingSnapshot.query.order_by(RankingSnapshot.id.desc()).first().note.startswith("manual recalculate")
+
+
+def test_ranking_recalculate_needs_admin(pg):
+    from flask.sessions import SecureCookieSessionInterface
+    from padel_league.models.v2 import RankingSnapshot
+
+    pg.session_interface = SecureCookieSessionInterface()
+    before = RankingSnapshot.query.count()
+    r = pg.test_client().get("/players/ranking/recalculate")
+    assert r.status_code == 302
+    assert RankingSnapshot.query.count() == before

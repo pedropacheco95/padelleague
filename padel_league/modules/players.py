@@ -23,7 +23,11 @@ def players(recalculate=None):
             return denied
     league = League.query.first()
     if recalculate == "recalculate":
-        league.update_rankings()
+        from padel_league.services import ranking
+        from padel_league.sql_db import db
+
+        ranking.recompute(league.id, note="manual recalculate (/players/ranking/recalculate)")
+        db.session.commit()
     # This should be changed if more leagues are added
     players = league.players_rankings_position()
     return render_template("players/players.html", players=players)
