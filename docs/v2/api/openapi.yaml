@@ -271,6 +271,7 @@ paths:
                 groupId: { type: integer }
                 substitutePlayerId: { type: [integer, "null"] }
                 kind: { type: string, enum: [full, partial], default: full }
+                matchIds: { type: array, items: { type: integer }, description: "kind=partial: the matches the player misses (required for partial)" }
       responses:
         "201": { description: Created, content: { application/json: { schema: { $ref: "#/components/schemas/Absence" } } } }
         "400": { $ref: "#/components/responses/Error" }
