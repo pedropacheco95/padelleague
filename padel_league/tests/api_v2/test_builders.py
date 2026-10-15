@@ -47,14 +47,37 @@ def test_preview_bad_input(client, make_user):
     assert client.post("/api/v2/competitions/preview", json=_body(fromCompetitionId=26), headers=h).status_code == 400
 
 
-def test_create_classica(client, make_user):
-    resp = client.post("/api/v2/competitions", json=_body(startsOn="2026-11-03"), headers=bearer(make_user(role="admin")))
-    if resp.status_code == 409:  # S5's v2 create-edition not merged yet
-        assert resp.get_json()["code"] == "not_available"
-        return
-    assert resp.status_code == 201
+def test_create_classica_then_fixtures(client, make_user):
+    admin = bearer(make_user(role="admin"))
+    resp = client.post("/api/v2/competitions", json=_body(startsOn="2026-11-03"), headers=admin)
+    assert resp.status_code == 201, resp.get_json()
     comp = resp.get_json()
     assert comp["format"] == "classica" and comp["groupCount"] == 6 and comp["playerCount"] == 48
+    # S5 creates the fixtures with the edition; regenerating without force is refused
+    resp = client.post(f"/api/v2/competitions/{comp['id']}/fixtures", json={}, headers=admin)
+    assert resp.status_code == 409 and resp.get_json()["code"] == "fixtures_not_generated"
+
+
+def test_fixtures_for_a_group_without_matches(client, make_user):
+    comp = f.competition(format="classica", name="Fixtures test")
+    stg = f.stage(comp)
+    grp = f.group(stg, name="Fixtures test - 1ª Divisão")
+    for _ in range(8):
+        f.member(grp, f.entry(comp, f.player()))
+    persist()
+    admin = bearer(make_user(role="admin"))
+    body = client.post(f"/api/v2/competitions/{comp.id}/fixtures", json={"firstRoundDate": "2026-11-03"}, headers=admin).get_json()
+    group_matches = client.get(f"/api/v2/groups/{grp.id}/matches").get_json()
+    assert body["id"] == comp.id and len(group_matches) == 42  # 7 jornadas × 6 matches
+    assert client.post("/api/v2/competitions/26/fixtures", json={}, headers=admin).status_code == 409
+
+
+def test_preview_flags_a_plan_create_would_refuse(client, make_user):
+    # the names of the 22ª's divisions already exist → S5's validation, shown as a note
+    body = client.post(
+        "/api/v2/competitions/preview", json=_body(name="Masters de Outono"), headers=bearer(make_user(role="admin"))
+    ).get_json()
+    assert any("não pode ser criado" in n for n in body["notes"])
 
 
 def test_shuffle_rounds_guards(client, make_user):
