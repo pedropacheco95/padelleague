@@ -99,3 +99,13 @@ def test_upcoming_competition_shows_no_results(client):
     for row in teams:
         assert row["groupId"] is None
         assert all(row[k] is None for k in ("place", "points", "played", "wins", "draws", "losses", "awardPoints"))
+
+
+def test_history_played_is_matches_not_jornadas(client):
+    """S6 gate 2: player history counts matches (v1 tournamentHistory.played); only the
+    group standings convert to jornadas. Player 10 in group 11: 21 matches = 7 jornadas."""
+    body = check(client.get("/api/v2/players/10"), "/players/{playerId}")
+    row = next(h for h in body["history"] if h["groupId"] == 11)
+    assert row["played"] == 21
+    group = check(client.get("/api/v2/groups/11"), "/groups/{groupId}")
+    assert next(r for r in group["standings"] if r["player"]["id"] == 10)["played"] == 7
