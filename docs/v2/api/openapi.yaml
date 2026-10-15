@@ -905,7 +905,7 @@ components:
                 required: [rankingPoints, rankingPosition, paired, allowedForMe]
                 properties:
                   rankingPoints: { type: number }
-                  rankingPosition: { type: integer }
+                  rankingPosition: { type: [integer, "null"], description: null when unranked under the current rule }
                   paired: { type: boolean }
                   allowedForMe: { type: boolean }
         pairs:
