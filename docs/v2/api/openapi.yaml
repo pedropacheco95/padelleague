@@ -705,6 +705,18 @@ components:
         rankingPlacePoints: { type: [number, "null"], description: Award place points once awarded / projected }
         rankingBonusPoints: { type: [number, "null"] }
         nextGroupTier: { type: [integer, "null"], description: Shuffle next placement }
+        stages:
+          type: array
+          description: Competition standings only — per stage (Teams mini-tournament / Shuffle round) breakdown
+          items:
+            type: object
+            required: [stageNumber]
+            properties:
+              stageNumber: { type: integer }
+              groupId: { type: [integer, "null"] }
+              tier: { type: [integer, "null"] }
+              place: { type: [integer, "null"] }
+              points: { type: [number, "null"] }
 
     PlayerRef:
       type: object
