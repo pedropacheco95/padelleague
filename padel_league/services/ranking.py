@@ -90,6 +90,16 @@ def latest_snapshot(league_id, include_dry_runs=False):
     return q.order_by(RankingSnapshot.id.desc()).first()
 
 
+def is_bootstrapped(league_id):
+    """True once a ranking snapshot under the current season's rule exists."""
+    try:
+        rule = rule_for(league_id)
+    except NotFound:
+        return False
+    latest = latest_snapshot(league_id)
+    return latest is not None and latest.rule_id == rule.id
+
+
 def current_snapshot(league_id=1):
     return latest_snapshot(league_id)
 
