@@ -110,3 +110,112 @@ def test_post_division_without_end_date_answers_instead_of_500(pg):
     r = client.post("/api/v1/divisions", json=_body(eid, players, end_date=None), headers=_h())
     assert r.status_code == 201, r.get_data(as_text=True)[:300]
     assert r.get_json()["editionShortDateString"] == "Sem data"
+
+
+# --- S1 review: ended groups keep their frozen standings and awards ----------
+
+
+def _payload_for(group_id, **kw):
+    from padel_league.models.v2 import CompetitionGroup as G
+
+    g = db.session.get(G, group_id)
+    body = {
+        "edition_id": g.stage.competition_id,
+        "name": g.name,
+        "beginning_datetime": g.starts_at.isoformat(),
+        "rating": g.rating,
+        "end_date": g.end_date.date().isoformat() if g.end_date else None,
+        "has_ended": bool(g.has_ended),
+        "open_division": bool(g.open_division),
+        "logo_image_id": g.logo_image_id,
+        "large_picture_id": g.large_picture_id,
+        "players": [{"player_id": m.entry.player_id, "order_index": i} for i, m in enumerate(g.members, 1)],
+    }
+    body.update(kw)
+    return body
+
+
+def _snapshots(group_id):
+    from padel_league.models.v2 import StandingSnapshot
+
+    return sorted(
+        (s.place, s.entry.player_id, s.points)
+        for s in StandingSnapshot.query.join(GroupMember, GroupMember.id == StandingSnapshot.group_member_id)
+        .filter(GroupMember.group_id == group_id)
+    )
+
+
+def test_put_rename_on_an_ended_group_keeps_its_frozen_standings(pg):
+    before = _snapshots(77)
+    assert len(before) == 8
+    r = pg.test_client().put("/api/v1/divisions/77", json=_payload_for(77, name="Renamed 77"), headers=_h())
+    assert r.status_code == 200, r.get_data(as_text=True)[:300]
+    db.session.expire_all()
+    assert _snapshots(77) == before
+    assert db.session.get(CompetitionGroup, 77).name == "Renamed 77"
+
+
+def test_put_refuses_member_changes_rating_and_reopening_on_an_ended_group(pg):
+    body = _payload_for(77)
+    body["players"][0]["player_id"] = f.player().id
+    for bad in (body, _payload_for(77, rating=1), _payload_for(77, has_ended=False)):
+        r = pg.test_client().put("/api/v1/divisions/77", json=bad, headers=_h())
+        assert r.status_code == 409, r.get_data(as_text=True)[:300]
+    db.session.expire_all()
+    assert len(_snapshots(77)) == 8
+
+
+def test_put_has_ended_on_an_incomplete_group_is_refused(pg):
+    client = pg.test_client()
+    eid = _edition(client)
+    gid = client.post("/api/v1/divisions", json=_body(eid, [f.player().id for _ in range(8)]), headers=_h()).get_json()["id"]
+    r = client.put(f"/api/v1/divisions/{gid}", json=_payload_for(gid, has_ended=True), headers=_h())
+    assert r.status_code == 409
+    assert db.session.get(CompetitionGroup, gid).has_ended is False
+
+
+def test_put_has_ended_on_a_complete_group_closes_it(pg):
+    import random
+
+    from padel_league.models.v2 import AwardEvent, CompetitionMatch
+    from padel_league.services.fixtures import generate_group_fixtures
+
+    client = pg.test_client()
+    eid = _edition(client)
+    gid = client.post("/api/v1/divisions", json=_body(eid, [f.player().id for _ in range(8)]), headers=_h()).get_json()["id"]
+    generate_group_fixtures(db.session.get(CompetitionGroup, gid), rng=random.Random(5), commit=False)
+    for m in CompetitionMatch.query.filter_by(group_id=gid):
+        m.set_score(6, 3)
+        m.status = "played"
+    db.session.flush()
+
+    r = client.put(f"/api/v1/divisions/{gid}", json=_payload_for(gid, has_ended=True), headers=_h())
+    assert r.status_code == 200, r.get_data(as_text=True)[:300]
+    db.session.expire_all()
+    assert db.session.get(CompetitionGroup, gid).has_ended is True
+    assert len(_snapshots(gid)) == 8
+    assert AwardEvent.query.filter_by(group_id=gid).count() == 1
+
+
+def test_put_on_a_started_group_keeps_existing_members(pg):
+    """Once a match is played, members are diffed, not recreated."""
+    import random
+
+    from padel_league.models.v2 import CompetitionMatch
+    from padel_league.services.fixtures import generate_group_fixtures
+
+    client = pg.test_client()
+    eid = _edition(client)
+    players = [f.player().id for _ in range(8)]
+    gid = client.post("/api/v1/divisions", json=_body(eid, players), headers=_h()).get_json()["id"]
+    generate_group_fixtures(db.session.get(CompetitionGroup, gid), rng=random.Random(5), commit=False)
+    m = CompetitionMatch.query.filter_by(group_id=gid).first()
+    m.set_score(6, 3)
+    m.status = "played"
+    db.session.flush()
+    ids_before = {gm.entry.player_id: gm.id for gm in db.session.get(CompetitionGroup, gid).members}
+
+    r = client.put(f"/api/v1/divisions/{gid}", json=_payload_for(gid, name="Renamed"), headers=_h())
+    assert r.status_code == 200
+    db.session.expire_all()
+    assert {gm.entry.player_id: gm.id for gm in db.session.get(CompetitionGroup, gid).members} == ids_before

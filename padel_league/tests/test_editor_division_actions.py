@@ -131,3 +131,27 @@ def test_readd_player_takes_the_slot_back_from_a_substitute(pg):
     ]
     assert a.id in {p.player_id for p in match.participants}
     assert _appearances(grp)[sub.id] == 0
+
+
+def test_replace_player_on_an_ended_group_keeps_the_frozen_table(pg):
+    from padel_league.models.v2 import GroupMember, RankingSnapshot, StandingSnapshot
+
+    def table():
+        return sorted(
+            (s.place, s.entry.player_id)
+            for s in StandingSnapshot.query.join(GroupMember, GroupMember.id == StandingSnapshot.group_member_id)
+            .filter(GroupMember.group_id == 77)
+        )
+
+    before = table()
+    a_place, a_id = before[0]
+    b = f.player()
+    snapshots = RankingSnapshot.query.count()
+    r = _admin_client(pg).post(
+        "/editor/division/77/replace-player", data={"player_a_id": a_id, "player_b_id": b.id, "confirm_has_ended": "1"}
+    )
+    assert r.status_code == 302, r.get_data(as_text=True)[:300]
+    db.session.expire_all()
+    after = table()
+    assert len(after) == 8 and (a_place, b.id) in after and a_id not in {p for _, p in after}
+    assert RankingSnapshot.query.count() == snapshots + 1

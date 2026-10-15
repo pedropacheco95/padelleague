@@ -43,6 +43,40 @@ def register_cli(app):
                 raise click.ClickException(str(exc))
             click.echo(json.dumps(summary, indent=2, ensure_ascii=False))
 
+    @app.cli.command("propose-edition")
+    @click.option("--previous", "previous_id", type=int, required=True, help="Competition id of the last Clássica.")
+    @click.option("--name", "edition_name", required=True, help='e.g. "23ª Edição"')
+    @click.option("--start", "beginning", required=True, help="ISO datetime of jornada 1, e.g. 2027-01-12T21:30:00")
+    @click.option("--prefix", "division_prefix", default=None, help='Division base name, e.g. "Inverno 2027"')
+    @click.option("--withdrawals", default="", help="Comma-separated player ids leaving")
+    @click.option("--new", "new_players", default="", help="Comma-separated new player ids, filling vacancies bottom-up")
+    @click.option("--placed", default=None, help='JSON {tier: [player ids]} placed straight into a division')
+    @click.option("--season", default=None)
+    @click.option("--event-slot", default=None)
+    @click.option("--out", "out_path", type=click.Path(dir_okay=False), required=True)
+    def propose_edition(previous_id, edition_name, beginning, division_prefix, withdrawals, new_players, placed,
+                        season, event_slot, out_path):
+        """Write the next Clássica's plan (promotion from --previous) to --out. Writes nothing to the DB."""
+        from padel_league.domain.errors import InvalidInput, Conflict, NotFound
+        from padel_league.services.classica_builder import next_classica_plan
+
+        ids = lambda raw: [int(x) for x in raw.split(",") if x.strip()]  # noqa: E731
+        with app.app_context():
+            try:
+                plan, notes = next_classica_plan(
+                    previous_id, edition_name, beginning,
+                    withdrawals=ids(withdrawals), new_player_ids=ids(new_players),
+                    placed_new_players=json.loads(placed) if placed else None,
+                    season=season, event_slot=event_slot, division_prefix=division_prefix, strict=False,
+                )
+            except (InvalidInput, Conflict, NotFound) as exc:
+                raise click.ClickException(str(exc))
+        with open(out_path, "w") as handle:
+            json.dump(plan, handle, indent=2, ensure_ascii=False)
+        for note in notes:
+            click.echo(f"note: {note}")
+        click.echo(f"plan written to {out_path} ({len(plan['divisions'])} divisions); review it, then create-edition --dry-run")
+
     @app.cli.command("create-edition")
     @click.option(
         "--plan",

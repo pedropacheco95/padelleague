@@ -13,7 +13,7 @@ from padel_league.models import (
 )
 from padel_league.models.v2 import CompetitionGroup
 from padel_league.modules.frontend_api.v1.serializers import serialize_division
-from padel_league.services.editions import save_classica_group
+from padel_league.services.editions import EditionPlanError, save_classica_group
 from padel_league.services.fixtures import (
     FixtureGenerationError,
     generate_division_fixtures,
@@ -202,6 +202,9 @@ def create_division():
     try:
         division = _save(payload)
         return jsonify(serialize_division(division, short=True)), 201
+    except EditionPlanError as exc:
+        db.session.rollback()
+        return _json_error(str(exc), 409)
     except IntegrityError:
         db.session.rollback()
         return _json_error("A division with this name already exists", 409)
@@ -222,6 +225,9 @@ def update_division(id):
     try:
         division = _save(payload, group=group)
         return jsonify(serialize_division(division, short=True))
+    except EditionPlanError as exc:
+        db.session.rollback()
+        return _json_error(str(exc), 409)
     except IntegrityError:
         db.session.rollback()
         return _json_error("A division with this name already exists", 409)

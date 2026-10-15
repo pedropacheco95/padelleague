@@ -23,6 +23,7 @@ from padel_league.models.v2 import (
     GroupMember,
     MatchParticipant,
     Round,
+    StandingSnapshot,
 )
 from padel_league.modules.compat_guard import compat_write_message, is_compat_model
 from padel_league.services.results import _audit, _match_state, unfreeze_group_standings
@@ -154,7 +155,14 @@ def _swap_player_in_division(division, player_a, player_b, actor_user_id=None):
         {"entry_id": entry_b.id, "player_id": player_b.id}, synchronize_session=False
     )
 
-    unfreeze_group_standings(group.id)
+    if group.has_ended:
+        # A finished group keeps its published table: B takes A's frozen row
+        # (as B takes A's awards above), and the ranking is recomputed.
+        StandingSnapshot.query.filter_by(group_member_id=member.id).update(
+            {"entry_id": entry_b.id}, synchronize_session=False
+        )
+    else:
+        unfreeze_group_standings(group.id)
     member.entry_id = entry_b.id
     entry_a.status = "replaced"
     group.standings_up_to_date = True
@@ -164,6 +172,10 @@ def _swap_player_in_division(division, player_a, player_b, actor_user_id=None):
         {"player_id": player_b.id, "entry_id": entry_b.id},
     )
     db.session.flush()
+    if group.has_ended:
+        from padel_league.services import ranking
+
+        ranking.recompute(group.stage.competition.season.league_id, note=f"group {group.id} replace_player")
     return len(matches)
 
 
