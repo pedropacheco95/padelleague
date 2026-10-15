@@ -103,9 +103,21 @@ def test_record_sets_validates_format(pg):
     assert cm.status == "played" and cm.sets[0].home_games == 4
 
 
+def _drop_shuffle_awards():
+    """Back to the pre-bootstrap state (works on a bootstrapped template too)."""
+    from padel_league.models.v2 import AwardEvent, RankingSnapshot
+
+    events = AwardEvent.query.filter_by(competition_id=26).all()
+    ids = [e.id for e in events]
+    if ids:
+        RankingSnapshot.query.filter(RankingSnapshot.after_award_event_id.in_(ids)).delete(synchronize_session=False)
+    for event in events:
+        db.session.delete(event)
+    db.session.flush()
+
+
 def test_shuffle_awards_follow_the_curve_and_enter_the_ranking(pg):
-    if AwardEvent.query.filter_by(competition_id=26).first():
-        pytest.skip("Shuffle 26 already awarded in this template")
+    _drop_shuffle_awards()
     event = closeout.close_shuffle(26)
     assert len(event.awards) == 48
     assert sum(a.place_points for a in event.awards) == 15364
@@ -122,6 +134,7 @@ def test_shuffle_awards_follow_the_curve_and_enter_the_ranking(pg):
 def test_close_shuffle_twice_is_refused(pg):
     if not db.session.get(Competition, 26):
         pytest.skip("no Shuffle 26 in template")
+    _drop_shuffle_awards()
     closeout.close_shuffle(26, recompute_ranking=False)
     with pytest.raises(Conflict):
         closeout.close_shuffle(26, recompute_ranking=False)

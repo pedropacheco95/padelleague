@@ -94,6 +94,13 @@ def test_teams_walkover_is_three_sets_to_nil_and_absent_pair_scores_nothing():
     assert (rows[3].points, rows[3].appearances) == (0, 0)
 
 
+def test_teams_walkover_player_who_turned_up_keeps_the_presence():
+    # P3 came, P4 did not and no substitute was found: B loses by walkover
+    rows = {r.player_id: r for r in teams_standings(_members(), [MatchFacts(1, A, (3,), walkover_winner="home")])}
+    assert (rows[3].points, rows[3].appearances, rows[3].sets_lost) == (0, 1, 0)
+    assert (rows[4].points, rows[4].appearances) == (0, 0)
+
+
 def test_teams_no_set_finished_gives_three_draws():
     rows = {r.player_id: r for r in teams_standings(_members(), [MatchFacts(1, A, B, (T, N, N))])}
     assert rows[1].points == rows[3].points == 3

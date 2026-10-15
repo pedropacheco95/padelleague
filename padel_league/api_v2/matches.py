@@ -11,6 +11,7 @@ from padel_league.models import Player
 from padel_league.models.v2 import (
     Absence,
     Award,
+    Competition,
     AwardEvent,
     CompetitionGroup,
     CompetitionMatch,
@@ -69,13 +70,30 @@ def absences_by_round(matches):
     for absence, group_id in rows:
         if (group_id, absence.round_id) in keys:
             out.setdefault((group_id, absence.round_id), []).append(absence)
+    recorders = recorded_by([a for items in out.values() for a in items])
     return {
         key: [
-            ser.absence(a, key[0], subs[key][0] if len(items) == 1 and len(subs.get(key, [])) == 1 else None)
+            ser.absence(
+                a,
+                key[0],
+                subs[key][0] if len(items) == 1 and len(subs.get(key, [])) == 1 else None,
+                recorders.get(a.created_by_user_id),
+            )
             for a in items
         ]
         for key, items in out.items()
     }
+
+
+def recorded_by(absences):
+    """{user_id: Player} for the users who recorded these absences (one query)."""
+    from padel_league.models import User
+
+    ids = {a.created_by_user_id for a in absences if a.created_by_user_id}
+    if not ids:
+        return {}
+    users = User.query.options(joinedload(User.player).joinedload(Player.picture)).filter(User.id.in_(ids))
+    return {u.id: u.player for u in users if u.player is not None}
 
 
 def serialize_matches(matches):
@@ -85,7 +103,10 @@ def serialize_matches(matches):
 
 def get_group(group_id):
     group = (
-        CompetitionGroup.query.options(joinedload(CompetitionGroup.stage).joinedload(Stage.competition))
+        CompetitionGroup.query.options(
+            joinedload(CompetitionGroup.stage).joinedload(Stage.competition).joinedload(Competition.season),
+            joinedload(CompetitionGroup.stage).joinedload(Stage.competition).joinedload(Competition.event_slot),
+        )
         .filter(CompetitionGroup.id == group_id)
         .first()
     )
