@@ -31,6 +31,11 @@ def before_request():
 
 @bp.route("/upload_csv_to_db", methods=["POST"])
 def upload_csv_to_db():
+    # Bootstraps a whole database from CSVs into the pre-v2 tables (editions,
+    # divisions, matches), which are read-only views since the v2 migration.
+    from flask import jsonify
+
+    return jsonify(success=False, error="O carregamento de CSV para a base antiga foi desativado na migração v2."), 410
 
     leagues = dict()
     f = open(os.path.join("padel_league/static/data/csv", "leagues.csv"))

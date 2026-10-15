@@ -9,13 +9,12 @@ class SQLClient:
     """Run the chatbot's SQL and return rows as dicts.
 
     Queries run on their own connection inside a READ ONLY transaction that is
-    always rolled back, so generated SQL can never change data. The search
-    path puts schema `compat` first, so the pre-v2 table names the chatbot's
-    schema description uses (divisions, matches, players_in_match...) resolve
-    to views with the same shape over the v2 tables.
+    always rolled back, so generated SQL can never change data. The schema
+    description in core/agents.py names the v2 tables, so only `public` is on
+    the search path (the old names in `compat` no longer resolve).
     """
 
-    SEARCH_PATH = "compat, public"
+    SEARCH_PATH = "public"
 
     def __init__(self, session=None):
         self.session = session or db.session

@@ -16,7 +16,9 @@ from flask_login import current_user
 from sqlalchemy.orm import joinedload
 
 from padel_league.model import Image
+from padel_league.sql_db import db
 from padel_league.models import Division, Match, OrderLine, Player, MODELS
+from padel_league.modules.compat_guard import compat_write_message, is_compat_model
 from padel_league.tools import auth_tools, tools
 
 bp = Blueprint("api", __name__, url_prefix="/api")
@@ -99,24 +101,26 @@ def delete_order_line(id):
 
 @bp.route("/delete_player/<id>", methods=["POST"])
 def delete_player(id):
-    player = Player.query.filter_by(id=id).first()
-    for association in player.divisions_relations:
-        association.delete()
+    from padel_league.models.v2 import Entry
+
+    player = Player.query.filter_by(id=id).first_or_404()
+    if Entry.query.filter_by(player_id=player.id).first():
+        return jsonify(success=False, error="O jogador tem inscrições em competições; não pode ser apagado."), 409
     player.delete()
-    return True
+    return jsonify(success=True)
 
 
 @bp.route("/delete_tournament/<id>", methods=["POST"])
 def delete_tournament(id):
-    division = Division.query.filter_by(id=id).first()
-    for association in division.players_relations:
-        association.delete()
-    for match in division.matches:
-        for association in match.players_relations:
-            association.delete()
-        match.delete()
-    division.delete()
-    return True
+    from padel_league.services.editions import EditionPlanError, delete_classica_group
+
+    try:
+        delete_classica_group(int(id), actor_user_id=current_user.id)
+        db.session.commit()
+    except EditionPlanError as exc:
+        db.session.rollback()
+        return jsonify(success=False, error=str(exc)), 409
+    return jsonify(success=True)
 
 
 @bp.route("/edit/<model>/<id>", methods=["POST"])
@@ -125,6 +129,8 @@ def edit(model, id):
     if not model_cls:
         return jsonify(success=False, error=f"Model {model} not found"), 404
 
+    if is_compat_model(model_cls):
+        return jsonify(success=False, error=compat_write_message(model_cls)), 409
     obj = model_cls.query.filter_by(id=id).first()
     if not obj:
         return jsonify(success=False, error=f"{model} with id {id} not found"), 404
@@ -148,6 +154,8 @@ def delete(model, id):
     model_name = model
     if request.method == "POST":
         model = MODELS[model]
+        if is_compat_model(model):
+            return jsonify(success=False, error=compat_write_message(model)), 409
         obj = model.query.filter_by(id=id).first()
         obj.delete()
         return jsonify(url_for("editor.display_all", model=model_name))
@@ -176,6 +184,9 @@ def remove_relationship():
 
     model1 = MODELS[model_name1]
     model2 = MODELS[model_name2]
+    for model_cls in (model1, model2):
+        if is_compat_model(model_cls):
+            return jsonify(success=False, error=compat_write_message(model_cls)), 409
 
     obj1 = model1.query.filter_by(id=id1).first()
     obj2 = model2.query.filter_by(id=id2).first()
@@ -190,6 +201,8 @@ def remove_relationship():
 def modal_create_page(model):
     model_name = model
     model = MODELS[model_name]
+    if request.method == "POST" and is_compat_model(model):
+        return jsonify(success=False, error=compat_write_message(model)), 409
     empty_instance = model()
     form = empty_instance.get_basic_create_form()
     if request.method == "POST":
@@ -237,6 +250,8 @@ def csv_file(model):
 def upload_csv_to_db(model):
     model_name = model
     model = MODELS[model_name]
+    if is_compat_model(model):
+        return jsonify(success=False, error=compat_write_message(model)), 409
     check = tools.upload_csv_to_model(model)
     if check:
         return jsonify(url_for("editor.display_all", model=model_name))
