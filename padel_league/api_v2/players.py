@@ -152,7 +152,7 @@ def history(player_id):
                 "groupName": group_name,
                 "place": snap.place if snap else e.final_place,
                 "points": snap.points if snap else None,
-                "played": snap.appearances if snap else None,
+                "played": ser.presences(comp.format, snap.appearances) if snap else None,
                 "wins": snap.wins if snap else None,
                 "draws": snap.draws if snap else None,
                 "losses": snap.losses if snap else None,
