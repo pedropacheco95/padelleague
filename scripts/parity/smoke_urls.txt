@@ -1,0 +1,15 @@
+# Cut-over smoke: public pages the live site calls. Every URL must answer 200.
+/api/v1/players/ranking
+/api/v1/players/108
+/api/v1/tournaments/77
+/api/v1/tournaments/69
+/api/v1/tournaments/3
+/api/v1/calendar/77?month=2026-10
+/api/v1/shuffle_tournament
+/api/v1/teams/
+/api/v1/main/index
+/api/v1/tournaments/
+/api/v1/editions
+/api/v1/players/short/all
+/api/v1/players/all
+/api/v1/tournaments/77/player_comparison?player1Id=104&player2Id=105
