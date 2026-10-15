@@ -13,31 +13,43 @@ import json
 from collections import Counter
 from pathlib import Path
 
-# (request key prefix, json path prefix, reason)
+D1 = "D1 matches 85/86 attached to division 3"
+D1_MATCH_PAGES = {"tournament_3", "calendar_2022-03", "calendar_div_3_2022-03"}
+
+# (request key, json path prefix, reason). Keys match exactly unless they end
+# in "*" (prefix); paths match whole segments (".a" does not cover ".ab").
 INTENDED_DIFFERENCES = [
     # D1: matches 85 and 86 had no division; they are division 3, jornada 1.
-    ("tournament_3", "", "D1 matches 85/86 attached to division 3"),
-    ("calendar_2022-03", "", "D1 matches 85/86 attached to division 3"),
-    ("calendar_div_3_2022-03", "", "D1 matches 85/86 attached to division 3"),
-    # ...so the four players of those matches now have them in their division 3 history.
-    ("player_8", ".body.tournamentHistory[7]", "D1 matches 85/86 attached to division 3"),
-    ("player_12", ".body.tournamentHistory[3]", "D1 matches 85/86 attached to division 3"),
+    # On the pages listing matches (D1_MATCH_PAGES) those two matches are
+    # dropped from both sides instead, so the rest of the page is still compared.
+    # The four players of those matches now have them in their division 3 history.
+    ("player_8", ".body.tournamentHistory[7]", D1),
+    ("player_12", ".body.tournamentHistory[3]", D1),
     # Indexes from the 2026-10-15 golden (newest edition first, so they move as history grows).
-    ("player_13", ".body.tournamentHistory[9]", "D1 matches 85/86 attached to division 3"),
-    ("player_16", ".body.tournamentHistory[5]", "D1 matches 85/86 attached to division 3"),
-    ("players_all", ".body[12].tournamentHistory[7]", "D1 matches 85/86 attached to division 3"),
-    ("players_all", ".body[53].tournamentHistory[9]", "D1 matches 85/86 attached to division 3"),
-    ("players_all", ".body[72].tournamentHistory[3]", "D1 matches 85/86 attached to division 3"),
-    ("players_all", ".body[54].tournamentHistory[5]", "D1 matches 85/86 attached to division 3"),
+    ("player_13", ".body.tournamentHistory[9]", D1),
+    ("player_16", ".body.tournamentHistory[5]", D1),
+    ("players_all", ".body[12].tournamentHistory[7]", D1),
+    ("players_all", ".body[53].tournamentHistory[9]", D1),
+    ("players_all", ".body[72].tournamentHistory[3]", D1),
+    ("players_all", ".body[54].tournamentHistory[5]", D1),
     # D8: Teams mini-tournaments are v2 stages, so their (and pairs') ids change.
-    ("teams_", ".body.miniTournament.id", "D8 Teams ids are v2 stage/pair ids"),
-    ("teams_", ".body.pairs", "D8 Teams ids are v2 stage/pair ids"),
+    ("teams_*", ".body.miniTournament.id", "D8 Teams ids are v2 stage/pair ids"),
+    ("teams_*", ".body.pairs", "D8 Teams ids are v2 stage/pair ids"),
     # D2: after an edit, the old schema moved the edited row to the end of the
     # table's physical order. "Last 4 played" breaks date ties by that order,
     # so which tied matches it picks changed after any edit; v2 keeps the
     # original order.
-    ("edit_score", ".body[1].body.division.lastPlayedMatches", "D2 physical row order after an edit"),
+    ("edit_score*", ".body[1].body.division.lastPlayedMatches", "D2 physical row order after an edit"),
 ]
+
+
+
+def _drop_d1_matches(o):
+    if isinstance(o, dict):
+        return {k: _drop_d1_matches(v) for k, v in o.items()}
+    if isinstance(o, list):
+        return [_drop_d1_matches(x) for x in o if not (isinstance(x, dict) and x.get("id") in (85, 86))]
+    return o
 
 
 def _sort_players(body):
@@ -81,9 +93,17 @@ def walk(a, b, path, out):
         out.append((path, a, b))
 
 
+def _key_matches(kp, key):
+    return key.startswith(kp[:-1]) if kp.endswith("*") else key == kp
+
+
+def _path_matches(pp, path):
+    return path == pp or (path.startswith(pp) and path[len(pp)] in ".[") or pp == ""
+
+
 def intended(key, path):
     for kp, pp, reason in INTENDED_DIFFERENCES:
-        if key.startswith(kp) and path.startswith(pp):
+        if _key_matches(kp, key) and _path_matches(pp, path):
             return reason
     return None
 
@@ -105,6 +125,10 @@ def main():
             missing.append(key)
             continue
         ga, ca = json.loads(g.read_text()), json.loads(c.read_text())
+        if key in D1_MATCH_PAGES:
+            if ga != ca:
+                expected[D1] += 1
+            ga["body"], ca["body"] = _drop_d1_matches(ga["body"]), _drop_d1_matches(ca["body"])
         diffs = []
         walk(
             {"status": ga["status"], "body": normalise(key, ga["body"])},
@@ -113,8 +137,9 @@ def main():
             diffs,
         )
         real = [d for d in diffs if not intended(key, d[0])]
-        if len(real) < len(diffs):
-            expected[intended(key, diffs[0][0]) or "?"] += 1
+        reasons = {intended(key, d[0]) for d in diffs} - {None}
+        for reason in reasons:
+            expected[reason] += 1
         if real:
             regressions[key] = len(real)
             print(f"✗ {key}  ({len(real)} differences)")
@@ -128,7 +153,8 @@ def main():
         print(f"expected ({reason}): {n} requests")
     if missing:
         print(f"missing in candidate: {len(missing)} e.g. {missing[:5]}")
+    return 1 if regressions or missing else 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

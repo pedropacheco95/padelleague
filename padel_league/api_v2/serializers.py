@@ -105,16 +105,23 @@ def stage(s, groups=None, rounds=None, images=None):
 
 # --- matches --------------------------------------------------------------------
 
-SET_POINTS = {"win": 2, "draw": 1}  # Teams, per set
+# Teams (Estatutos): set won 3, drawn 1 each, lost 0; a walkover is 3 sets won.
+# Mirrors S1's domain.standings.teams_match_points; swap to it once merged.
+SET_POINTS = {"win": 3, "draw": 1}
 DRAWN_SET_OUTCOMES = ("timeout_draw", "not_started")
 
 
 def match_score(m, fmt):
-    """(homeScore, awayScore, winner) — games for Clássica/Shuffle, set points for Teams.
-
-    A walkover without sets has no score here; its winner lives in the sets S1 writes.
-    """
-    if m.status not in ("played", "walkover") or not m.sets:
+    """(homeScore, awayScore, winner) — games for Clássica/Shuffle, set points for Teams."""
+    if m.status == "walkover":
+        side = m.walkover_winner
+        if side not in ("home", "away"):
+            return None, None, None
+        if fmt == "teams":
+            pts = 3 * SET_POINTS["win"]
+            return (pts, 0, side) if side == "home" else (0, pts, side)
+        return None, None, side
+    if m.status != "played" or not m.sets:
         return None, None, None
     if fmt == "teams":
         home = away = 0

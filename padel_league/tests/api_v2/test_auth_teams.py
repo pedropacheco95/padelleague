@@ -88,3 +88,11 @@ def test_admin_guards(client, make_user):
 def test_teams_is_teams_only(client):
     resp = client.get("/api/v2/competitions/25/teams")
     assert resp.status_code == 404 and resp.get_json()["code"] == "not_teams"
+
+
+def test_teams_state_query_count(client, count_queries):
+    from padel_league.tests.api_v2.conftest import stop_counting
+
+    counter = count_queries()
+    client.get(f"/api/v2/competitions/{TEAMS}/teams")
+    assert stop_counting(counter) <= 15
