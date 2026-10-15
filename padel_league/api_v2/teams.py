@@ -44,7 +44,20 @@ def mini_tournament(competition_id):
     return opened[-1] if opened else stages[0]
 
 
+def _preload_roster(mt):
+    """Load roster players with pictures in one query; teams_pairing's per-entry
+    lazy loads then hit the identity map instead of the database. The caller must
+    hold the returned list: the identity map only keeps weak references."""
+    from sqlalchemy.orm import joinedload
+
+    from padel_league.models.v2 import Entry
+
+    ids = Entry.query.filter_by(competition_id=mt.competition_id).with_entities(Entry.player_id)
+    return Player.query.options(joinedload(Player.picture)).filter(Player.id.in_(ids)).all()
+
+
 def state(mt, user=None):
+    preloaded = _preload_roster(mt)  # noqa: F841 - keeps them in the (weak) identity map
     players = sorted(teams_pairing.roster_players(mt), key=teams_pairing.ranking_key)
     by_id = {p.id: p for p in players}
     pairs = teams_pairing.stage_pairs(mt)
