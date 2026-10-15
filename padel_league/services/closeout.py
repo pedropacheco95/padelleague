@@ -141,6 +141,46 @@ def close_group(group_id, actor_user_id=None, now=None, recompute_ranking=True):
     return event
 
 
+def refresh_closed_group(group_id, actor_user_id=None, now=None):
+    """A result changed in a group that was already closed: re-snapshot its
+    standings, update its award rows in place (the event stays: ranking
+    snapshots point at it) and write a new ranking snapshot. Returns the event."""
+    now = now or datetime.utcnow()
+    group = db.session.get(CompetitionGroup, group_id)
+    if group is None or not group.has_ended:
+        raise Conflict("Este grupo não está fechado.", "group_not_closed")
+    rows = standings_svc.compute_rows(group)
+    snapshot_standings(group, rows)
+    event = AwardEvent.query.filter_by(group_id=group.id).order_by(AwardEvent.id.desc()).first()
+    rating = group_rating(group)
+    if event is not None and rating:
+        current = {a.entry_id: a for a in event.awards}
+        for line in points.group_awards(rows, rating):
+            award = current.pop(line.entry_id, None)
+            if award is None:
+                award = Award(entry_id=line.entry_id, player_id=line.player_id, group_id=group.id)
+                event.awards.append(award)
+            award.place, award.rating = line.place, rating
+            award.place_points, award.bonus_points = line.place_points, line.bonus_points
+            award.wins, award.draws = line.wins, line.draws
+            if group.stage.competition.format == "classica":
+                db.session.get(Entry, line.entry_id).final_place = line.place
+        for stale in current.values():
+            event.awards.remove(stale)
+            db.session.delete(stale)
+        event.awarded_at = now
+    group.standings_up_to_date = True
+    db.session.add(
+        AuditEvent(actor_user_id=actor_user_id, entity="group", entity_id=group.id, action="refreshed",
+                   after={"award_event_id": event.id if event else None})
+    )
+    db.session.flush()
+    if event is not None:
+        ranking.recompute(group.stage.competition.season.league_id, after_award_event_id=event.id,
+                          note=f"group {group.id} result edited after close")
+    return event
+
+
 def close_shuffle(competition_id, actor_user_id=None, now=None, recompute_ranking=True):
     """Shuffle awards: the curve over the final overall places (no bonus).
 

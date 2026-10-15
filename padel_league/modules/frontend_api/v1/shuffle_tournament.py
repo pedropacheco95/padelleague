@@ -1,16 +1,14 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
-from sqlalchemy.orm import joinedload
 
+from padel_league.domain.errors import Conflict, NotFound
+from padel_league.services import shuffle
 from padel_league.sql_db import db
 from padel_league.tools.auth_tools import admin_required_jwt
 from padel_league.models import (
     Association_PlayerMatch,
-    Association_PlayerShuffleMatch,
-    Association_PlayerShuffleTournament,
     Match,
     Player,
-    ShuffleMatch,
     ShuffleTournament,
 )
 from padel_league.modules.frontend_api.v1.player_comparison import (
@@ -45,34 +43,29 @@ def _get_tournament_from_payload():
     return shuffle_tournament, data, None
 
 
-def _last_played_division_for_player(shuffle_tournament, player_id):
-    last_played_match = (
-        ShuffleMatch.query.join(
-            Association_PlayerShuffleMatch,
-            Association_PlayerShuffleMatch.shuffle_match_id == ShuffleMatch.id,
-        )
-        .filter(ShuffleMatch.shuffle_tournament_id == shuffle_tournament.id)
-        .filter(Association_PlayerShuffleMatch.player_id == player_id)
-        .filter(ShuffleMatch.played.is_(True))
-        .filter(ShuffleMatch.score1.isnot(None), ShuffleMatch.score2.isnot(None))
-        .order_by(ShuffleMatch.matchweek.desc(), ShuffleMatch.id.desc())
-        .first()
-    )
-    return int(last_played_match.division) if last_played_match else None
+def _actor():
+    from flask_jwt_extended import get_jwt_identity
+
+    try:
+        return int(get_jwt_identity())
+    except (TypeError, ValueError, RuntimeError):
+        return None
 
 
-def _reorder_positions(shuffle_tournament):
-    ordered = sorted(
-        shuffle_tournament.players_relations,
-        key=lambda rel: (
-            int(rel.division_number or 9999),
-            rel.position or 9999,
-            -(rel.points or 0),
-            rel.player_id,
-        ),
-    )
-    for idx, rel in enumerate(ordered, start=1):
-        rel.position = idx
+def _competition_id(shuffle_tournament):
+    """compat.shuffle_tournaments.id = coalesce(legacy_shuffle_id, competitions.id)."""
+    return shuffle.competition_for_tournament_id(shuffle_tournament.id).id
+
+
+def _payload(shuffle_tournament_id):
+    """The serialized tournament after a committed write. recalculate_player_stats
+    sets stats on the compat (view) objects in memory; never flush them."""
+    with db.session.no_autoflush:
+        tournament = ShuffleTournament.query.filter_by(id=shuffle_tournament_id).first_or_404()
+        tournament.recalculate_player_stats()
+        payload = serialize_shuffle_tournament(tournament)
+    db.session.rollback()
+    return payload
 
 
 @bp.route("", methods=["GET"])
@@ -283,30 +276,17 @@ def remove_player_from_matchweek():
     except (TypeError, ValueError):
         return jsonify({"error": "playerId and matchweek must be integers"}), 400
 
-    match_ids = [m.id for m in shuffle_tournament.matches if m.matchweek == matchweek]
-    if not match_ids:
-        return jsonify({"error": "No matches found for that matchweek"}), 404
-
-    associations = (
-        Association_PlayerShuffleMatch.query.filter(
-            Association_PlayerShuffleMatch.shuffle_match_id.in_(match_ids)
+    try:
+        removed_count = shuffle.remove_player_from_round(
+            _competition_id(shuffle_tournament), matchweek, player_id, actor_user_id=_actor()
         )
-        .filter_by(player_id=player_id)
-        .all()
-    )
-
-    if not associations:
-        return jsonify({"error": "Player not found in that matchweek"}), 404
-
-    removed_count = 0
-    for assoc in associations:
-        assoc.delete()
-        removed_count += 1
-
-    shuffle_tournament = ShuffleTournament.query.filter_by(
-        id=tournament_id
-    ).first_or_404()
-    shuffle_tournament.recalculate_player_stats()
+    except NotFound as exc:
+        message = {
+            "round_not_found": "No matches found for that matchweek",
+            "player_not_in_round": "Player not found in that matchweek",
+        }.get(exc.code, exc.message)
+        return jsonify({"error": message}), 404
+    db.session.commit()
     return jsonify({"removedAssociations": removed_count})
 
 
@@ -317,33 +297,9 @@ def calculate_divisions():
     if error_response:
         return error_response
 
-    shuffle_tournament.recalculate_player_stats()
-    shuffle_tournament = ShuffleTournament.query.filter_by(
-        id=shuffle_tournament.id
-    ).first_or_404()
-
-    ordered_relations = sorted(
-        shuffle_tournament.players_relations,
-        key=lambda rel: (
-            -(rel.points or 0),
-            -(rel.games_played or 0),
-            -((rel.games_won or 0) - (rel.games_lost or 0)),
-            -(
-                rel.player.ranking_points
-                if rel.player and rel.player.ranking_points is not None
-                else 0
-            ),
-            shuffle_tournament._draw_order_for_player(rel.player_id),
-        ),
-    )
-
-    total_divisions = max(1, int(shuffle_tournament.number_of_divisions or 1))
-    slots_per_division = 8
-    for idx, rel in enumerate(ordered_relations):
-        rel.division_number = min((idx // slots_per_division) + 1, total_divisions)
-
-    shuffle_tournament.save()
-    return jsonify(serialize_shuffle_tournament(shuffle_tournament))
+    shuffle.calculate_divisions(_competition_id(shuffle_tournament))
+    db.session.commit()
+    return jsonify(_payload(shuffle_tournament.id))
 
 
 @bp.route("/undo_calculate_divisions", methods=["POST"])
@@ -353,46 +309,9 @@ def undo_calculate_divisions():
     if error_response:
         return error_response
 
-    shuffle_tournament = (
-        ShuffleTournament.query.options(
-            joinedload(ShuffleTournament.players_relations).joinedload(
-                Association_PlayerShuffleTournament.player
-            )
-        )
-        .filter_by(id=shuffle_tournament.id)
-        .first_or_404()
-    )
-
-    fallback_relations = sorted(
-        shuffle_tournament.players_relations,
-        key=lambda rel: (
-            rel.position or 9999,
-            -(rel.points or 0),
-            rel.player_id,
-        ),
-    )
-
-    total_divisions = max(1, int(shuffle_tournament.number_of_divisions or 1))
-    slots_per_division = 8
-    fallback_division_by_player = {
-        rel.player_id: min((idx // slots_per_division) + 1, total_divisions)
-        for idx, rel in enumerate(fallback_relations)
-    }
-
-    for rel in shuffle_tournament.players_relations:
-        last_division = _last_played_division_for_player(shuffle_tournament, rel.player_id)
-        rel.division_number = last_division or fallback_division_by_player.get(
-            rel.player_id, rel.division_number or 1
-        )
-
-    shuffle_tournament.recalculate_player_stats()
-    _reorder_positions(shuffle_tournament)
+    shuffle.undo_calculate_divisions(_competition_id(shuffle_tournament))
     db.session.commit()
-
-    shuffle_tournament = ShuffleTournament.query.filter_by(
-        id=shuffle_tournament.id
-    ).first_or_404()
-    return jsonify(serialize_shuffle_tournament(shuffle_tournament))
+    return jsonify(_payload(shuffle_tournament.id))
 
 
 @bp.route("/generate_matchweek", methods=["POST"])
@@ -404,84 +323,17 @@ def generate_matchweek():
     if not shuffle_tournament.players_relations:
         return jsonify({"error": "No players in tournament"}), 400
 
-    unfinished_matches = [
-        m
-        for m in shuffle_tournament.matches
-        if (not m.played) or m.score1 is None or m.score2 is None
-    ]
-    if unfinished_matches:
-        return (
-            jsonify(
-                {
-                    "error": "Cannot generate a new matchweek while there are unfinished matches."
-                }
-            ),
-            400,
-        )
-
-    new_matchweek = int(shuffle_tournament.current_matchweek or 0) + 1
-    created_matches = 0
-
-    by_division = {}
-    for rel in shuffle_tournament.players_relations:
-        by_division.setdefault(rel.division_number, []).append(rel)
-
-    for division_number in sorted(by_division.keys()):
-        relations = sorted(
-            by_division[division_number],
-            key=lambda rel: (
-                rel.position or 9999,
-                -(rel.points or 0),
-                rel.player_id,
-            ),
-        )
-        if len(relations) < 8:
-            continue
-
-        player_ids = [rel.player_id for rel in relations[:8]]
-        pairs = [
-            (player_ids[0], player_ids[7]),
-            (player_ids[1], player_ids[6]),
-            (player_ids[2], player_ids[5]),
-            (player_ids[3], player_ids[4]),
-        ]
-
-        # All pairs play all other pairs once:
-        # p0-vs-p1, p0-vs-p2, p0-vs-p3, p1-vs-p2, p1-vs-p3, p2-vs-p3
-        pair_matchups = [(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)]
-        for a, b in pair_matchups:
-            match = ShuffleMatch(
-                shuffle_tournament_id=shuffle_tournament.id,
-                matchweek=new_matchweek,
-                division=int(division_number),
-                played=False,
-            )
-            match.create()
-
-            Association_PlayerShuffleMatch(
-                player_id=pairs[a][0], shuffle_match_id=match.id, team="Home"
-            ).create()
-            Association_PlayerShuffleMatch(
-                player_id=pairs[a][1], shuffle_match_id=match.id, team="Home"
-            ).create()
-            Association_PlayerShuffleMatch(
-                player_id=pairs[b][0], shuffle_match_id=match.id, team="Away"
-            ).create()
-            Association_PlayerShuffleMatch(
-                player_id=pairs[b][1], shuffle_match_id=match.id, team="Away"
-            ).create()
-            created_matches += 1
-
-    if created_matches == 0:
-        return jsonify({"error": "No divisions with enough players (minimum 8)"}), 400
-
-    shuffle_tournament.current_matchweek = new_matchweek
-    shuffle_tournament.save()
-    shuffle_tournament = ShuffleTournament.query.filter_by(
-        id=shuffle_tournament.id
-    ).first_or_404()
-    shuffle_tournament.recalculate_player_stats()
-    return jsonify(serialize_shuffle_tournament(shuffle_tournament))
+    try:
+        shuffle.generate_round(_competition_id(shuffle_tournament), actor_user_id=_actor())
+    except Conflict as exc:
+        message = {
+            "round_unfinished": "Cannot generate a new matchweek while there are unfinished matches.",
+            "not_enough_players": "No divisions with enough players (minimum 8)",
+            "competition_ended": "This shuffle tournament has ended.",
+        }.get(exc.code, exc.message)
+        return jsonify({"error": message}), 400
+    db.session.commit()
+    return jsonify(_payload(shuffle_tournament.id))
 
 
 @bp.route("/delete_last_matchweek", methods=["POST"])
@@ -491,57 +343,24 @@ def delete_last_matchweek():
     if error_response:
         return error_response
 
-    matches = list(shuffle_tournament.matches or [])
-    if not matches:
+    if not shuffle_tournament.matches:
         return jsonify({"error": "No matchweeks found"}), 400
-
-    last_matchweek = max(int(match.matchweek or 0) for match in matches)
-    last_matchweek_matches = [
-        match for match in matches if int(match.matchweek or 0) == last_matchweek
-    ]
-    if not last_matchweek_matches:
-        return jsonify({"error": "No matches found for last matchweek"}), 400
-
-    has_played_matches = any(
-        match.played and match.score1 is not None and match.score2 is not None
-        for match in last_matchweek_matches
-    )
-    if has_played_matches:
-        return (
-            jsonify(
-                {
-                    "error": "Cannot delete the last matchweek because it already has played matches."
-                }
-            ),
-            400,
-        )
-
-    deleted_matches = 0
-    for match in last_matchweek_matches:
-        for assoc in list(match.players_relations or []):
-            db.session.delete(assoc)
-        db.session.delete(match)
-        deleted_matches += 1
-
-    remaining_matchweeks = [
-        int(match.matchweek or 0)
-        for match in matches
-        if int(match.matchweek or 0) != last_matchweek
-    ]
-    shuffle_tournament.current_matchweek = (
-        max(remaining_matchweeks) if remaining_matchweeks else 1
-    )
-    shuffle_tournament.recalculate_player_stats()
+    last_matchweek = max(int(m.matchweek or 0) for m in shuffle_tournament.matches)
+    deleted_matches = sum(1 for m in shuffle_tournament.matches if int(m.matchweek or 0) == last_matchweek)
+    try:
+        shuffle.delete_last_round(_competition_id(shuffle_tournament))
+    except Conflict as exc:
+        message = {
+            "no_rounds": "No matchweeks found",
+            "round_has_results": "Cannot delete the last matchweek because it already has played matches.",
+        }.get(exc.code, exc.message)
+        return jsonify({"error": message}), 400
     db.session.commit()
-
-    shuffle_tournament = ShuffleTournament.query.filter_by(
-        id=shuffle_tournament.id
-    ).first_or_404()
     return jsonify(
         {
             "deletedMatches": deleted_matches,
             "deletedMatchweek": last_matchweek,
-            "tournament": serialize_shuffle_tournament(shuffle_tournament),
+            "tournament": _payload(shuffle_tournament.id),
         }
     )
 
@@ -567,7 +386,6 @@ def create():
 
     try:
         title = str(data["title"]).strip()
-        current_matchweek = 0
         max_players = int(data["max_players"])
         number_of_divisions = int(data["number_of_divisions"])
         has_ended = bool(data["has_ended"])
@@ -641,28 +459,13 @@ def create():
     if missing_player_ids:
         return jsonify({"error": f"player(s) not found: {missing_player_ids}"}), 400
 
-    players_per_division = 8
-
-    tournament = ShuffleTournament(
-        title=title,
-        current_matchweek=current_matchweek,
-        max_players=max_players,
+    competition = shuffle.create_shuffle(
+        title,
+        [(item["player_id"], item["order_index"]) for item in parsed_players],
         number_of_divisions=number_of_divisions,
+        max_players=max_players,
+        multipliers_by_tier={int(k): v for k, v in division_multipliers.items()},
         has_ended=has_ended,
     )
-    tournament.division_multipliers = division_multipliers
-    tournament.create()
-
-    for item in sorted(parsed_players, key=lambda x: x["order_index"]):
-        division_number = ((item["order_index"] - 1) // players_per_division) + 1
-        division_number = min(division_number, number_of_divisions)
-
-        Association_PlayerShuffleTournament(
-            player_id=item["player_id"],
-            shuffle_tournament_id=tournament.id,
-            division_number=division_number,
-            position=item["order_index"],
-        ).create()
-
-    tournament.recalculate_player_stats()
-    return jsonify(serialize_shuffle_tournament(tournament)), 201
+    db.session.commit()
+    return jsonify(_payload(competition.legacy_shuffle_id or competition.id)), 201
