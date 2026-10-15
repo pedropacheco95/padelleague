@@ -274,6 +274,8 @@ class CompetitionMatch(db.Model):
     scheduled_at = Column(DateTime)
     court = Column(Text)
     status = Column(Text, nullable=False, default="scheduled")
+    # home | away for a walkover (no sets stored); null otherwise.
+    walkover_winner = Column(Text)
     home_pair_id = Column(Integer, ForeignKey("pairs.id"))
     away_pair_id = Column(Integer, ForeignKey("pairs.id"))
     bracket_code = Column(Text)

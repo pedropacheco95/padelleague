@@ -19,6 +19,7 @@ from . import (
     chatbot_api,
 )
 from .frontend_api.v1 import register_api_blueprints as register_v1_blueprints
+from padel_league.api_v2 import register_v2_blueprints
 
 
 # Register Blueprints
@@ -42,6 +43,7 @@ def register_blueprints(app):
     app.register_blueprint(chatbot_api.bp)
 
     register_v1_blueprints(app)
+    register_v2_blueprints(app)
 
     return True
 
