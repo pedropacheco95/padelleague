@@ -49,6 +49,7 @@ LOGGED_IN_V1 = [
     ("POST", "/api/v1/tournaments/1/remove_player_from_matchweek"),
     ("POST", "/api/v1/shuffle_tournament/remove_player_from_matchweek"),
     ("PUT", "/api/v1/players/1"),
+    ("POST", "/api/v1/tournaments/1/refresh_standings"),
 ]
 
 ADMIN_V1 = [
@@ -56,7 +57,6 @@ ADMIN_V1 = [
     ("PUT", "/api/v1/divisions/1"),
     ("POST", "/api/v1/divisions/1/generate_matches"),
     ("POST", "/api/v1/editions"),
-    ("POST", "/api/v1/tournaments/1/refresh_standings"),
 ]
 
 SUPER_ADMIN_V1 = [

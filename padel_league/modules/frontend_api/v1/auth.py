@@ -6,6 +6,7 @@ import unidecode
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import (
     create_access_token,
+    create_refresh_token,
     get_jwt_identity,
     jwt_required,
 )
@@ -16,6 +17,15 @@ from padel_league.models import Player, User
 from padel_league.tools import email_tools, image_tools
 
 bp = Blueprint("api_v1_auth", __name__, url_prefix="/api/v1/auth")
+
+
+def _tokens(user):
+    """A short-lived access token plus the refresh token the site renews it with."""
+    identity = str(user.id)
+    return {
+        "access_token": create_access_token(identity=identity),
+        "refresh_token": create_refresh_token(identity=identity),
+    }
 
 
 @bp.route("/login", methods=["POST"])
@@ -31,8 +41,17 @@ def login():
     if not check_password_hash(user.password, password):
         return jsonify({"error": "Enganaste-te na password oh burro."}), 401
 
-    access_token = create_access_token(identity=str(user.id))
-    return jsonify({"user": user.serialize(), "access_token": access_token})
+    return jsonify({"user": user.serialize(), **_tokens(user)})
+
+
+@bp.route("/refresh", methods=["POST"])
+@jwt_required(refresh=True)
+def refresh():
+    """Swap a valid refresh token for a new pair, so an active player never expires."""
+    user = User.query.get(int(get_jwt_identity()))
+    if user is None:
+        return jsonify({"error": "User not found"}), 401
+    return jsonify(_tokens(user))
 
 
 @bp.route("/logout", methods=["POST"])
@@ -84,8 +103,7 @@ def verify_generated_code(user_id):
     user.generated_code = None
     user.save()
 
-    access_token = create_access_token(identity=str(user.id))
-    return jsonify({"player_id": user.player_id, "access_token": access_token})
+    return jsonify({"player_id": user.player_id, **_tokens(user)})
 
 
 @bp.route("/generate_new_code/<int:user_id>", methods=["POST"])
@@ -166,5 +184,4 @@ def register():
     user = User(username=username, email=email, password=password, player_id=player.id)
     user.create()
 
-    access_token = create_access_token(identity=str(user.id))
-    return jsonify({"user": user.serialize(), "access_token": access_token}), 201
+    return jsonify({"user": user.serialize(), **_tokens(user)}), 201

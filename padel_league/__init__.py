@@ -37,6 +37,8 @@ def create_app(test_config=None):
         from .config import ProdConfig
 
         app.config.from_object(ProdConfig)
+        if not app.config.get("SECRET_KEY") or not app.config.get("JWT_SECRET_KEY"):
+            raise RuntimeError("Production needs FLASK_SECRET_KEY (or SECRET_KEY and JWT_SECRET_KEY) set")
     else:
         from .config import DevConfig
 

@@ -21,6 +21,8 @@ class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev-jwt-secret")
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=30)
+    # The site renews the access token with this one, so active players stay signed in.
+    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
     JWT_TOKEN_LOCATION = ["headers", "query_string"]
     JWT_HEADER_TYPE = "Bearer"
     JWT_QUERY_STRING_NAME = "token"
@@ -50,6 +52,26 @@ class DevConfigProdDB(Config):
     POSTGRES_HOST = os.getenv("POSTGRES_HOST", "35.205.246.86")
 
 
+def _prod_secret(name, purpose):
+    """A production secret: its own env var, else derived from FLASK_SECRET_KEY.
+
+    The deploy only passes FLASK_SECRET_KEY. Before this, SECRET_KEY and
+    JWT_SECRET_KEY silently fell back to the public dev defaults in production.
+    """
+    explicit = os.getenv(name)
+    if explicit:
+        return explicit
+    base = os.getenv("FLASK_SECRET_KEY")
+    if not base:
+        return None
+    import hashlib
+    import hmac
+
+    return hmac.new(base.encode(), purpose.encode(), hashlib.sha256).hexdigest()
+
+
 class ProdConfig(Config):
     DEBUG = False
     POSTGRES_HOST = os.getenv("POSTGRES_HOST", "172.17.0.1")
+    SECRET_KEY = _prod_secret("SECRET_KEY", "flask-session")
+    JWT_SECRET_KEY = _prod_secret("JWT_SECRET_KEY", "jwt")

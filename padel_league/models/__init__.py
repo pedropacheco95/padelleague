@@ -18,6 +18,7 @@ from .backend_apps import Backend_App
 from .sponsors import Sponsor
 from .sponsor_clicks import SponsorClick
 from .chatbot_logs import ChatbotLog
+from .teams import TeamsMiniTournament, TeamsPair, TeamsPartnerRequest, TeamsPlayer
 from .Association_PlayerDivision import Association_PlayerDivision
 from .Association_PlayerMatch import Association_PlayerMatch
 from .Association_PlayerShuffleTournament import Association_PlayerShuffleTournament
