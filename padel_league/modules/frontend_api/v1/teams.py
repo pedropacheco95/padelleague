@@ -4,7 +4,6 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, verify_jwt_in_request
 
 from padel_league.models import Player
-from padel_league.models.teams import TeamsPair, TeamsPartnerRequest, TeamsPlayer
 from padel_league.services import teams_pairing
 from padel_league.services.teams_pairing import PairingError
 from padel_league.sql_db import db
@@ -24,24 +23,21 @@ def _viewer():
 
 
 def _state(mt, viewer=None):
-    roster = TeamsPlayer.query.all()
-    players = sorted((row.player for row in roster), key=teams_pairing.ranking_key)
-    pairs = TeamsPair.query.filter_by(mini_tournament_id=mt.id).order_by(TeamsPair.id).all()
-    paired = {pid for p in pairs for pid in p.player_ids}
+    players = sorted(teams_pairing.roster_players(mt), key=teams_pairing.ranking_key)
+    pairs = teams_pairing.stage_pairs(mt)
+    pair_players = {p.id: teams_pairing.pair_players(mt, p) for p in pairs}
+    paired = {pid for ids in pair_players.values() for pid in ids}
+    by_id = {p.id: p for p in players}
     my_id = viewer.player_id if viewer else None
-    in_roster = my_id in {p.id for p in players}
+    in_roster = my_id in by_id
 
     my_choice, chose_me = None, []
     if in_roster:
-        mine = TeamsPartnerRequest.query.filter_by(mini_tournament_id=mt.id, player_id=my_id).first()
-        my_choice = mine.partner_id if mine else None
-        chose_me = [
-            r.player_id
-            for r in TeamsPartnerRequest.query.filter_by(mini_tournament_id=mt.id, partner_id=my_id)
-            if r.player_id not in paired
-        ]
+        my_choice = teams_pairing.choice_of(mt, my_id)
+        chose_me = [pid for pid in teams_pairing.chose(mt, my_id) if pid not in paired]
 
-    history = teams_pairing.times_together(mt.id)
+    history = teams_pairing.times_together(mt)
+    source = {"mutual": "mutual", "ranking": "auto", "manual": "admin"}
     return {
         "miniTournament": {
             "id": mt.id,
@@ -63,9 +59,9 @@ def _state(mt, viewer=None):
         "pairs": [
             {
                 "id": pair.id,
-                "source": pair.source,
-                "players": [serialize_player_short(pair.player_a), serialize_player_short(pair.player_b)],
-                "rankingPoints": (pair.player_a.ranking_points or 0) + (pair.player_b.ranking_points or 0),
+                "source": source.get(pair.formed_by, pair.formed_by),
+                "players": [serialize_player_short(Player.query.get(pid)) for pid in pair_players[pair.id]],
+                "rankingPoints": sum((Player.query.get(pid).ranking_points or 0) for pid in pair_players[pair.id]),
             }
             for pair in pairs
         ],
@@ -74,7 +70,7 @@ def _state(mt, viewer=None):
             "inRoster": in_roster,
             "myChoice": my_choice,
             "choseMe": chose_me,
-            "pairId": next((p.id for p in pairs if my_id in p.player_ids), None),
+            "pairId": next((pid for pid, ids in pair_players.items() if my_id in ids), None),
             "isAdmin": bool(viewer and viewer.is_admin),
         },
     }
@@ -165,38 +161,16 @@ def admin_set_roster():
     known = {p.id for p in Player.query.filter(Player.id.in_(ids))}
     if ids != known:
         return jsonify({"error": f"Jogadores desconhecidos: {sorted(ids - known)}"}), 400
-    TeamsPlayer.query.filter(~TeamsPlayer.player_id.in_(ids)).delete(synchronize_session=False)
-    present = {row.player_id for row in TeamsPlayer.query.all()}
-    db.session.add_all(TeamsPlayer(player_id=i) for i in ids - present)
-    db.session.commit()
-    mt, error = _current_or_404()
-    return error or jsonify(_state(mt, jwt_user()))
+    return _run(lambda mt, user: teams_pairing.set_roster(mt, ids))
 
 
 @bp.route("/roster/<int:player_id>", methods=["POST"])
 @admin_required_jwt()
 def admin_add_to_roster(player_id):
-    def action(mt, user):
-        if db.session.get(Player, player_id) is None:
-            raise PairingError("Jogador desconhecido.")
-        if db.session.get(TeamsPlayer, player_id) is None:
-            db.session.add(TeamsPlayer(player_id=player_id))
-            db.session.commit()
-
-    return _run(action)
+    return _run(lambda mt, user: teams_pairing.add_to_roster(mt, player_id))
 
 
 @bp.route("/roster/<int:player_id>", methods=["DELETE"])
 @admin_required_jwt()
 def admin_remove_from_roster(player_id):
-    def action(mt, user):
-        if teams_pairing.pair_of(mt.id, player_id):
-            raise PairingError("Desfaz primeiro a parelha deste jogador.")
-        TeamsPartnerRequest.query.filter(
-            TeamsPartnerRequest.mini_tournament_id == mt.id,
-            (TeamsPartnerRequest.player_id == player_id) | (TeamsPartnerRequest.partner_id == player_id),
-        ).delete(synchronize_session=False)
-        TeamsPlayer.query.filter_by(player_id=player_id).delete()
-        db.session.commit()
-
-    return _run(action)
+    return _run(lambda mt, user: teams_pairing.remove_from_roster(mt, player_id))

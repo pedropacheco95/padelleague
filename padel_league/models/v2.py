@@ -118,6 +118,9 @@ class Stage(db.Model):
     seeded_from_id = Column(Integer, ForeignKey("ranking_snapshots.id"))
     emits_award = Column(Boolean, nullable=False, default=False)
     status = Column(Text, nullable=False, default="planned")
+    # Teams: partner choices are accepted until this moment (UTC); closing pairs the rest.
+    pairing_deadline = Column(DateTime)
+    pairing_closed = Column(Boolean, nullable=False, default=False)
 
     competition = relationship("Competition", back_populates="stages")
     groups = relationship("CompetitionGroup", back_populates="stage", order_by="CompetitionGroup.tier", cascade="all, delete-orphan")
@@ -183,13 +186,25 @@ class Entry(db.Model):
 
 
 class Pair(db.Model):
+    """Two entries playing together for one stage. entry_a_id < entry_b_id."""
+
     __tablename__ = "pairs"
+    __table_args__ = (
+        UniqueConstraint("stage_id", "entry_a_id"),
+        UniqueConstraint("stage_id", "entry_b_id"),
+    )
 
     id = Column(Integer, primary_key=True)
     stage_id = Column(Integer, ForeignKey("stages.id", ondelete="CASCADE"), nullable=False)
     entry_a_id = Column(Integer, ForeignKey("entries.id"), nullable=False)
     entry_b_id = Column(Integer, ForeignKey("entries.id"), nullable=False)
+    # mutual | ranking | draw | rotation | manual
     formed_by = Column(Text, nullable=False)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    @property
+    def entry_ids(self):
+        return (self.entry_a_id, self.entry_b_id)
 
     stage = relationship("Stage", back_populates="pairs")
     entry_a = relationship("Entry", foreign_keys=[entry_a_id])
