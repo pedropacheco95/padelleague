@@ -405,3 +405,38 @@ def save_classica_group(payload, group=None, actor_user_id=None):
         )
     )
     return group
+
+
+def delete_classica_group(group_id, actor_user_id=None):
+    """Delete a group with its members and unplayed matches. Caller commits.
+
+    Refused once a match was played or awards exist: that history feeds the
+    ranking and player pages.
+    """
+    from padel_league.models.v2 import Award, CompetitionMatch
+
+    group = db.session.get(CompetitionGroup, group_id)
+    if group is None:
+        raise EditionPlanError(f"division {group_id} was not found")
+    matches = CompetitionMatch.query.filter_by(group_id=group_id).all()
+    if any(m.played for m in matches) or Award.query.filter_by(group_id=group_id).first():
+        raise EditionPlanError(f"division {group_id} has played matches or awards; it cannot be deleted")
+    competition_id = group.stage.competition_id
+    for match in matches:
+        db.session.delete(match)
+    db.session.flush()
+    db.session.delete(group)
+    db.session.flush()
+    _drop_unused_entries(competition_id)
+    db.session.add(AuditEvent(actor_user_id=actor_user_id, entity="group", entity_id=group_id, action="deleted"))
+
+
+def delete_empty_competition(competition_id, actor_user_id=None):
+    """Delete a competition that has no groups yet. Caller commits."""
+    competition = db.session.get(Competition, competition_id)
+    if competition is None:
+        raise EditionPlanError(f"edition {competition_id} was not found")
+    if CompetitionGroup.query.join(Stage).filter(Stage.competition_id == competition_id).first():
+        raise EditionPlanError(f"edition {competition_id} still has divisions; delete them first")
+    db.session.delete(competition)
+    db.session.add(AuditEvent(actor_user_id=actor_user_id, entity="competition", entity_id=competition_id, action="deleted"))

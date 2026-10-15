@@ -56,12 +56,16 @@ def edit(id):
 @bp.route("/delete/<division_id>", methods=["POST"])
 @auth_tools.admin_required
 def delete(division_id):
-    division = Division.query.filter_by(id=division_id).first()
-    for match in division.matches:
-        for association in match.players_relations:
-            association.delete()
-        match.delete()
-    for association in division.players_relations:
-        association.delete()
-    division.delete()
+    from flask import flash
+    from flask_login import current_user
+
+    from padel_league.services.editions import EditionPlanError, delete_classica_group
+    from padel_league.sql_db import db
+
+    try:
+        delete_classica_group(int(division_id), actor_user_id=current_user.id)
+        db.session.commit()
+    except EditionPlanError as exc:
+        db.session.rollback()
+        flash(str(exc))
     return redirect(url_for("tournaments.tournaments"))

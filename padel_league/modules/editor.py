@@ -24,6 +24,7 @@ from padel_league.models.v2 import (
     MatchParticipant,
     Round,
 )
+from padel_league.modules.compat_guard import compat_write_message, is_compat_model
 from padel_league.services.results import _audit, _match_state, unfreeze_group_standings
 from padel_league.sql_db import db
 from padel_league.tools import auth_tools
@@ -73,6 +74,9 @@ def create(model):
     empty_instance = model()
     form = empty_instance.get_create_form()
     if request.method == "POST":
+        if is_compat_model(model):
+            flash(compat_write_message(model), "error")
+            return redirect(url_for("editor.display_all", model=model_name))
         values = form.set_values(request)
         empty_instance.update_with_dict(values)
         empty_instance.create()
