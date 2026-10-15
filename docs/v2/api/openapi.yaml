@@ -365,6 +365,7 @@ paths:
       responses:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/RankingExplanation" } } } }
         "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
 
   /competitions/{competitionId}/teams:
     parameters: [{ $ref: "#/components/parameters/competitionId" }]
@@ -482,6 +483,28 @@ paths:
         "409": { $ref: "#/components/responses/Error" }
         "401": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /news:
+    get:
+      tags: [news]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/NewsSummary" } } } } }
+
+  /news/latest:
+    get:
+      tags: [news]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/NewsDetail" } } } }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /news/{newsId}:
+    parameters: [{ name: newsId, in: path, required: true, schema: { type: integer } }]
+    get:
+      tags: [news]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/NewsDetail" } } } }
+        "404": { $ref: "#/components/responses/Error" }
 
   /auth/login:
     post:
@@ -885,6 +908,23 @@ components:
             choseMe: { type: array, items: { type: integer } }
             pairId: { type: [integer, "null"] }
             isAdmin: { type: boolean }
+
+    NewsSummary:
+      type: object
+      required: [id, title, author, latest, coverImage]
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        author: { type: [string, "null"] }
+        latest: { type: boolean }
+        coverImage: { oneOf: [{ $ref: "#/components/schemas/Image" }, { type: "null" }] }
+
+    NewsDetail:
+      allOf:
+        - $ref: "#/components/schemas/NewsSummary"
+        - type: object
+          required: [text]
+          properties: { text: { type: string } }
 
     User:
       type: object
