@@ -3,9 +3,19 @@ absences; closing a group is admin. The domain work is S1's (services.results.re
 services.closeout.close_group); older service paths cover Clássica/Shuffle until then.
 """
 
+import logging
+
 from flask import Blueprint, jsonify
 
-from padel_league.models.v2 import Absence, CompetitionGroup, CompetitionMatch, Round
+from padel_league.models.v2 import (
+    Absence,
+    GroupMember,
+    AuditEvent,
+    CompetitionGroup,
+    CompetitionMatch,
+    MatchParticipant,
+    Round,
+)
 from padel_league.services import results
 from padel_league.services.results import ResultError
 from padel_league.sql_db import db
@@ -101,7 +111,11 @@ def put_result(match_id):
         db.session.rollback()
         raise bad_request(str(exc), "invalid_result")
     db.session.commit()
-    _close_if_complete(match.group)
+    try:
+        _close_if_complete(match.group)
+    except Exception:  # noqa: BLE001 - the result is saved; v1 also logs and carries on
+        db.session.rollback()
+        logging.getLogger(__name__).exception("close-out after result on match %s failed", match_id)
     fresh = match_query().filter(CompetitionMatch.id == match_id).one()
     return jsonify(serialize_matches([fresh])[0])
 
@@ -145,10 +159,50 @@ def post_absence(round_id):
 @bp.route("/absences/<int:absence_id>", methods=["DELETE"])
 @role_required("player")
 def delete_absence(absence_id):
-    """Deletes the absence record only; slots already given to a substitute stay as they are."""
+    """Undo a recorded absence: the player gets their slot back in every match of that
+    round where the absence moved them out (from the audit trail), then the record goes.
+    Migrated (derived) absences are history and are not deleted here."""
     absence = db.session.get(Absence, absence_id)
     if absence is None:
         raise not_found("Falta não encontrada.", "absence_not_found")
+    if absence.source != "recorded":
+        raise conflict("Esta falta vem do histórico e não pode ser anulada aqui.", "absence_not_recorded")
+    entry = absence.entry
+    group_ids = [m.group_id for m in GroupMember.query.filter_by(entry_id=entry.id)]
+    matches = CompetitionMatch.query.filter(
+        CompetitionMatch.round_id == absence.round_id, CompetitionMatch.group_id.in_(group_ids)
+    ).all()
+    for match in matches:
+        if any(p.player_id == entry.player_id for p in match.participants):
+            continue
+        audit = (
+            AuditEvent.query.filter_by(entity="match", entity_id=match.id, action="absence")
+            .order_by(AuditEvent.id.desc())
+            .all()
+        )
+        slot = next(
+            (
+                (p["side"], p["slot"])
+                for a in audit
+                for p in (a.before or {}).get("participants", [])
+                if p["player_id"] == entry.player_id
+            ),
+            None,
+        )
+        if slot is None:
+            continue
+        occupant = next((p for p in match.participants if (p.side, p.slot) == slot), None)
+        if occupant is not None:
+            if occupant.role == "member":  # someone else holds it now; leave it alone
+                continue
+            match.participants.remove(occupant)
+            db.session.delete(occupant)
+            db.session.flush()
+        match.participants.append(
+            MatchParticipant(side=slot[0], slot=slot[1], role="member", entry_id=entry.id, player_id=entry.player_id)
+        )
+        if match.status in ("played", "walkover"):
+            results.unfreeze_group_standings(match.group_id)
     db.session.delete(absence)
     db.session.commit()
     return "", 204
@@ -164,6 +218,8 @@ def close_group(group_id):
         close(group.id, actor_user_id=user.id)
         db.session.commit()
     else:
+        if group.stage.competition.format != "classica":
+            raise conflict("O fecho deste formato ainda não está disponível.", "not_available")
         if group.has_ended:
             raise conflict("Este grupo já está fechado.", "group_already_closed")
         if not results.close_group_if_complete(group):

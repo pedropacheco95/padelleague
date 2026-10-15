@@ -60,6 +60,9 @@ def test_absence_with_substitute_then_delete(client, make_user):
     assert any(p["role"] == "substitute" and p["player"]["id"] == sub.id for p in match["participants"])
     resp = client.delete(f"/api/v2/absences/{body['id']}", headers=h)
     assert resp.status_code == 204 and db.session.get(Absence, body["id"]) is None
+    match = check(client.get(f"/api/v2/matches/{m.id}"), "/matches/{matchId}")
+    restored = {p["player"]["id"]: p["role"] for p in match["participants"] if p["player"]}
+    assert restored.get(absent) == "member" and sub.id not in restored
     outsider = f.player()
     persist()
     check(client.post(f"/api/v2/rounds/{rnd.id}/absences", json={"playerId": outsider.id, "groupId": grp.id}, headers=h), "/rounds/{roundId}/absences", "post", 400)
@@ -76,3 +79,17 @@ def test_close_group_is_admin_and_needs_all_results(client, make_user):
 def test_competition_standings_endpoint(client):
     body = check(client.get("/api/v2/competitions/26/standings"), "/competitions/{competitionId}/standings")
     assert isinstance(body, list)
+
+
+def test_derived_absence_is_not_deleted(client, make_user):
+    derived = Absence.query.filter_by(source="derived").first()
+    resp = client.delete(f"/api/v2/absences/{derived.id}", headers=bearer(make_user()))
+    assert resp.status_code == 409 and resp.get_json()["code"] == "absence_not_recorded"
+
+
+def test_close_fallback_refuses_other_formats(client, make_user):
+    comp = f.competition(format="shuffle", name="Shuffle close test")
+    grp = f.group(f.stage(comp))
+    persist()
+    resp = client.post(f"/api/v2/groups/{grp.id}/close", headers=bearer(make_user(role="admin")))
+    assert resp.status_code == 409
