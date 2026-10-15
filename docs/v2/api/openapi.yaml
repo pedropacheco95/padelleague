@@ -70,6 +70,7 @@ paths:
         "403": { $ref: "#/components/responses/Error" }
         "401": { $ref: "#/components/responses/Error" }
         "409": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
 
   /competitions/preview:
     post:
@@ -105,6 +106,7 @@ paths:
         "401": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
         "409": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
 
   /competitions/current:
     get:
@@ -629,6 +631,7 @@ components:
         fromCompetitionId: { type: [integer, "null"], description: Clássica built from the previous one via promotion }
         withdrawals: { type: array, items: { type: integer } }
         newPlayerIds: { type: array, items: { type: integer } }
+        placedNewPlayers: { type: object, additionalProperties: { type: array, items: { type: integer } }, description: "tier → newcomer ids placed straight into that division (Golden Ticket)" }
         playerIds: { type: array, items: { type: integer }, description: Shuffle / Teams roster }
 
     Stage:
