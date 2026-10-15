@@ -9,11 +9,14 @@ when one of its results is edited, as the old code recomputed them too.
 
 from datetime import datetime
 
+from padel_league.domain import standings as rules
+from padel_league.domain.errors import InvalidInput, NotFound
 from padel_league.models.v2 import (
     Absence,
     AuditEvent,
     CompetitionMatch,
     Entry,
+    MatchSet,
     GroupMember,
     MatchParticipant,
     StandingSnapshot,
@@ -45,6 +48,8 @@ def _match_state(match):
         "court": match.court,
         "home_games": first.home_games if first else None,
         "away_games": first.away_games if first else None,
+        "sets": [[x.home_games, x.away_games, x.outcome] for x in match.sets],
+        "walkover_winner": match.walkover_winner,
         "participants": [
             {"side": p.side, "slot": p.slot, "player_id": p.player_id, "role": p.role}
             for p in match.participants
@@ -87,6 +92,69 @@ def record_result(match_id, home_games, away_games, court=None, actor_user_id=No
     return match
 
 
+def _set_rows(fmt, sets):
+    """Validate the submitted sets for the competition format; returns MatchSet rows."""
+    parsed = []
+    for raw in sets:
+        outcome = raw.get("outcome") or "completed"
+        home, away = raw.get("home_games"), raw.get("away_games")
+        parsed.append(
+            rules.SetResult(
+                int(home) if home is not None else None, int(away) if away is not None else None, outcome
+            )
+        )
+    if fmt == "teams":
+        if len(parsed) != rules.TEAMS_SETS_PER_MATCH:
+            raise InvalidInput("Um encontro da Teams tem sempre exatamente 3 sets.", "teams_needs_three_sets")
+        for result in parsed:
+            rules.set_points(result)  # raises on a completed set without a winner
+    else:
+        if len(parsed) != 1 or parsed[0].outcome != "completed":
+            raise InvalidInput("Este formato regista um só set terminado.", "one_set_expected")
+        if parsed[0].home_games is None or parsed[0].away_games is None:
+            raise InvalidInput("Indica os jogos das duas equipas.", "invalid_set_score")
+    return [
+        MatchSet(set_no=n, home_games=r.home_games, away_games=r.away_games, outcome=r.outcome)
+        for n, r in enumerate(parsed, start=1)
+    ]
+
+
+def record_sets(match_id, sets=(), walkover_winner=None, court=None, actor_user_id=None):
+    """Record a full result: the sets (Teams: exactly 3; Clássica/Shuffle: 1) or a
+    walkover (Teams only: the present pair wins 3-0, no sets are stored)."""
+    match = db.session.get(CompetitionMatch, match_id)
+    if match is None:
+        raise NotFound(f"Jogo {match_id} não existe.", "match_not_found")
+    fmt = match.group.stage.competition.format
+    before = _match_state(match)
+
+    if walkover_winner is not None:
+        if fmt != "teams":
+            raise InvalidInput("Só a Teams regista faltas de comparência.", "walkover_not_allowed")
+        if walkover_winner not in ("home", "away"):
+            raise InvalidInput("Vencedor de falta de comparência inválido.", "invalid_walkover")
+        if sets:
+            raise InvalidInput("Uma falta de comparência não tem sets.", "walkover_has_no_sets")
+        new_sets, status = [], "walkover"
+    else:
+        new_sets, status = _set_rows(fmt, sets), "played"
+
+    for old in list(match.sets):
+        match.sets.remove(old)
+        db.session.delete(old)
+    db.session.flush()
+    match.sets.extend(new_sets)
+    match.status = status
+    match.walkover_winner = walkover_winner
+    if court is not None:
+        match.court = court
+    match.updated_by_user_id = actor_user_id
+    match.updated_at = datetime.utcnow()
+    unfreeze_group_standings(match.group_id)
+    _audit(actor_user_id, "match", match.id, "result", before, _match_state(match))
+    return match
+
+
 def _member_entry(group_id, player_id):
     return (
         Entry.query.join(GroupMember, GroupMember.entry_id == Entry.id)
@@ -95,9 +163,11 @@ def _member_entry(group_id, player_id):
     )
 
 
-def mark_absent(group_id, round_number, player_id, actor_user_id=None, substitute_player_id=None):
-    """Remove a player from every match of a round in a group and record the absence.
+def mark_absent(group_id, round_number, player_id, actor_user_id=None, substitute_player_id=None, match_ids=None):
+    """Remove a player from the matches of a round in a group and record the absence.
 
+    Every match of the round by default (kind 'full'); only `match_ids` when
+    given (kind 'partial': the player misses some matches of the jornada).
     The slot they leave is filled by `substitute_player_id` when given,
     otherwise it stays unknown (shown as "Substituto"). Returns
     (removed_count, any_played_match_affected).
@@ -108,6 +178,13 @@ def mark_absent(group_id, round_number, player_id, actor_user_id=None, substitut
         .filter_by(number=round_number)
         .all()
     )
+    kind = "full"
+    if match_ids is not None:
+        wanted = {int(m) for m in match_ids}
+        if not wanted or not wanted <= {m.id for m in matches}:
+            raise InvalidInput("Escolhe jogos desta jornada.", "matches_not_in_round")
+        matches = [m for m in matches if m.id in wanted]
+        kind = "partial"
     removed, played_affected = 0, False
     for match in matches:
         participant = next((p for p in match.participants if p.player_id == player_id), None)
@@ -135,17 +212,75 @@ def mark_absent(group_id, round_number, player_id, actor_user_id=None, substitut
                 Absence(
                     entry_id=entry.id,
                     round_id=round_id,
-                    kind="full",
+                    kind=kind,
                     source="recorded",
                     created_by_user_id=actor_user_id,
                 )
             )
         else:
-            absence.kind, absence.source = "full", "recorded"
+            absence.kind = "full" if "full" in (kind, absence.kind) else kind
+            absence.source = "recorded"
 
     if played_affected:
         unfreeze_group_standings(group_id)
     return removed, played_affected
+
+
+def _slot_before_absence(match, player_id):
+    """(side, slot) the player held before they were marked absent, from the audit trail."""
+    events = (
+        AuditEvent.query.filter_by(entity="match", entity_id=match.id, action="absence")
+        .order_by(AuditEvent.id.desc())
+        .all()
+    )
+    for event in events:
+        for p in (event.before or {}).get("participants", []):
+            if p.get("player_id") == player_id and p.get("role") == "member":
+                return p["side"], p["slot"]
+    return None
+
+
+def undo_absence(absence_id, actor_user_id=None):
+    """Put the player back in the unplayed matches of the round and delete the absence.
+
+    Played matches are left as they are (their result stands). The slot comes
+    from the audit trail of the absence; a substitute in that slot is removed.
+    Returns the number of matches the player was restored to.
+    """
+    absence = db.session.get(Absence, absence_id)
+    if absence is None:
+        raise NotFound(f"Ausência {absence_id} não existe.", "absence_not_found")
+    if absence.source == "derived":
+        raise InvalidInput("Esta ausência vem dos resultados e não pode ser anulada.", "absence_derived")
+    entry = absence.entry
+    group_ids = [gm.group_id for gm in GroupMember.query.filter_by(entry_id=entry.id)]
+    matches = CompetitionMatch.query.filter(
+        CompetitionMatch.round_id == absence.round_id, CompetitionMatch.group_id.in_(group_ids)
+    ).all()
+    restored = 0
+    for match in matches:
+        if match.played or any(p.player_id == entry.player_id for p in match.participants):
+            continue
+        place = _slot_before_absence(match, entry.player_id)
+        if place is None:
+            continue
+        side, slot = place
+        before = _match_state(match)
+        occupant = next((p for p in match.participants if p.side == side and p.slot == slot), None)
+        if occupant is not None:
+            if occupant.role == "member":
+                continue  # slot taken by another member: leave it to an admin
+            match.participants.remove(occupant)
+            db.session.delete(occupant)
+            db.session.flush()
+        match.participants.append(
+            MatchParticipant(side=side, slot=slot, role="member", entry_id=entry.id, player_id=entry.player_id)
+        )
+        restored += 1
+        _audit(actor_user_id, "match", match.id, "absence_undone", before, _match_state(match))
+    db.session.delete(absence)
+    _audit(actor_user_id, "absence", absence_id, "deleted", {"entry_id": entry.id, "round_id": absence.round_id})
+    return restored
 
 
 def match_for_shuffle_id(shuffle_match_id):
@@ -154,73 +289,20 @@ def match_for_shuffle_id(shuffle_match_id):
     return match or db.session.get(CompetitionMatch, shuffle_match_id)
 
 
-def _group_standings(group_id):
-    """Standings of a classica group from the compat view (frozen or live)."""
-    rows = db.session.execute(
-        db.text(
-            "select player_id, place, wins, draws from compat.players_in_division "
-            "where division_id = :g order by place"
-        ),
-        {"g": group_id},
-    ).all()
-    return rows
-
-
 def close_group_if_complete(group):
-    """Mark a group ended once every match is played and write its ranking awards.
+    """Close the group once every match is done: snapshot, awards, ranking (in that order).
 
-    Returns True when the group was closed by this call. The caller commits and
-    then recomputes the ranking, so the closing group always counts (the old
-    code recomputed before marking the division ended).
+    Returns True when this call closed it. The caller commits.
     """
-    from padel_league.models.v2 import Award, AwardEvent
+    from padel_league.services import closeout
 
-    if group.has_ended:
+    if group.has_ended or not closeout.is_complete(group.id):
         return False
-    matches = CompetitionMatch.query.filter_by(group_id=group.id).all()
-    if not matches or any(not m.played for m in matches):
-        return False
-
-    last = max((m.scheduled_at for m in matches if m.scheduled_at), default=None)
-    group.has_ended = True
-    group.end_date = datetime.combine(last.date(), datetime.min.time()) if last else None
-    group.standings_up_to_date = True
-
-    competition = group.stage.competition
-    if not group.open_division and group.rating:
-        event = AwardEvent(
-            competition_id=competition.id,
-            stage_id=group.stage_id,
-            group_id=group.id,
-            awarded_at=datetime.utcnow(),
-            source="computed",
-        )
-        db.session.add(event)
-        for player_id, place, wins, draws in _group_standings(group.id):
-            entry = Entry.query.filter_by(competition_id=competition.id, player_id=player_id).first()
-            entry.final_place = place
-            event.awards.append(
-                Award(
-                    entry_id=entry.id,
-                    player_id=player_id,
-                    group_id=group.id,
-                    place=place,
-                    rating=group.rating,
-                    place_points=float(int(group.rating * 0.75 ** (place - 1))),
-                    bonus_points=wins * (group.rating / 100) + draws * (group.rating / 250),
-                    wins=wins,
-                    draws=draws,
-                )
-            )
-    _audit(None, "group", group.id, "closed", None, {"end_date": str(group.end_date)})
+    closeout.close_group(group.id)
     return True
 
 
 def after_result_commit(group):
-    """Close the group if complete and refresh the ranking. Commits."""
-    from padel_league.models import League
-
+    """Close the group if complete (awards before the ranking: B1 fixed). Commits."""
     if close_group_if_complete(group):
         db.session.commit()
-        db.session.expire_all()
-        League.query.first().update_rankings()

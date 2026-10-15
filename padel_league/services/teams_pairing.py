@@ -18,6 +18,7 @@ from datetime import datetime
 
 from padel_league.models import Player
 from padel_league.models.v2 import Competition, Entry, Pair, PartnerRequest, Stage
+from padel_league.services import ranking as ranking_svc
 from padel_league.sql_db import db
 
 MAX_TIMES_TOGETHER = 3
@@ -258,14 +259,24 @@ def _settle_mutual(stage):
     db.session.flush()
 
 
-def close(stage):
-    """Pair everyone left by ranking and close the mini-tournament's pairs."""
+def close(stage, positions=None):
+    """Pair everyone left by ranking and close the mini-tournament's pairs.
+
+    `positions` ({player_id: ranking position}) seeds the pairing; by default
+    the live v2 ranking (services.ranking.seeding), the same source as the
+    divisions. Pass positions={} only in tests that seed by players.* columns.
+    """
     if stage.pairing_closed:
         raise PairingError("As parelhas deste mini-torneio já estão fechadas.")
     _settle_mutual(stage)
     paired = {pid for p in stage_pairs(stage) for pid in pair_players(stage, p)}
     left = Player.query.filter(Player.id.in_(roster_ids(stage) - paired)).all()
-    order = [p.id for p in sorted(left, key=ranking_key)]
+    if positions is None:
+        positions = ranking_svc.seeding(stage.competition.season.league_id)[1]
+    if not positions:
+        order = [p.id for p in sorted(left, key=ranking_key)]
+    else:
+        order = [p.id for p in sorted(left, key=lambda p: (positions.get(p.id) or 10**9, p.id))]
     created = [_make_pair(stage, a, b, "ranking") for a, b in auto_pairs(order, times_together(stage))]
     stage.pairing_closed = True
     db.session.commit()

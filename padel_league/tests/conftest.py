@@ -83,7 +83,13 @@ def pg_app(pg_database):
 
 @pytest.fixture
 def pg(pg_app):
-    """App context on the session database; everything the test does is rolled back."""
+    """App context on the session database; everything the test does is rolled back.
+
+    Commit test setup with db.session.commit() before calling the app: each
+    request's teardown removes the session (and a GET rolls back), which drops
+    rows that were only flushed. The commit just releases the savepoint; the
+    outer transaction still rolls everything back at the end.
+    """
     with pg_app.app_context():
         connection = db.engine.connect()
         outer = connection.begin()
