@@ -12,11 +12,9 @@ The parity harness (`scripts/parity/`) treats everything not listed here as a re
 | D6 | GET routes that delete or create (`/tournaments/delete/<id>`, `/editions/delete/<id>`, the legacy `/api/delete*` on GET...) raise an error instead of deleting. `/players/ranking/recalculate` and the sponsor-click redirect still write. | Deletes on plain GET could be triggered by any link or image tag. |
 
 | D7 | Division 69 places follow the computed order: player 38 goes 3º → 6º, player 52 4º → 3º, player 86 6º → 4º. This affects their player history and ranking points. | Pedro (2026-10-14): the computed order wins over the manual override. Applied to every finished division; only 69 differs. |
+| D8 | `GET /api/v1/teams/`: `miniTournament.id` is now the v2 stage id (34, was 1) and pair ids are new `pairs.id` values. Content is otherwise identical. | Migration `c4f1a9e2b7d3` folds the interim teams_* tables into v2 stages and pairs. The website never stores these ids. |
 
 ## Approved, not yet applied
 
 - **Ranking rule.** The site shows "last 4 editions by id" (Shuffle excluded). The settled 2026/27 rule is "last 3 completed + current". Approved by Pedro on 2026-10-14; it will be applied as a listed change before Teams seeding.
 
-## D8: Teams ids are v2 ids
-
-The interim Teams tables (`teams_mini_tournaments`, `teams_pairs`) are folded into v2 `stages` and `pairs` by migration `c4f1a9e2b7d3`. `GET /api/v1/teams/` returns the same content, but `miniTournament.id` is now the stage id (34 instead of 1) and pair ids are the new `pairs.id`. The website never stores these ids; it only sends a pair id back to undo that pair in the same state it just received.
