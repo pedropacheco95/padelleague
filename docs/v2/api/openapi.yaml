@@ -609,7 +609,7 @@ components:
         name: { type: string, examples: ["22ª Edição", "PPL Teams 2026/27"] }
         title: { type: [string, "null"], description: Short display title }
         format: { $ref: "#/components/schemas/Format" }
-        formatLabel: { type: string, examples: ["Clássica", "Teams", "Shuffle", "Super Cup"] }
+        formatLabel: { type: string, examples: ["Classic", "Teams", "Shuffle", "Super Cup"] }
         eventSlot: { type: [string, "null"], examples: ["classica-1"], description: Recurring event key }
         season: { $ref: "#/components/schemas/Season" }
         status: { $ref: "#/components/schemas/CompetitionStatus" }
@@ -633,7 +633,7 @@ components:
 
     CompetitionCreate:
       type: object
-      required: [format, name, seasonId]
+      required: [format, seasonId]
       properties:
         format: { $ref: "#/components/schemas/Format" }
         name: { type: string }
