@@ -1,0 +1,807 @@
+openapi: 3.1.0
+info:
+  title: Porto Padel League API v2
+  version: 0.1.0
+  description: |
+    Contract v0 for the v2 data model (docs/v2/APP_MIGRATION_PLAN.md, section 4).
+    Owner: S0. Sessions request changes; S0 edits this file and regenerates
+    `padel_league_frontend/src/api/v2/schema.d.ts`.
+
+    Conventions
+    - camelCase JSON; ids are integers and preserved from v1 (division id = group id).
+    - Points and other computed numbers are **unrounded**; the frontend rounds for display.
+    - GET never writes. Errors are `{error, code}`.
+    - Auth: `Authorization: Bearer <access token>` (30 min); renew with POST /auth/refresh
+      using the refresh token (30 days). Roles: player | admin | super_admin.
+    - Dates are ISO 8601; datetimes are UTC with a trailing Z.
+servers:
+  - url: /api/v2
+security: []
+tags:
+  - name: competitions
+  - name: groups
+  - name: matches
+  - name: players
+  - name: rankings
+  - name: teams
+  - name: auth
+  - name: admin
+
+paths:
+  /seasons:
+    get:
+      tags: [competitions]
+      summary: Seasons, newest first
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Season" } }
+
+  /competitions:
+    get:
+      tags: [competitions]
+      summary: Competition cards for the Tournaments page
+      description: Grouped by season on the client; ordered current season first, then by start date descending.
+      parameters:
+        - { name: season, in: query, schema: { type: integer }, description: season id }
+        - { name: format, in: query, schema: { $ref: "#/components/schemas/Format" } }
+        - { name: status, in: query, schema: { $ref: "#/components/schemas/CompetitionStatus" } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/CompetitionCard" } }
+    post:
+      tags: [admin]
+      summary: Create a competition (Clássica from the previous one via promotion, Shuffle, Teams)
+      security: [{ bearer: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CompetitionCreate" }
+      responses:
+        "201": { description: Created, content: { application/json: { schema: { $ref: "#/components/schemas/Competition" } } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+
+  /competitions/current:
+    get:
+      tags: [competitions]
+      summary: The current competition of a format (target of the /shuffle and /teams redirects)
+      parameters:
+        - { name: format, in: query, required: true, schema: { $ref: "#/components/schemas/Format" } }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/CompetitionCard" } } } }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /competitions/{competitionId}:
+    parameters: [{ $ref: "#/components/parameters/competitionId" }]
+    get:
+      tags: [competitions]
+      summary: Competition page (stages, groups, rules)
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Competition" } } } }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /competitions/{competitionId}/fixtures:
+    parameters: [{ $ref: "#/components/parameters/competitionId" }]
+    post:
+      tags: [admin]
+      summary: Generate the fixtures of every group of a stage
+      security: [{ bearer: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                stageId: { type: integer }
+                firstRoundDate: { type: string, format: date }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Competition" } } } }
+        "409": { $ref: "#/components/responses/Error" }
+
+  /competitions/{competitionId}/rounds:
+    parameters: [{ $ref: "#/components/parameters/competitionId" }]
+    post:
+      tags: [admin]
+      summary: Shuffle — generate the next round (groups from the standings)
+      security: [{ bearer: [] }]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Competition" } } } }
+    delete:
+      tags: [admin]
+      summary: Shuffle — delete the last (unplayed) round
+      security: [{ bearer: [] }]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Competition" } } } }
+        "409": { $ref: "#/components/responses/Error" }
+
+  /competitions/{competitionId}/standings:
+    parameters: [{ $ref: "#/components/parameters/competitionId" }]
+    get:
+      tags: [competitions]
+      summary: Competition-level standings (Shuffle overall; Teams edition total = sum of mini-tournament points)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/StandingRow" } }
+
+  /groups/{groupId}:
+    parameters: [{ $ref: "#/components/parameters/groupId" }]
+    get:
+      tags: [groups]
+      summary: Group page — members, standings, rounds (v1 tournament page)
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/GroupDetail" } } } }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /groups/{groupId}/matches:
+    parameters: [{ $ref: "#/components/parameters/groupId" }]
+    get:
+      tags: [groups]
+      parameters:
+        - { name: round, in: query, schema: { type: integer }, description: round number }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Match" } }
+
+  /groups/{groupId}/close:
+    parameters: [{ $ref: "#/components/parameters/groupId" }]
+    post:
+      tags: [admin]
+      summary: Freeze standings, write awards, refresh the ranking
+      security: [{ bearer: [] }]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/GroupDetail" } } } }
+        "409": { $ref: "#/components/responses/Error" }
+
+  /matches/{matchId}:
+    parameters: [{ $ref: "#/components/parameters/matchId" }]
+    get:
+      tags: [matches]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Match" } } } }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /matches/{matchId}/result:
+    parameters: [{ $ref: "#/components/parameters/matchId" }]
+    put:
+      tags: [matches]
+      summary: Record a result (any signed-in player)
+      description: |
+        Clássica / Shuffle send one set with the games. Teams send exactly 3 sets,
+        each `completed` or `timeout_draw`; a walkover is `walkover` with `walkoverWinner`.
+      security: [{ bearer: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ResultInput" }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Match" } } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+
+  /rounds/{roundId}/absences:
+    parameters: [{ name: roundId, in: path, required: true, schema: { type: integer } }]
+    post:
+      tags: [matches]
+      summary: Mark a player absent for a round, optionally naming the substitute
+      security: [{ bearer: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [playerId, groupId]
+              properties:
+                playerId: { type: integer }
+                groupId: { type: integer }
+                substitutePlayerId: { type: [integer, "null"] }
+                kind: { type: string, enum: [full, partial], default: full }
+      responses:
+        "201": { description: Created, content: { application/json: { schema: { $ref: "#/components/schemas/Absence" } } } }
+        "400": { $ref: "#/components/responses/Error" }
+
+  /absences/{absenceId}:
+    parameters: [{ name: absenceId, in: path, required: true, schema: { type: integer } }]
+    delete:
+      tags: [matches]
+      security: [{ bearer: [] }]
+      responses:
+        "204": { description: Deleted }
+
+  /calendar:
+    get:
+      tags: [matches]
+      parameters:
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date } }
+        - { name: group, in: query, schema: { type: integer } }
+        - { name: competition, in: query, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Match" } }
+
+  /players:
+    get:
+      tags: [players]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/PlayerSummary" } }
+
+  /players/compare:
+    get:
+      tags: [players]
+      parameters:
+        - { name: a, in: query, required: true, schema: { type: integer } }
+        - { name: b, in: query, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/PlayerComparison" } } } }
+
+  /players/{playerId}:
+    parameters: [{ $ref: "#/components/parameters/playerId" }]
+    get:
+      tags: [players]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/PlayerDetail" } } } }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /players/{playerId}/matches:
+    parameters: [{ $ref: "#/components/parameters/playerId" }]
+    get:
+      tags: [players]
+      parameters:
+        - { name: competition, in: query, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Match" } }
+
+  /rankings/current:
+    get:
+      tags: [rankings]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Ranking" } } } }
+
+  /rankings/{snapshotId}:
+    parameters: [{ name: snapshotId, in: path, required: true, schema: { type: integer } }]
+    get:
+      tags: [rankings]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Ranking" } } } }
+
+  /rankings/players/{playerId}:
+    parameters: [{ $ref: "#/components/parameters/playerId" }]
+    get:
+      tags: [rankings]
+      summary: Why a player has their points — one line per counted or dropped award
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/RankingExplanation" } } } }
+
+  /competitions/{competitionId}/teams:
+    parameters: [{ $ref: "#/components/parameters/competitionId" }]
+    get:
+      tags: [teams]
+      summary: Teams pair choice state for the current mini-tournament (same shape as v1 /teams/)
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/TeamsState" } } } }
+
+  /competitions/{competitionId}/partner-requests:
+    parameters: [{ $ref: "#/components/parameters/competitionId" }]
+    post:
+      tags: [teams]
+      security: [{ bearer: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [partnerId], properties: { partnerId: { type: integer } } }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/TeamsState" } } } }
+        "400": { $ref: "#/components/responses/Error" }
+    delete:
+      tags: [teams]
+      security: [{ bearer: [] }]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/TeamsState" } } } }
+
+  /competitions/{competitionId}/pairs:
+    parameters: [{ $ref: "#/components/parameters/competitionId" }]
+    post:
+      tags: [teams, admin]
+      summary: Admin forms a pair by hand
+      security: [{ bearer: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [playerIds]
+              properties: { playerIds: { type: array, items: { type: integer }, minItems: 2, maxItems: 2 } }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/TeamsState" } } } }
+
+  /competitions/{competitionId}/pairs/{pairId}:
+    parameters:
+      - { $ref: "#/components/parameters/competitionId" }
+      - { name: pairId, in: path, required: true, schema: { type: integer } }
+    delete:
+      tags: [teams, admin]
+      security: [{ bearer: [] }]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/TeamsState" } } } }
+
+  /competitions/{competitionId}/pairs/close:
+    parameters: [{ $ref: "#/components/parameters/competitionId" }]
+    post:
+      tags: [teams, admin]
+      summary: Pair everyone left by ranking (nearest allowed partner) and close the pairs
+      security: [{ bearer: [] }]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/TeamsState" } } } }
+
+  /competitions/{competitionId}/roster/{playerId}:
+    parameters:
+      - { $ref: "#/components/parameters/competitionId" }
+      - { $ref: "#/components/parameters/playerId" }
+    post:
+      tags: [admin]
+      security: [{ bearer: [] }]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/TeamsState" } } } }
+    delete:
+      tags: [admin]
+      security: [{ bearer: [] }]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/TeamsState" } } } }
+
+  /stages/{stageId}/divisions:
+    parameters: [{ name: stageId, in: path, required: true, schema: { type: integer } }]
+    post:
+      tags: [teams, admin]
+      summary: Teams — form the divisions of a mini-tournament (pairs by summed ranking points, 4 per division)
+      security: [{ bearer: [] }]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Stage" } } } }
+        "409": { $ref: "#/components/responses/Error" }
+
+  /auth/login:
+    post:
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties: { username: { type: string }, password: { type: string } }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Session" } } } }
+        "401": { $ref: "#/components/responses/Error" }
+
+  /auth/refresh:
+    post:
+      tags: [auth]
+      summary: Exchange the refresh token (sent as Bearer) for a new token pair
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Tokens" } } } }
+        "401": { $ref: "#/components/responses/Error" }
+
+  /auth/me:
+    get:
+      tags: [auth]
+      security: [{ bearer: [] }]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { type: object, required: [user], properties: { user: { $ref: "#/components/schemas/User" } } } } } }
+
+components:
+  securitySchemes:
+    bearer: { type: http, scheme: bearer, bearerFormat: JWT }
+
+  parameters:
+    competitionId: { name: competitionId, in: path, required: true, schema: { type: integer } }
+    groupId: { name: groupId, in: path, required: true, schema: { type: integer } }
+    matchId: { name: matchId, in: path, required: true, schema: { type: integer } }
+    playerId: { name: playerId, in: path, required: true, schema: { type: integer } }
+
+  responses:
+    Error:
+      description: Error
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string, description: Message shown to the user (Portuguese) }
+        code: { type: string, description: Stable machine code, e.g. pairing_closed }
+
+    Format: { type: string, enum: [classica, teams, shuffle, super_cup] }
+    CompetitionStatus: { type: string, enum: [upcoming, live, ended] }
+    Role: { type: string, enum: [player, admin, super_admin] }
+
+    Season:
+      type: object
+      required: [id, name, isCurrent]
+      properties:
+        id: { type: integer }
+        name: { type: string, examples: ["2026/27"] }
+        startsOn: { type: [string, "null"], format: date }
+        endsOn: { type: [string, "null"], format: date }
+        isCurrent: { type: boolean }
+
+    Image:
+      type: [object, "null"]
+      properties:
+        url: { type: string }
+        width: { type: [integer, "null"] }
+        height: { type: [integer, "null"] }
+
+    CompetitionCard:
+      type: object
+      description: Everything a Tournaments-page card needs.
+      required: [id, name, format, season, status, groupCount]
+      properties:
+        id: { type: integer }
+        name: { type: string, examples: ["22ª Edição", "PPL Teams 2026/27"] }
+        title: { type: [string, "null"], description: Short display title }
+        format: { $ref: "#/components/schemas/Format" }
+        formatLabel: { type: string, examples: ["Clássica", "Teams", "Shuffle", "Super Cup"] }
+        eventSlot: { type: [string, "null"], examples: ["classica-1"], description: Recurring event key }
+        season: { $ref: "#/components/schemas/Season" }
+        status: { $ref: "#/components/schemas/CompetitionStatus" }
+        startsOn: { type: [string, "null"], format: date }
+        endsOn: { type: [string, "null"], format: date }
+        groupCount: { type: integer, description: Groups in the current/last stage (divisions) }
+        playerCount: { type: integer }
+        coverImage: { $ref: "#/components/schemas/Image" }
+        bannerImage: { $ref: "#/components/schemas/Image" }
+        legacyEditionId: { type: [integer, "null"], description: v1 edition id when the competition was an edition }
+
+    Competition:
+      allOf:
+        - $ref: "#/components/schemas/CompetitionCard"
+        - type: object
+          required: [stages, rules]
+          properties:
+            rules: { type: object, additionalProperties: true }
+            stages: { type: array, items: { $ref: "#/components/schemas/Stage" } }
+            currentStageId: { type: [integer, "null"] }
+
+    CompetitionCreate:
+      type: object
+      required: [format, name, seasonId]
+      properties:
+        format: { $ref: "#/components/schemas/Format" }
+        name: { type: string }
+        seasonId: { type: integer }
+        eventSlot: { type: [string, "null"] }
+        startsOn: { type: string, format: date }
+        fromCompetitionId: { type: [integer, "null"], description: Clássica built from the previous one via promotion }
+        withdrawals: { type: array, items: { type: integer } }
+        newPlayerIds: { type: array, items: { type: integer } }
+        playerIds: { type: array, items: { type: integer }, description: Shuffle / Teams roster }
+
+    Stage:
+      type: object
+      required: [id, number, status, groups, rounds]
+      properties:
+        id: { type: integer }
+        number: { type: integer }
+        name: { type: [string, "null"], examples: ["Mini-torneio 1"] }
+        status: { type: string, enum: [planned, running, ended] }
+        emitsAward: { type: boolean }
+        pairingDeadline: { type: [string, "null"], format: date-time }
+        pairingClosed: { type: boolean }
+        groups: { type: array, items: { $ref: "#/components/schemas/GroupSummary" } }
+        rounds: { type: array, items: { $ref: "#/components/schemas/Round" } }
+
+    Round:
+      type: object
+      required: [id, number]
+      properties:
+        id: { type: integer }
+        number: { type: integer }
+        date: { type: [string, "null"], format: date }
+
+    GroupSummary:
+      type: object
+      required: [id, name, tier]
+      properties:
+        id: { type: integer, description: Equals the v1 division id for migrated groups }
+        name: { type: string }
+        tier: { type: [integer, "null"] }
+        rating: { type: [number, "null"] }
+        hasEnded: { type: boolean }
+        logoImage: { $ref: "#/components/schemas/Image" }
+        bannerImage: { $ref: "#/components/schemas/Image" }
+
+    GroupDetail:
+      allOf:
+        - $ref: "#/components/schemas/GroupSummary"
+        - type: object
+          required: [competition, stage, members, standings, rounds]
+          properties:
+            competition: { $ref: "#/components/schemas/CompetitionCard" }
+            stage: { type: object, properties: { id: { type: integer }, number: { type: integer }, name: { type: [string, "null"] } } }
+            members: { type: array, items: { $ref: "#/components/schemas/PlayerRef" } }
+            standings: { type: array, items: { $ref: "#/components/schemas/StandingRow" } }
+            standingsFrozen: { type: boolean, description: true when read from standing_snapshots }
+            rounds: { type: array, items: { $ref: "#/components/schemas/Round" } }
+            currentRound: { type: [integer, "null"] }
+            lastPlayedMatches: { type: array, items: { $ref: "#/components/schemas/Match" } }
+
+    StandingRow:
+      type: object
+      required: [place, player, points, played]
+      properties:
+        place: { type: integer, description: Ties share the place (Teams) }
+        player: { $ref: "#/components/schemas/PlayerRef" }
+        points: { type: number, description: Competition points (Clássica match points, Teams set points) }
+        played: { type: integer, description: Appearances (presenças) }
+        wins: { type: integer }
+        draws: { type: integer }
+        losses: { type: integer }
+        gamesWon: { type: [integer, "null"] }
+        gamesLost: { type: [integer, "null"] }
+        setsWon: { type: [integer, "null"], description: Teams }
+        setsDrawn: { type: [integer, "null"], description: Teams }
+        attendancePct: { type: [number, "null"] }
+        rankingPlacePoints: { type: [number, "null"], description: Award place points once awarded / projected }
+        rankingBonusPoints: { type: [number, "null"] }
+        nextGroupTier: { type: [integer, "null"], description: Shuffle next placement }
+
+    PlayerRef:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        fullName: { type: [string, "null"] }
+        pictureUrl: { type: [string, "null"] }
+
+    Participant:
+      type: object
+      required: [side, slot, role]
+      properties:
+        side: { type: string, enum: [home, away] }
+        slot: { type: integer, enum: [1, 2] }
+        role: { type: string, enum: [member, substitute, unknown] }
+        player: { oneOf: [{ $ref: "#/components/schemas/PlayerRef" }, { type: "null" }], description: null when an unknown substitute played }
+
+    MatchSet:
+      type: object
+      required: [setNo, outcome]
+      properties:
+        setNo: { type: integer }
+        homeGames: { type: [integer, "null"] }
+        awayGames: { type: [integer, "null"] }
+        outcome: { type: string, enum: [completed, timeout_draw, not_started_draw, walkover] }
+
+    Match:
+      type: object
+      required: [id, groupId, round, status, participants, sets]
+      properties:
+        id: { type: integer }
+        groupId: { type: integer }
+        groupName: { type: [string, "null"] }
+        competitionId: { type: integer }
+        format: { $ref: "#/components/schemas/Format" }
+        round: { type: integer }
+        scheduledAt: { type: [string, "null"], format: date-time }
+        court: { type: [string, "null"] }
+        status: { type: string, enum: [scheduled, played, walkover, cancelled] }
+        participants: { type: array, items: { $ref: "#/components/schemas/Participant" } }
+        sets: { type: array, items: { $ref: "#/components/schemas/MatchSet" } }
+        homeScore: { type: [number, "null"], description: Games (Clássica/Shuffle) or set points (Teams) }
+        awayScore: { type: [number, "null"] }
+        winner: { type: [string, "null"], enum: [home, away, draw, null] }
+        absences: { type: array, items: { $ref: "#/components/schemas/Absence" } }
+
+    ResultInput:
+      type: object
+      required: [sets]
+      properties:
+        sets:
+          type: array
+          minItems: 1
+          maxItems: 3
+          items:
+            type: object
+            required: [outcome]
+            properties:
+              homeGames: { type: [integer, "null"] }
+              awayGames: { type: [integer, "null"] }
+              outcome: { type: string, enum: [completed, timeout_draw, not_started_draw, walkover] }
+        walkoverWinner: { type: [string, "null"], enum: [home, away, null] }
+        court: { type: [string, "null"] }
+
+    Absence:
+      type: object
+      required: [id, roundId, player, kind, source]
+      properties:
+        id: { type: integer }
+        roundId: { type: integer }
+        groupId: { type: integer }
+        player: { $ref: "#/components/schemas/PlayerRef" }
+        substitute: { oneOf: [{ $ref: "#/components/schemas/PlayerRef" }, { type: "null" }] }
+        kind: { type: string, enum: [full, partial] }
+        source: { type: string, enum: [derived, recorded] }
+
+    PlayerSummary:
+      allOf:
+        - $ref: "#/components/schemas/PlayerRef"
+        - type: object
+          properties:
+            rankingPosition: { type: [integer, "null"] }
+            rankingPoints: { type: number }
+            status: { type: string, enum: [active, inactive, substitute] }
+
+    PlayerDetail:
+      allOf:
+        - $ref: "#/components/schemas/PlayerSummary"
+        - type: object
+          properties:
+            largePictureUrl: { type: [string, "null"] }
+            preferredHand: { type: [string, "null"] }
+            preferredPosition: { type: [string, "null"] }
+            height: { type: [number, "null"] }
+            birthDate: { type: [string, "null"], format: date }
+            history:
+              type: array
+              description: One row per competition entry, newest first
+              items:
+                type: object
+                properties:
+                  competition: { $ref: "#/components/schemas/CompetitionCard" }
+                  groupId: { type: [integer, "null"] }
+                  groupName: { type: [string, "null"] }
+                  place: { type: [integer, "null"] }
+                  points: { type: [number, "null"] }
+                  played: { type: [integer, "null"] }
+                  wins: { type: [integer, "null"] }
+                  draws: { type: [integer, "null"] }
+                  losses: { type: [integer, "null"] }
+                  awardPoints: { type: [number, "null"] }
+            stats:
+              type: object
+              additionalProperties: { type: number }
+
+    PlayerComparison:
+      type: object
+      properties:
+        a: { $ref: "#/components/schemas/PlayerSummary" }
+        b: { $ref: "#/components/schemas/PlayerSummary" }
+        headToHead: { type: object, properties: { played: { type: integer }, aWins: { type: integer }, bWins: { type: integer }, draws: { type: integer } } }
+        together: { type: object, properties: { played: { type: integer }, wins: { type: integer }, draws: { type: integer }, losses: { type: integer } } }
+        matches: { type: array, items: { $ref: "#/components/schemas/Match" } }
+
+    Ranking:
+      type: object
+      required: [snapshotId, rule, computedAt, entries]
+      properties:
+        snapshotId: { type: integer }
+        rule: { type: object, properties: { key: { type: string }, name: { type: string } } }
+        computedAt: { type: string, format: date-time }
+        entries:
+          type: array
+          items:
+            type: object
+            required: [position, player, points]
+            properties:
+              position: { type: integer }
+              player: { $ref: "#/components/schemas/PlayerRef" }
+              points: { type: number, description: Unrounded }
+              previousPosition: { type: [integer, "null"] }
+
+    RankingExplanation:
+      type: object
+      properties:
+        player: { $ref: "#/components/schemas/PlayerRef" }
+        total: { type: number }
+        lines:
+          type: array
+          items:
+            type: object
+            properties:
+              competition: { $ref: "#/components/schemas/CompetitionCard" }
+              stageNumber: { type: [integer, "null"] }
+              place: { type: [integer, "null"] }
+              placePoints: { type: number }
+              bonusPoints: { type: number }
+              counted: { type: boolean }
+              reason: { type: string, examples: ["one of the last 3 completed", "current competition", "dropped: older"] }
+
+    TeamsState:
+      type: object
+      description: Same shape as v1 GET /api/v1/teams/ (pair-choice page).
+      required: [miniTournament, players, pairs, me]
+      properties:
+        miniTournament:
+          type: object
+          properties:
+            id: { type: integer, description: stage id }
+            number: { type: integer }
+            pairingDeadline: { type: string, format: date-time }
+            pairingClosed: { type: boolean }
+            pairingOpen: { type: boolean }
+        players:
+          type: array
+          items:
+            allOf:
+              - $ref: "#/components/schemas/PlayerRef"
+              - type: object
+                properties:
+                  rankingPoints: { type: number }
+                  rankingPosition: { type: integer }
+                  paired: { type: boolean }
+                  allowedForMe: { type: boolean }
+        pairs:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: integer }
+              source: { type: string, enum: [mutual, auto, admin] }
+              players: { type: array, items: { $ref: "#/components/schemas/PlayerRef" } }
+              rankingPoints: { type: number }
+        me:
+          type: object
+          properties:
+            playerId: { type: [integer, "null"] }
+            inRoster: { type: boolean }
+            myChoice: { type: [integer, "null"] }
+            choseMe: { type: array, items: { type: integer } }
+            pairId: { type: [integer, "null"] }
+            isAdmin: { type: boolean }
+
+    User:
+      type: object
+      required: [id, username, role]
+      properties:
+        id: { type: integer }
+        username: { type: string }
+        email: { type: string }
+        role: { $ref: "#/components/schemas/Role" }
+        playerId: { type: [integer, "null"] }
+        isAdmin: { type: boolean, description: Deprecated; role in (admin, super_admin) }
+        superAdmin: { type: boolean, description: Deprecated; role == super_admin }
+
+    Tokens:
+      type: object
+      required: [access_token, refresh_token]
+      properties:
+        access_token: { type: string }
+        refresh_token: { type: string }
+
+    Session:
+      allOf:
+        - $ref: "#/components/schemas/Tokens"
+        - type: object
+          required: [user]
+          properties: { user: { $ref: "#/components/schemas/User" } }
