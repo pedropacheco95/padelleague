@@ -1,4 +1,5 @@
 from padel_league.models.v2 import Entry
+from padel_league.sql_db import db
 from padel_league.tests import factories as f
 from padel_league.tests.api_v2.conftest import bearer, persist
 
@@ -55,7 +56,10 @@ def test_create_classica_then_fixtures(client, make_user):
     assert comp["format"] == "classica" and comp["groupCount"] == 6 and comp["playerCount"] == 48
     # S5 creates the fixtures with the edition; regenerating without force is refused
     resp = client.post(f"/api/v2/competitions/{comp['id']}/fixtures", json={}, headers=admin)
-    assert resp.status_code == 409 and resp.get_json()["code"] == "fixtures_not_generated"
+    assert resp.status_code == 409 and resp.get_json() == {
+        "code": "fixtures_exist",
+        "error": "Os jogos desta fase já foram gerados.",
+    }
 
 
 def test_fixtures_for_a_group_without_matches(client, make_user):
@@ -85,3 +89,19 @@ def test_shuffle_rounds_guards(client, make_user):
     assert client.post("/api/v2/competitions/26/rounds", headers=bearer(make_user())).status_code == 403
     resp = client.delete("/api/v2/competitions/25/rounds", headers=admin)
     assert resp.status_code == 409 and resp.get_json()["code"] == "not_shuffle"
+
+
+def test_fixtures_refusals_are_portuguese(client, make_user):
+    comp = f.competition(format="classica", name="Short group test")
+    grp = f.group(f.stage(comp), name="Short group test - 1ª Divisão")
+    for _ in range(7):
+        f.member(grp, f.entry(comp, f.player()))
+    persist()
+    admin = bearer(make_user(role="admin"))
+    body = client.post(f"/api/v2/competitions/{comp.id}/fixtures", json={"firstRoundDate": "2026-11-03"}, headers=admin).get_json()
+    assert body["code"] == "wrong_player_count" and "precisa de 8 jogadores" in body["error"]
+    f.member(grp, f.entry(comp, f.player()))
+    persist()
+    db.session.expire_all()  # the test shares the request's session: drop the cached member list
+    body = client.post(f"/api/v2/competitions/{comp.id}/fixtures", json={}, headers=admin).get_json()
+    assert body["code"] == "no_start_date"

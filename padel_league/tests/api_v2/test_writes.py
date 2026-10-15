@@ -151,3 +151,32 @@ def test_teams_standings_stage_lines_after_close(client):
     (line,) = top["stages"]
     assert line["groupId"] == grp.id and line["points"] == 501.5 and top["points"] == 501.5
     assert line["setPoints"] == 6  # two sets won × 3
+
+
+def test_partial_absence_shows_only_on_missed_matches(client, make_user):
+    comp = f.competition(format="classica", name="Partial test")
+    stg = f.stage(comp)
+    grp = f.group(stg)
+    rnd = f.round_(stg)
+    entries = [f.entry(comp, f.player()) for _ in range(4)]
+    for e in entries:
+        f.member(grp, e)
+    m1 = f.match(grp, rnd, home=entries[:2], away=entries[2:])
+    m2 = f.match(grp, rnd, home=[entries[0], entries[2]], away=[entries[1], entries[3]])
+    persist()
+    absent = entries[0].player_id
+    resp = client.post(
+        f"/api/v2/rounds/{rnd.id}/absences",
+        json={"playerId": absent, "groupId": grp.id, "kind": "partial", "matchIds": [m1.id]},
+        headers=bearer(make_user()),
+    )
+    assert resp.status_code == 201 and resp.get_json()["kind"] == "partial"
+    missed = client.get(f"/api/v2/matches/{m1.id}").get_json()
+    played = client.get(f"/api/v2/matches/{m2.id}").get_json()
+    assert [a["player"]["id"] for a in missed["absences"]] == [absent]
+    assert played["absences"] == []
+    resp = client.post(
+        f"/api/v2/rounds/{rnd.id}/absences", json={"playerId": absent, "groupId": grp.id, "kind": "partial"},
+        headers=bearer(make_user()),
+    )
+    assert resp.status_code == 400 and resp.get_json()["code"] == "match_ids_required"

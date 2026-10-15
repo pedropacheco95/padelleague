@@ -96,9 +96,16 @@ def recorded_by(absences):
     return {u.id: u.player for u in users if u.player is not None}
 
 
+def _absences_for(m, absences):
+    """A full absence shows on every match of the round; a partial one only on the
+    matches the player actually misses (S4)."""
+    present = {p.player_id for p in m.participants}
+    return [a for a in absences if a["kind"] == "full" or a["player"]["id"] not in present]
+
+
 def serialize_matches(matches):
     absences = absences_by_round(matches)
-    return [ser.match(m, absences=absences.get((m.group_id, m.round_id), [])) for m in matches]
+    return [ser.match(m, absences=_absences_for(m, absences.get((m.group_id, m.round_id), []))) for m in matches]
 
 
 def get_group(group_id):

@@ -6,6 +6,7 @@ writes groups, entries and fixtures.
 Shuffle / Teams builders are not written yet (409 not_available).
 """
 
+import logging
 from datetime import date, datetime, time
 
 from flask import Blueprint, jsonify
@@ -236,14 +237,30 @@ def generate_fixtures(competition_id):
     groups = CompetitionGroup.query.filter_by(stage_id=stage.id).order_by(CompetitionGroup.tier).all()
     if not groups:
         raise conflict("Esta etapa não tem divisões.", "no_groups")
+    # The usual refusals, checked here so the player-facing message is Portuguese
+    # (S5's FixtureGenerationError text is internal English).
+    from padel_league.models.v2 import CompetitionMatch
+
+    if CompetitionMatch.query.filter(CompetitionMatch.group_id.in_([g.id for g in groups])).first():
+        raise conflict("Os jogos desta fase já foram gerados.", "fixtures_exist")
+    for group in groups:
+        if len(group.members) != fixtures_service.PLAYERS_PER_DIVISION:
+            raise conflict(
+                f"{group.name}: precisa de {fixtures_service.PLAYERS_PER_DIVISION} jogadores "
+                f"(tem {len(group.members)}).",
+                "wrong_player_count",
+            )
+        if group.starts_at is None and not first:
+            raise conflict(f"{group.name}: indica a data da primeira jornada (firstRoundDate).", "no_start_date")
     try:
         for group in groups:
             if first and group.starts_at is None:
                 group.starts_at = first
             fixtures_service.generate_group_fixtures(group, commit=False, actor_user_id=user.id)
-    except fixtures_service.FixtureGenerationError as exc:
+    except fixtures_service.FixtureGenerationError:
         db.session.rollback()
-        raise conflict(str(exc), "fixtures_not_generated")
+        logging.getLogger(__name__).exception("fixture generation failed for competition %s", competition_id)
+        raise conflict("Não foi possível gerar os jogos desta fase.", "fixtures_not_generated")
     db.session.commit()
     db.session.expire_all()
     return jsonify(competition_detail(get_competition(competition_id)))
