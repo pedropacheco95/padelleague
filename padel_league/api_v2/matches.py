@@ -288,7 +288,9 @@ def competition_standings(competition_id):
                         "groupId": st.get("group_id"),
                         "tier": st.get("tier"),
                         "place": st.get("place"),
-                        "points": st.get("points"),
+                        # S1 keys: ranking_points (award total, None while live), set_points (Teams)
+                        "points": st.get("ranking_points"),
+                        "setPoints": st.get("set_points"),
                     }
                     for st in (r.stages or [])
                 ],
