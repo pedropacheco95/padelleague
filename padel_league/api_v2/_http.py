@@ -12,6 +12,8 @@ from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request
 from flask_jwt_extended.exceptions import JWTExtendedException
 from jwt.exceptions import PyJWTError
 
+from padel_league.domain.errors import Conflict, DomainError, NotFound
+
 ROLE_ORDER = {"player": 0, "admin": 1, "super_admin": 2}
 
 
@@ -34,11 +36,10 @@ def conflict(message, code="conflict"):
 
 
 def _domain_status(exc):
-    """Map S1's DomainError subclasses (padel_league/domain/errors.py) by name."""
-    names = {cls.__name__ for cls in type(exc).__mro__}
-    if "NotFound" in names:
+    """S1's domain errors: NotFound → 404, Conflict → 409, InvalidInput (and the rest) → 400."""
+    if isinstance(exc, NotFound):
         return 404
-    if "Conflict" in names:
+    if isinstance(exc, Conflict):
         return 409
     return 400
 
@@ -48,17 +49,9 @@ def register_error_handlers(bp):
     def _api_error(exc):
         return jsonify({"error": exc.message, "code": exc.code}), exc.status
 
-    try:
-        from padel_league.domain.errors import DomainError
-    except ImportError:  # S1's domain package not merged yet
-        DomainError = None
-
-    if DomainError is not None:
-
-        @bp.errorhandler(DomainError)
-        def _domain_error(exc):
-            message = getattr(exc, "message", None) or str(exc)
-            return jsonify({"error": message, "code": getattr(exc, "code", "domain_error")}), _domain_status(exc)
+    @bp.errorhandler(DomainError)
+    def _domain_error(exc):
+        return jsonify({"error": exc.message, "code": exc.code}), _domain_status(exc)
 
 
 def _user_from_token(optional):
