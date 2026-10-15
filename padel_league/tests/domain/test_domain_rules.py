@@ -169,12 +169,13 @@ COMPS = [
     _comp(26, ends=date(2026, 4, 1), fmt="shuffle", slot=4),
     _comp(24, ends=date(2026, 6, 23), slot=1),
     _comp(27, status="running", fmt="teams", slot=5),
+    CompetitionFact(14, "classica", "planned", None, date(2024, 5, 29)),  # stale planned row
 ]
 AWARDS = [AwardFact(player_id=1, competition_id=c.id, place_points=100.0 * c.id, bonus_points=0.5) for c in COMPS]
 
 
 def test_last_n_by_id_ignores_status_and_dates():
-    r = compute(Rule("last_n_by_id", 4), COMPS, AWARDS)
+    r = compute(Rule("last_n_by_id", 4), COMPS[:-1], AWARDS)
     assert r.counted_competition_ids == [23, 24, 26, 27]
 
 
@@ -192,13 +193,13 @@ def test_formats_option_decides_whether_shuffle_counts():
 
 
 def test_per_slot_latest_instance_replaces_its_counterpart():
-    r = compute(Rule("per_slot"), COMPS, AWARDS)
+    r = compute(Rule("per_slot"), COMPS[:-1], AWARDS)
     assert r.counted_competition_ids == [22, 23, 24, 26, 27]  # 24 replaces 21 (slot 1)
 
 
 def test_positions_are_distinct_points_then_previous_position():
     awards = [AwardFact(p, 24, 100.0, 0) for p in (5, 6)] + [AwardFact(7, 24, 300.0, 0)]
-    r = compute(Rule("last_n_by_id", 4), COMPS, awards, previous_positions={6: 1, 5: 2})
+    r = compute(Rule("last_n_by_id", 4), COMPS[:-1], awards, previous_positions={6: 1, 5: 2})
     assert [(l.player_id, l.position) for l in r.lines] == [(7, 1), (6, 2), (5, 3)]
 
 

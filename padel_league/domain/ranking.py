@@ -4,7 +4,9 @@ Rules (ranking_rules.mode):
 - last_n_by_id: the n competitions with the highest ids (the pre-2026 rule:
   4 most recent editions by id, finished or not).
 - last_n_completed_plus_current: the n most recently ended competitions (by
-  end date) plus every competition still running (2026/27: n = 3).
+  end date) plus the current ones: not ended and starting after the last of
+  those ended (2026/27: n = 3, current = Teams, each closed mini-tournament
+  adding its awards).
 - per_slot: per event slot, the latest competition of that slot that has
   awards; each new instance replaces its counterpart (2027/28+).
 
@@ -111,8 +113,14 @@ def counted_competitions(rule, competitions, awards=()):
         return {c.id: f"uma das {rule.last_n} competições mais recentes" for c in chosen}
     if rule.mode == "last_n_completed_plus_current":
         ended = sorted((c for c in eligible if c.status == "ended"), key=_date_key, reverse=True)
-        out = {c.id: f"uma das {rule.last_n} últimas competições terminadas" for c in ended[: rule.last_n]}
-        out.update({c.id: "competição em curso" for c in eligible if c.status != "ended"})
+        window = ended[: rule.last_n]
+        out = {c.id: f"uma das {rule.last_n} últimas competições terminadas" for c in window}
+        # Current: not ended and starting after the last completed one ended
+        # (so a stale planned row from an old season never counts).
+        since = max((c.ends_on for c in window if c.ends_on), default=date.min)
+        out.update(
+            {c.id: "competição em curso" for c in eligible if c.status != "ended" and (c.starts_on or date.max) >= since}
+        )
         return out
     with_awards = {a.competition_id for a in awards}
     latest = {}
