@@ -216,6 +216,9 @@ def create_edition_from_plan(plan, actor_user_id=None, rng=None):
                 rating=spec["rating"],
                 has_ended=False,
                 open_division=False,
+                # Live standings come from the views, so they are never stale
+                # (the old code set this on its first GET).
+                standings_up_to_date=True,
                 logo_image_id=spec["logo_image_id"],
                 large_picture_id=spec["large_picture_id"],
             )
