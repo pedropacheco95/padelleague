@@ -156,6 +156,8 @@ def teams_standings(members, matches):
     for match in matches:
         per_set = teams_match_points(match)
         for side, entries in _sides(match):
+            if match.walkover_winner is not None and side != match.walkover_winner:
+                continue  # the pair that did not turn up scores nothing and loses the presence
             for entry_id in entries:
                 row = rows.get(entry_id)
                 if row is None:

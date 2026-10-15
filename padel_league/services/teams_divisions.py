@@ -55,11 +55,6 @@ def slice_divisions(seeded):
     return [seeded[i : i + PAIRS_PER_DIVISION] for i in range(0, len(seeded), PAIRS_PER_DIVISION)]
 
 
-def _ranking_maps(league_id):
-    result = ranking_svc.compute(league_id)
-    return {l.player_id: l.points for l in result.lines}, {l.player_id: l.position for l in result.lines}
-
-
 def _rounds(stage):
     existing = {r.number: r for r in Round.query.filter_by(stage_id=stage.id)}
     for n in range(1, len(ROUND_ROBIN) + 1):
@@ -80,7 +75,7 @@ def build_divisions(stage, points=None, positions=None, with_fixtures=True):
     if CompetitionGroup.query.filter_by(stage_id=stage.id).first():
         raise Conflict("As divisões deste mini-torneio já foram criadas.", "divisions_exist")
     if points is None or positions is None:
-        live_points, live_positions = _ranking_maps(stage.competition.season.league_id)
+        live_points, live_positions = ranking_svc.seeding(stage.competition.season.league_id)
         points = live_points if points is None else points
         positions = live_positions if positions is None else positions
 

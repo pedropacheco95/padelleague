@@ -34,11 +34,17 @@ def _teams_stage1():
     return comp, stage
 
 
+def test_seeding_refuses_while_the_shuffle_has_no_awards(pg):
+    comp, stage = _teams_stage1()
+    with pytest.raises(Conflict) as err:
+        teams_pairing.close(stage)
+    assert err.value.code == "ranking_missing_awards"
+
+
 def test_real_roster_pairs_divisions_and_first_group_close(pg):
     comp, stage = _teams_stage1()
-    live = ranking.compute(comp.season.league_id)
-    positions = {l.player_id: l.position for l in live.lines}
-    teams_pairing.close(stage, positions=positions)
+    closeout.close_shuffle(26)  # the cut-over step: Shuffle awards + ranking snapshot + mirror
+    teams_pairing.close(stage)
     assert len(teams_pairing.stage_pairs(stage)) == 24
 
     built = teams_divisions.build_divisions(stage)
@@ -64,3 +70,31 @@ def test_real_roster_pairs_divisions_and_first_group_close(pg):
     assert max(a.place_points for a in event.awards) == 500
     # the closed mini-tournament group now counts in the live ranking (Teams = current)
     assert comp.id in ranking.compute(comp.season.league_id).counted_competition_ids
+
+
+def test_walkover_on_a_built_match_gives_the_no_show_pair_nothing(pg):
+    comp, stage = _teams_stage1()
+    closeout.close_shuffle(26, recompute_ranking=False)
+    teams_pairing.close(stage)
+    group, division = teams_divisions.build_divisions(stage)[5]
+    match = CompetitionMatch.query.filter_by(group_id=group.id).order_by(CompetitionMatch.id).first()
+    results.record_sets(match.id, walkover_winner="home")
+    db.session.flush()
+    from padel_league.services.standings import group_standings
+
+    rows = {r.entry_id: r for r in group_standings(group.id).rows}
+    home = [p.entry_id for p in match.participants if p.side == "home"]
+    away = [p.entry_id for p in match.participants if p.side == "away"]
+    assert all((rows[e].points, rows[e].appearances, rows[e].sets_won) == (9, 1, 3) for e in home)
+    assert all((rows[e].points, rows[e].appearances) == (0, 0) for e in away)
+
+
+def test_mirror_keeps_previously_ranked_players_nonzero(pg):
+    from padel_league.models import Player
+
+    before = {p.id for p in Player.query.filter(Player.ranking_position > 0)}
+    closeout.close_shuffle(26)
+    after = {p.id: p.ranking_position for p in Player.query.all()}
+    assert all(after[pid] > 0 for pid in before)
+    ranked = sorted(v for v in after.values() if v > 0)
+    assert ranked == list(range(1, len(ranked) + 1))

@@ -9,7 +9,7 @@ bigint mirror rounds half up, as the old column effectively did.
 from datetime import date, datetime
 
 from padel_league.domain import ranking as engine
-from padel_league.domain.errors import NotFound
+from padel_league.domain.errors import Conflict, NotFound
 from padel_league.models import Player
 from padel_league.models.v2 import (
     Award,
@@ -98,12 +98,31 @@ def current_snapshot(league_id=1):
 
 
 def compute(league_id, rule=None):
-    """The ranking as it stands now (nothing written)."""
+    """The ranking as it stands now (nothing written).
+
+    Refuses when a completed competition in the window has no awards (e.g. the
+    2025/26 Shuffle before closeout.close_shuffle ran): a silent gap would seed
+    Teams with the wrong numbers.
+    """
     rule = rule or rule_for(league_id)
     comps, awards = league_facts(league_id)
     previous = latest_snapshot(league_id)
     prev_positions = {e.player_id: e.position for e in previous.entries} if previous else {}
-    return engine.compute(_engine_rule(rule), comps, awards, prev_positions)
+    result = engine.compute(_engine_rule(rule), comps, awards, prev_positions)
+    awarded = {a.competition_id for a in awards}
+    ended = {c.id for c in comps if c.status == "ended"}
+    missing = [cid for cid in result.counted_competition_ids if cid in ended and cid not in awarded]
+    if missing:
+        raise Conflict(
+            f"Faltam pontos de ranking das competições terminadas {missing}.", "ranking_missing_awards"
+        )
+    return result
+
+
+def seeding(league_id):
+    """(points, positions) by player under the live ranking: seeds Teams pairing and divisions."""
+    result = compute(league_id)
+    return {l.player_id: l.points for l in result.lines}, {l.player_id: l.position for l in result.lines}
 
 
 def recompute(league_id, after_award_event_id=None, note=None, dry_run=False, mirror=True):
@@ -127,12 +146,25 @@ def recompute(league_id, after_award_event_id=None, note=None, dry_run=False, mi
 
 
 def mirror_into_players(result):
-    """Old columns: bigint points (half up), position 0 = unranked."""
+    """Old columns: bigint points (half up). Every player who was ranked before
+    keeps a nonzero position after the ranked ones (v1 recomputes the ranking
+    with the old rule whenever a recent player has position 0)."""
     by_player = {l.player_id: l for l in result.lines}
-    for player in Player.query.all():
+    players = Player.query.all()
+    for player in players:
         line = by_player.get(player.id)
         player.ranking_points = int(line.points + 0.5) if line else 0
-        player.ranking_position = line.position if line else 0
+    position = len(result.lines)
+    rest = sorted(
+        (p for p in players if p.id not in by_player and (p.ranking_position or 0) > 0),
+        key=lambda p: (p.ranking_position, p.id),
+    )
+    for player in players:
+        if player.id in by_player:
+            player.ranking_position = by_player[player.id].position
+    for player in rest:
+        position += 1
+        player.ranking_position = position
 
 
 def explain(player_id, league_id=1):
