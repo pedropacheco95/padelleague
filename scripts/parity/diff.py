@@ -22,12 +22,16 @@ INTENDED_DIFFERENCES = [
     # ...so the four players of those matches now have them in their division 3 history.
     ("player_8", ".body.tournamentHistory[7]", "D1 matches 85/86 attached to division 3"),
     ("player_12", ".body.tournamentHistory[3]", "D1 matches 85/86 attached to division 3"),
-    ("player_13", ".body.tournamentHistory[7]", "D1 matches 85/86 attached to division 3"),
-    ("player_16", ".body.tournamentHistory[6]", "D1 matches 85/86 attached to division 3"),
+    # Indexes from the 2026-10-15 golden (newest edition first, so they move as history grows).
+    ("player_13", ".body.tournamentHistory[9]", "D1 matches 85/86 attached to division 3"),
+    ("player_16", ".body.tournamentHistory[5]", "D1 matches 85/86 attached to division 3"),
     ("players_all", ".body[12].tournamentHistory[7]", "D1 matches 85/86 attached to division 3"),
-    ("players_all", ".body[53].tournamentHistory[7]", "D1 matches 85/86 attached to division 3"),
+    ("players_all", ".body[53].tournamentHistory[9]", "D1 matches 85/86 attached to division 3"),
     ("players_all", ".body[72].tournamentHistory[3]", "D1 matches 85/86 attached to division 3"),
-    ("players_all", ".body[54].tournamentHistory[6]", "D1 matches 85/86 attached to division 3"),
+    ("players_all", ".body[54].tournamentHistory[5]", "D1 matches 85/86 attached to division 3"),
+    # D8: Teams mini-tournaments are v2 stages, so their (and pairs') ids change.
+    ("teams_", ".body.miniTournament.id", "D8 Teams ids are v2 stage/pair ids"),
+    ("teams_", ".body.pairs", "D8 Teams ids are v2 stage/pair ids"),
     # D2: after an edit, the old schema moved the edited row to the end of the
     # table's physical order. "Last 4 played" breaks date ties by that order,
     # so which tied matches it picks changed after any edit; v2 keeps the

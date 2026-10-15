@@ -3154,5 +3154,29 @@
   "method": "GET",
   "path": "/api/v1/auth/me",
   "user_id": 3
+ },
+ {
+  "key": "teams_anon",
+  "method": "GET",
+  "path": "/api/v1/teams/",
+  "user_id": null
+ },
+ {
+  "key": "teams_1",
+  "method": "GET",
+  "path": "/api/v1/teams/",
+  "user_id": 1
+ },
+ {
+  "key": "teams_2",
+  "method": "GET",
+  "path": "/api/v1/teams/",
+  "user_id": 2
+ },
+ {
+  "key": "teams_3",
+  "method": "GET",
+  "path": "/api/v1/teams/",
+  "user_id": 3
  }
 ]

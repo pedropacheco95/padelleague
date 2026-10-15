@@ -16,3 +16,7 @@ The parity harness (`scripts/parity/`) treats everything not listed here as a re
 ## Approved, not yet applied
 
 - **Ranking rule.** The site shows "last 4 editions by id" (Shuffle excluded). The settled 2026/27 rule is "last 3 completed + current". Approved by Pedro on 2026-10-14; it will be applied as a listed change before Teams seeding.
+
+## D8: Teams ids are v2 ids
+
+The interim Teams tables (`teams_mini_tournaments`, `teams_pairs`) are folded into v2 `stages` and `pairs` by migration `c4f1a9e2b7d3`. `GET /api/v1/teams/` returns the same content, but `miniTournament.id` is now the stage id (34 instead of 1) and pair ids are the new `pairs.id`. The website never stores these ids; it only sends a pair id back to undo that pair in the same state it just received.

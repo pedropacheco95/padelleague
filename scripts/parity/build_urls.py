@@ -45,6 +45,7 @@ def build(dsn):
     add("players_all", "/api/v1/players/all")
     add("shuffle", "/api/v1/shuffle_tournament")
     add("matches_for_edit", "/api/v1/matches/for_edit")
+    add("teams_anon", "/api/v1/teams/")
 
     for (division_id,) in rows("select id from divisions order by id"):
         add(f"tournament_{division_id}", f"/api/v1/tournaments/{division_id}")
@@ -79,6 +80,7 @@ def build(dsn):
 
     for user_id, in rows("select id from users order by id limit 3"):
         add(f"auth_me_{user_id}", "/api/v1/auth/me", user_id=user_id)
+        add(f"teams_{user_id}", "/api/v1/teams/", user_id=user_id)
 
     conn.close()
     return urls
