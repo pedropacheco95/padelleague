@@ -155,10 +155,17 @@ def test_rejects_unknown_player(pg):
 
 def test_rejects_duplicate_edition_name(pg):
     with pytest.raises(EditionPlanError, match="already exists"):
-        validate_plan(_plan(_players(), edition_name="22ª Edição Masters de Outono"))
+        validate_plan(_plan(_players(), edition_name="22ª Edição"))
     # names are unique across formats, not only among Clássicas
     with pytest.raises(EditionPlanError, match="already exists"):
         validate_plan(_plan(_players(), edition_name="23ª Edição Teams 2026/27"))
+
+
+def test_rejects_an_edition_number_already_used_by_any_format(pg):
+    for name in ("23ª Edição", "20ª Edição Powered by X", "22ª  Edição"):
+        with pytest.raises(EditionPlanError, match="already used by .* the next is 24ª"):
+            validate_plan(_plan(_players(), edition_name=name))
+    assert validate_plan(_plan(_players(), edition_name="24ª Edição Powered by X"))["edition_name"] == "24ª Edição Powered by X"
 
 
 def test_next_edition_number_runs_across_every_format(pg):
@@ -246,4 +253,4 @@ def test_preview_plan_shows_the_groups_and_writes_nothing(pg):
     ]
     assert preview["divisions"][0]["players"] == player_ids[8:16]
     with pytest.raises(EditionPlanError):
-        preview_plan(_plan(player_ids, edition_name="22ª Edição Masters de Outono"))
+        preview_plan(_plan(player_ids, edition_name="22ª Edição"))

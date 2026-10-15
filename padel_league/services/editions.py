@@ -85,6 +85,16 @@ def validate_plan(plan):
     edition_name = (plan.get("edition_name") or "").strip() or default_edition_name()
     if Competition.query.filter_by(name=edition_name).first():
         raise EditionPlanError(f"an edition named {edition_name!r} already exists")
+    number = edition_number(edition_name)
+    taken = next(
+        (name for (name,) in db.session.query(Competition.name) if number and edition_number(name) == number),
+        None,
+    )
+    if taken:
+        raise EditionPlanError(
+            f"edition number {number}ª is already used by {taken!r} — numbers run across "
+            f"every format, the next is {next_edition_number()}ª"
+        )
 
     league_id = plan.get("league_id")
     if league_id is None:
