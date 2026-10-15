@@ -258,14 +258,22 @@ def _settle_mutual(stage):
     db.session.flush()
 
 
-def close(stage):
-    """Pair everyone left by ranking and close the mini-tournament's pairs."""
+def close(stage, positions=None):
+    """Pair everyone left by ranking and close the mini-tournament's pairs.
+
+    `positions` ({player_id: ranking position}) seeds the pairing; by default
+    players.ranking_position, which services.ranking keeps mirrored from the
+    live v2 ranking (services.ranking.compute gives it directly).
+    """
     if stage.pairing_closed:
         raise PairingError("As parelhas deste mini-torneio já estão fechadas.")
     _settle_mutual(stage)
     paired = {pid for p in stage_pairs(stage) for pid in pair_players(stage, p)}
     left = Player.query.filter(Player.id.in_(roster_ids(stage) - paired)).all()
-    order = [p.id for p in sorted(left, key=ranking_key)]
+    if positions is None:
+        order = [p.id for p in sorted(left, key=ranking_key)]
+    else:
+        order = [p.id for p in sorted(left, key=lambda p: (positions.get(p.id) or 10**9, p.id))]
     created = [_make_pair(stage, a, b, "ranking") for a, b in auto_pairs(order, times_together(stage))]
     stage.pairing_closed = True
     db.session.commit()
