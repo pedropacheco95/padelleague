@@ -264,3 +264,20 @@ def test_reset_code_dies_after_five_wrong_guesses(app):
     response = client.post(f"/api/v1/auth/verify_generated_code/{user_id}", json={"generated_code": code})
     assert response.status_code == 400
     assert "código novo" in response.get_json()["error"]
+
+
+def test_admin_adds_and_removes_roster_players(app):
+    from padel_league.models import Player
+    from padel_league.models.teams import TeamsPlayer
+
+    with app.app_context():
+        roster = {r.player_id for r in TeamsPlayer.query.all()}
+        outsider = Player.query.filter(~Player.id.in_(roster)).order_by(Player.id).first().id
+        insider = sorted(roster)[0]
+    client = app.test_client()
+    added = client.post(f"/api/v1/teams/roster/{outsider}", headers=_admin(app)).get_json()
+    assert len(added["players"]) == 49
+    removed = client.delete(f"/api/v1/teams/roster/{insider}", headers=_admin(app)).get_json()
+    assert len(removed["players"]) == 48
+    assert insider not in {p["id"] for p in removed["players"]}
+    assert client.post(f"/api/v1/teams/roster/{outsider}", headers=_as(app, _roster_users(app, 1)[0][0])).status_code == 403

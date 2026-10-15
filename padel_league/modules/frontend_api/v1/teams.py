@@ -171,3 +171,32 @@ def admin_set_roster():
     db.session.commit()
     mt, error = _current_or_404()
     return error or jsonify(_state(mt, jwt_user()))
+
+
+@bp.route("/roster/<int:player_id>", methods=["POST"])
+@admin_required_jwt()
+def admin_add_to_roster(player_id):
+    def action(mt, user):
+        if db.session.get(Player, player_id) is None:
+            raise PairingError("Jogador desconhecido.")
+        if db.session.get(TeamsPlayer, player_id) is None:
+            db.session.add(TeamsPlayer(player_id=player_id))
+            db.session.commit()
+
+    return _run(action)
+
+
+@bp.route("/roster/<int:player_id>", methods=["DELETE"])
+@admin_required_jwt()
+def admin_remove_from_roster(player_id):
+    def action(mt, user):
+        if teams_pairing.pair_of(mt.id, player_id):
+            raise PairingError("Desfaz primeiro a parelha deste jogador.")
+        TeamsPartnerRequest.query.filter(
+            TeamsPartnerRequest.mini_tournament_id == mt.id,
+            (TeamsPartnerRequest.player_id == player_id) | (TeamsPartnerRequest.partner_id == player_id),
+        ).delete(synchronize_session=False)
+        TeamsPlayer.query.filter_by(player_id=player_id).delete()
+        db.session.commit()
+
+    return _run(action)

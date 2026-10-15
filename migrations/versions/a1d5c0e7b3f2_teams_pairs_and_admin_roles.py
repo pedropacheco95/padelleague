@@ -5,7 +5,7 @@ Revises: 9c2f1a7d4e21
 Create Date: 2026-10-15 15:00:00.000000
 
 - Teams tables: roster, mini-tournaments, partner requests, pairs.
-- Roster seeded with the players of the latest edition (Clássica I 2026/27);
+- Roster seeded with the 48 players of edition 25 (Clássica I 2026/27);
   the admin endpoint PUT /api/v1/teams/roster changes it.
 - Mini-tournament 1: choices close Sunday 18 Oct 2026, 23:59 Lisbon (22:59 UTC).
 - Only the super admins keep is_admin. Every signed-in player can still enter
@@ -63,7 +63,15 @@ def upgrade():
         SELECT DISTINCT pd.player_id
         FROM players_in_division pd
         JOIN divisions d ON d.id = pd.division_id
-        WHERE d.edition_id = (SELECT max(id) FROM editions)
+        WHERE d.edition_id = 25;
+
+        DO $$
+        BEGIN
+            IF (SELECT count(*) FROM teams_players) <> 48 THEN
+                RAISE EXCEPTION 'Teams roster seed expected 48 players from edition 25, got %',
+                    (SELECT count(*) FROM teams_players);
+            END IF;
+        END $$;
         """
     )
     op.execute(
