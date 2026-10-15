@@ -19,6 +19,8 @@ class User(db.Model, UserMixin, model.Model):
     password = Column(Text, nullable=False)
     is_admin = Column(Boolean, default=False)
     super_admin = Column(Boolean, default=False)
+    # player | admin | super_admin. Kept in step with the two booleans (see _sync_role).
+    role = Column(Text, nullable=False, default="player", server_default="player")
     generated_code = Column(Integer)
     # Wrong guesses at the current emailed code; the code dies after MAX_CODE_ATTEMPTS.
     code_attempts = Column(Integer, nullable=False, default=0, server_default="0")
@@ -105,3 +107,26 @@ class User(db.Model, UserMixin, model.Model):
             "superAdmin": self.super_admin,
             "playerId": self.player_id,
         }
+
+
+ROLE_FLAGS = {"player": (False, False), "admin": (True, False), "super_admin": (True, True)}
+
+
+def _sync_role(mapper, connection, user):
+    """role and is_admin/super_admin describe the same thing until the booleans go (phase 4).
+
+    Whichever side was changed in this flush wins; the other is derived from it.
+    """
+    from sqlalchemy import inspect
+
+    state = inspect(user)
+    if state.attrs.role.history.has_changes() and user.role in ROLE_FLAGS:
+        user.is_admin, user.super_admin = ROLE_FLAGS[user.role]
+    else:
+        user.role = "super_admin" if user.super_admin else ("admin" if user.is_admin else "player")
+
+
+from sqlalchemy import event  # noqa: E402
+
+event.listen(User, "before_insert", _sync_role)
+event.listen(User, "before_update", _sync_role)
