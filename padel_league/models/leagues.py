@@ -60,7 +60,17 @@ class League(db.Model, model.Model):
         For each player, this function computes ranking points from divisions they played
         in editions that have ended. Points are calculated using the division rating,
         a decay factor based on the player's placement, and additional points for wins and draws.
+
+        v2: once the ranking is bootstrapped (`flask v2 bootstrap-ranking`), this
+        mirrors the v2 ranking (season rule, unrounded awards) into players.*
+        instead, so v1 never shows the old rule. Before that, the old rule runs
+        unchanged (v1 parity).
         """
+        from padel_league.services import ranking as ranking_svc
+
+        if ranking_svc.is_bootstrapped(self.id):
+            ranking_svc.mirror_into_players(ranking_svc.compute(self.id))
+            return
         # Determine the most recent four editions.
         editions = sorted(self.editions, key=lambda edition: edition.id, reverse=True)
         editions = [
