@@ -7,12 +7,13 @@ from sqlalchemy.exc import IntegrityError
 from padel_league.sql_db import db
 from padel_league.tools.auth_tools import admin_required_jwt
 from padel_league.models import (
-    Association_PlayerDivision,
     Division,
     Edition,
     Player,
 )
+from padel_league.models.v2 import CompetitionGroup
 from padel_league.modules.frontend_api.v1.serializers import serialize_division
+from padel_league.services.editions import save_classica_group
 from padel_league.services.fixtures import (
     FixtureGenerationError,
     generate_division_fixtures,
@@ -172,23 +173,19 @@ def _validate_payload(data):
     }
 
 
-def _replace_division_players(division_id: int, players_payload):
-    current_relations = Association_PlayerDivision.query.filter_by(
-        division_id=division_id
-    ).all()
-    for rel in current_relations:
-        db.session.delete(rel)
+def _actor_id():
+    from flask_jwt_extended import get_jwt_identity
 
-    for item in players_payload:
-        db.session.add(
-            Association_PlayerDivision(
-                player_id=item["player_id"],
-                division_id=division_id,
-                place=item["order_index"],
-            )
-        )
+    identity = get_jwt_identity()
+    return int(identity) if identity is not None else None
 
+
+def _save(payload, group=None):
+    """Write the group on v2 and answer with the v1 division as the views show it."""
+    group = save_classica_group(payload, group=group, actor_user_id=_actor_id())
     db.session.commit()
+    db.session.expire_all()
+    return Division.query.get(group.id)
 
 
 @bp.route("", methods=["POST"])
@@ -202,21 +199,8 @@ def create_division():
     except ValueError as exc:
         return _json_error(str(exc), 400)
 
-    division = Division(
-        edition_id=payload["edition_id"],
-        name=payload["name"],
-        beginning_datetime=payload["beginning_datetime"],
-        rating=payload["rating"],
-        end_date=payload["end_date"],
-        has_ended=payload["has_ended"],
-        open_division=payload["open_division"],
-        logo_image_id=payload["logo_image_id"],
-        large_picture_id=payload["large_picture_id"],
-    )
-
     try:
-        division.create()
-        _replace_division_players(division.id, payload["players"])
+        division = _save(payload)
         return jsonify(serialize_division(division, short=True)), 201
     except IntegrityError:
         db.session.rollback()
@@ -226,7 +210,8 @@ def create_division():
 @bp.route("/<int:id>", methods=["PUT"])
 @admin_required_jwt()
 def update_division(id):
-    division = Division.query.filter_by(id=id).first_or_404()
+    Division.query.filter_by(id=id).first_or_404()
+    group = db.session.get(CompetitionGroup, id)
     data = request.get_json() or {}
 
     try:
@@ -234,19 +219,8 @@ def update_division(id):
     except ValueError as exc:
         return _json_error(str(exc), 400)
 
-    division.edition_id = payload["edition_id"]
-    division.name = payload["name"]
-    division.beginning_datetime = payload["beginning_datetime"]
-    division.rating = payload["rating"]
-    division.end_date = payload["end_date"]
-    division.has_ended = payload["has_ended"]
-    division.open_division = payload["open_division"]
-    division.logo_image_id = payload["logo_image_id"]
-    division.large_picture_id = payload["large_picture_id"]
-
     try:
-        division.save()
-        _replace_division_players(division.id, payload["players"])
+        division = _save(payload, group=group)
         return jsonify(serialize_division(division, short=True))
     except IntegrityError:
         db.session.rollback()
@@ -321,7 +295,7 @@ def generate_matches(id):
     force = bool(data.get("force", False))
 
     try:
-        summary = generate_division_fixtures(division, force=force)
+        summary = generate_division_fixtures(division, force=force, actor_user_id=_actor_id())
     except FixtureGenerationError as exc:
         return _json_error(str(exc), 409)
 

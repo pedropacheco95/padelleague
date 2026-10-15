@@ -20,7 +20,10 @@ class Edition(db.Model, model.Model):
     divisions = relationship("Division", back_populates="edition")
 
     players_relations_registrations = relationship(
-        "Registration", back_populates="edition"
+        "Registration",
+        primaryjoin="Edition.id == Registration.edition_id",
+        foreign_keys="Registration.edition_id",
+        back_populates="edition",
     )
 
     def has_ended(self):

@@ -1,5 +1,3 @@
-from datetime import datetime, time
-
 from flask import url_for
 from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
@@ -115,57 +113,8 @@ class Division(db.Model, model.Model):
         return self.players_relations[0].matchweek
 
     def update_table(self, force_update=False):
-        last_upadted_matchweek = self.last_updated_matchweek()
-        matchweek = (
-            self.get_ordered_matches_played()[-1].matchweek
-            if self.get_ordered_matches_played()
-            else 0
-        )
-        if last_upadted_matchweek != matchweek or force_update:
-            for relation in self.players_relations:
-                player = relation.player
-                wins = len(player.matches_won(self))
-                draws = len(player.matches_drawn(self))
-                losts = len(player.matches_lost(self))
-                games_won = player.games_won(self)
-                games_lost = player.games_lost(self)
-
-                points = wins * 3 + draws * 1
-                appearances = len(player.matches_played(self))
-                percentage_of_appearances = round(
-                    (appearances / (matchweek + 1) * 3) * 100, 2
-                )
-
-                relation.points = points
-                relation.appearances = appearances
-                relation.percentage_of_appearances = percentage_of_appearances
-                relation.wins = wins
-                relation.draws = draws
-                relation.losts = losts
-                relation.games_won = games_won
-                relation.games_lost = games_lost
-                relation.matchweek = matchweek
-                relation.save()
-            self.standings_up_to_date = True
-            self.save()
-        self.players_classification(update_places=True)
-        games_not_played = [match for match in self.matches if not match.played]
-        if not games_not_played:
-            if not self.has_ended:
-                self.edition.league.update_rankings()
-                self.has_ended = True
-            sorted_matches = sorted(
-                self.matches, key=lambda match: match.date_hour, reverse=True
-            )
-            last_played_date = (
-                sorted_matches[0].date_hour.date() if sorted_matches else None
-            )
-            # The column is a timestamp in the database; keep the in-memory
-            # value the same type so read-only requests serialise it as before.
-            self.end_date = (
-                datetime.combine(last_played_date, time()) if last_played_date else None
-            )
-            self.save()
+        """No-op on v2: standings, places and the ended flag come from the views
+        and services/results.py (close_group_if_complete). Kept for callers."""
         return True
 
     def add_match_to_table(self, match):

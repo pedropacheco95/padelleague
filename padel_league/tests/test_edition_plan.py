@@ -205,3 +205,21 @@ def test_validate_plan_writes_nothing(pg):
     assert validated["season_id"] == Season.query.filter_by(name="2026/27").one().id
     assert _counts() == before
     assert Division.query.filter(Division.name.like("Teste %")).count() == 0
+
+
+def test_preview_plan_shows_the_groups_and_writes_nothing(pg):
+    from padel_league.services.editions import preview_plan
+
+    player_ids = _players()
+    before = _counts()
+    plan = _plan(player_ids)
+    plan["divisions"].reverse()
+    preview = preview_plan(plan)
+    assert _counts() == before
+    assert [(d["name"], d["tier"], d["rating"]) for d in preview["divisions"]] == [
+        (plan["divisions"][0]["name"], 2, 1000),
+        (plan["divisions"][1]["name"], 1, 2000),
+    ]
+    assert preview["divisions"][0]["players"] == player_ids[8:16]
+    with pytest.raises(EditionPlanError):
+        preview_plan(_plan(player_ids, edition_name="22ª Edição"))

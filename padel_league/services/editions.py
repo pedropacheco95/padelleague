@@ -173,6 +173,35 @@ def validate_plan(plan):
     }
 
 
+def preview_plan(plan):
+    """What create_edition_from_plan would create, without writing anything.
+
+    Raises EditionPlanError like validate_plan. Groups come back in plan order
+    with the tier they would get (by rating, highest first).
+    """
+    validated = validate_plan(plan)
+    ladder = sorted(validated["divisions"], key=lambda d: -d["rating"])
+    return {
+        "edition_name": validated["edition_name"],
+        "league_id": validated["league_id"],
+        "season_id": validated["season_id"],
+        "event_slot_id": validated["event_slot_id"],
+        "beginning_datetime": validated["beginning_datetime"].isoformat(),
+        "divisions": [
+            {
+                "name": spec["name"],
+                "tier": ladder.index(spec) + 1,
+                "rating": spec["rating"],
+                "starts_at": validated["beginning_datetime"].isoformat(),
+                "players": list(spec["players"]),
+                "logo_image_id": spec["logo_image_id"],
+                "large_picture_id": spec["large_picture_id"],
+            }
+            for spec in validated["divisions"]
+        ],
+    }
+
+
 def create_edition_from_plan(plan, actor_user_id=None, rng=None):
     """Create the competition, its stage, groups, entries, members and fixtures.
 
@@ -261,3 +290,118 @@ def create_edition_from_plan(plan, actor_user_id=None, rng=None):
         "edition_name": competition.name,
         "divisions": summaries,
     }
+
+
+# --- Single writes behind the v1 admin endpoints (POST /editions, POST|PUT /divisions)
+
+
+def _season_for(league_id, day=None):
+    """The season containing ``day`` (today by default), else the latest one."""
+    day = day or datetime.date.today()
+    seasons = Season.query.filter_by(league_id=league_id)
+    return (
+        seasons.filter(Season.starts_on <= day, Season.ends_on >= day).first()
+        or seasons.order_by(Season.starts_on.desc()).first()
+    )
+
+
+def _main_stage(competition_id):
+    stage = Stage.query.filter_by(competition_id=competition_id, number=1).first()
+    if stage is None:
+        stage = Stage(competition_id=competition_id, number=1, seeding_method="promotion", emits_award=True)
+        db.session.add(stage)
+        db.session.flush()
+    return stage
+
+
+def create_classica_competition(name, league_id, actor_user_id=None):
+    """An empty edition: a classica competition with its first stage. Caller commits."""
+    season = _season_for(league_id)
+    if season is None:
+        raise EditionPlanError(f"league {league_id} has no season")
+    competition = Competition(season_id=season.id, name=name, format="classica", status="planned")
+    db.session.add(competition)
+    db.session.flush()
+    _main_stage(competition.id)
+    db.session.add(
+        AuditEvent(actor_user_id=actor_user_id, entity="competition", entity_id=competition.id, action="created", after={"name": name})
+    )
+    return competition
+
+
+def _retier(stage):
+    """Tier = position on the stage's ladder, highest rating first."""
+    groups = CompetitionGroup.query.filter_by(stage_id=stage.id).all()
+    for tier, group in enumerate(sorted(groups, key=lambda g: (-(g.rating or 0), g.id)), start=1):
+        group.tier = tier
+
+
+def _drop_unused_entries(competition_id):
+    """Entries left with no group and no match in their competition."""
+    from padel_league.models.v2 import MatchParticipant
+
+    used = {gm.entry_id for gm in GroupMember.query.join(CompetitionGroup).join(Stage).filter(Stage.competition_id == competition_id)}
+    for entry in Entry.query.filter_by(competition_id=competition_id):
+        if entry.id not in used and not MatchParticipant.query.filter_by(entry_id=entry.id).first():
+            db.session.delete(entry)
+
+
+def save_classica_group(payload, group=None, actor_user_id=None):
+    """Create or update a classica group from the v1 division payload. Caller commits.
+
+    ``payload`` is the validated body of POST/PUT /api/v1/divisions (edition_id
+    is the competition id). The member list is replaced in ``order_index``
+    order, as the old code rewrote players_in_division; matches are untouched.
+    """
+    competition = db.session.get(Competition, payload["edition_id"])
+    stage = _main_stage(competition.id)
+    previous_stage = group.stage if group is not None else None
+    previous_competition_id = previous_stage.competition_id if previous_stage else None
+    before = None
+    if group is None:
+        group = CompetitionGroup(stage_id=stage.id, structure="round_robin", standings_up_to_date=True)
+        db.session.add(group)
+    else:
+        before = {"name": group.name, "rating": group.rating, "members": [m.entry.player_id for m in group.members]}
+        group.stage_id = stage.id
+
+    group.name = payload["name"]
+    group.starts_at = payload["beginning_datetime"]
+    group.rating = payload["rating"]
+    end_date = payload["end_date"]
+    group.end_date = datetime.datetime.combine(end_date, datetime.time.min) if end_date else None
+    group.has_ended = payload["has_ended"]
+    group.open_division = payload["open_division"]
+    group.logo_image_id = payload["logo_image_id"]
+    group.large_picture_id = payload["large_picture_id"]
+    db.session.flush()
+
+    for member in list(group.members):
+        db.session.delete(member)
+    db.session.flush()
+    db.session.expire(group, ["members"])
+    for item in payload["players"]:
+        entry = Entry.query.filter_by(competition_id=competition.id, player_id=item["player_id"]).first()
+        if entry is None:
+            entry = Entry(competition_id=competition.id, player_id=item["player_id"])
+            db.session.add(entry)
+            db.session.flush()
+        db.session.add(GroupMember(group_id=group.id, entry_id=entry.id, seed=item["order_index"]))
+    db.session.flush()
+
+    _retier(stage)
+    if previous_stage is not None and previous_stage.id != stage.id:
+        _retier(previous_stage)
+    for competition_id in {competition.id, previous_competition_id} - {None}:
+        _drop_unused_entries(competition_id)
+    db.session.add(
+        AuditEvent(
+            actor_user_id=actor_user_id,
+            entity="group",
+            entity_id=group.id,
+            action="updated" if before else "created",
+            before=before,
+            after={"name": group.name, "rating": group.rating, "members": [i["player_id"] for i in payload["players"]]},
+        )
+    )
+    return group

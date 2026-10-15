@@ -13,9 +13,15 @@ class Registration(db.Model, model.Model):
     model_name = "Registration"
 
     player_id = Column(Integer, ForeignKey("players.id"), primary_key=True)
-    edition_id = Column(Integer, ForeignKey("compat.editions.id"), primary_key=True)
+    # The database FK points at competitions (v2); Edition is the compat view of them.
+    edition_id = Column(Integer, ForeignKey("competitions.id"), primary_key=True)
 
-    edition = relationship("Edition", back_populates="players_relations_registrations")
+    edition = relationship(
+        "Edition",
+        primaryjoin="Registration.edition_id == Edition.id",
+        foreign_keys=[edition_id],
+        back_populates="players_relations_registrations",
+    )
     player = relationship("Player", back_populates="editions_relations_registrations")
 
     def display_all_info(self):
