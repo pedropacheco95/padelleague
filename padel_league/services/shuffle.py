@@ -117,21 +117,19 @@ def next_divisions(competition_id):
     """{tier: [entry_id]} for the next round.
 
     The calculated divisions when every entry has one (v1: calculate_divisions,
-    then generate), ordered within a division by position, points, player;
+    then generate), seated within a division in the live overall order;
     otherwise straight from the live overall order.
     """
     competition = _competition(competition_id)
-    live = {r.entry_id: r for r in _live_rows(competition_id)}
+    rows = overall_order(competition, _live_rows(competition_id))  # sets live place
     stored = _division_rows(competition)
-    if live and all(e in stored and stored[e].next_division for e in live):
+    if rows and all(r.entry_id in stored and stored[r.entry_id].next_division for r in rows):
+        # v1 rewrote the stored position with the live order on every read and
+        # admin action, so within a division the seats follow the live order.
         out = {}
-        for entry_id, row in sorted(
-            live.items(),
-            key=lambda kv: (stored[kv[0]].place or 9999, -(kv[1].points or 0), kv[1].player_id),
-        ):
-            out.setdefault(stored[entry_id].next_division, []).append(entry_id)
+        for row in sorted(rows, key=lambda r: (r.place, -(r.points or 0), r.player_id)):
+            out.setdefault(stored[row.entry_id].next_division, []).append(row.entry_id)
         return out
-    rows = overall_order(competition, list(live.values()))
     out = {}
     for row in rows:
         out.setdefault(row.next_group_tier, []).append(row.entry_id)
