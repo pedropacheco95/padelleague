@@ -70,6 +70,40 @@ paths:
         "403": { $ref: "#/components/responses/Error" }
         "401": { $ref: "#/components/responses/Error" }
 
+  /competitions/preview:
+    post:
+      tags: [admin]
+      summary: Dry run of POST /competitions — the groups and members it would create, nothing saved
+      security: [{ bearer: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CompetitionCreate" }
+      responses:
+        "200":
+          description: Proposed groups
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [groups]
+                properties:
+                  groups:
+                    type: array
+                    items:
+                      type: object
+                      required: [name, tier, rating, players]
+                      properties:
+                        name: { type: string }
+                        tier: { type: integer }
+                        rating: { type: number }
+                        players: { type: array, items: { $ref: "#/components/schemas/PlayerRef" } }
+                  notes: { type: array, items: { type: string }, description: Promotion decisions worth showing (withdrawals filled, contests won on appearances) }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+
   /competitions/current:
     get:
       tags: [competitions]
@@ -141,6 +175,7 @@ paths:
           content:
             application/json:
               schema: { type: array, items: { $ref: "#/components/schemas/StandingRow" } }
+        "404": { $ref: "#/components/responses/Error" }
 
   /groups/{groupId}:
     parameters: [{ $ref: "#/components/parameters/groupId" }]
@@ -164,6 +199,7 @@ paths:
             application/json:
               schema: { type: array, items: { $ref: "#/components/schemas/Match" } }
         "400": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
 
   /groups/{groupId}/close:
     parameters: [{ $ref: "#/components/parameters/groupId" }]
@@ -176,6 +212,7 @@ paths:
         "409": { $ref: "#/components/responses/Error" }
         "401": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
 
   /matches/{matchId}:
     parameters: [{ $ref: "#/components/parameters/matchId" }]
@@ -204,6 +241,8 @@ paths:
         "400": { $ref: "#/components/responses/Error" }
         "401": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
 
   /rounds/{roundId}/absences:
     parameters: [{ name: roundId, in: path, required: true, schema: { type: integer } }]
@@ -228,6 +267,8 @@ paths:
         "400": { $ref: "#/components/responses/Error" }
         "401": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
 
   /absences/{absenceId}:
     parameters: [{ name: absenceId, in: path, required: true, schema: { type: integer } }]
@@ -238,6 +279,8 @@ paths:
         "204": { description: Deleted }
         "401": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
 
   /calendar:
     get:
@@ -274,6 +317,7 @@ paths:
       responses:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/PlayerComparison" } } } }
         "400": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
 
   /players/{playerId}:
     parameters: [{ $ref: "#/components/parameters/playerId" }]
@@ -296,6 +340,7 @@ paths:
             application/json:
               schema: { type: array, items: { $ref: "#/components/schemas/Match" } }
         "400": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
 
   /rankings/current:
     get:
@@ -310,6 +355,7 @@ paths:
       tags: [rankings]
       responses:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Ranking" } } } }
+        "404": { $ref: "#/components/responses/Error" }
 
   /rankings/players/{playerId}:
     parameters: [{ $ref: "#/components/parameters/playerId" }]
@@ -318,6 +364,7 @@ paths:
       summary: Why a player has their points — one line per counted or dropped award
       responses:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/RankingExplanation" } } } }
+        "404": { $ref: "#/components/responses/Error" }
 
   /competitions/{competitionId}/teams:
     parameters: [{ $ref: "#/components/parameters/competitionId" }]
@@ -343,6 +390,7 @@ paths:
         "400": { $ref: "#/components/responses/Error" }
         "401": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
     delete:
       tags: [teams]
       security: [{ bearer: [] }]
@@ -350,6 +398,7 @@ paths:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/TeamsState" } } } }
         "401": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
 
   /competitions/{competitionId}/pairs:
     parameters: [{ $ref: "#/components/parameters/competitionId" }]
@@ -369,6 +418,8 @@ paths:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/TeamsState" } } } }
         "401": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
+        "400": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
 
   /competitions/{competitionId}/pairs/{pairId}:
     parameters:
@@ -381,6 +432,8 @@ paths:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/TeamsState" } } } }
         "401": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
+        "400": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
 
   /competitions/{competitionId}/pairs/close:
     parameters: [{ $ref: "#/components/parameters/competitionId" }]
@@ -392,6 +445,8 @@ paths:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/TeamsState" } } } }
         "401": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
+        "400": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
 
   /competitions/{competitionId}/roster/{playerId}:
     parameters:
@@ -404,6 +459,8 @@ paths:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/TeamsState" } } } }
         "401": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
+        "400": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
     delete:
       tags: [admin]
       security: [{ bearer: [] }]
@@ -411,6 +468,8 @@ paths:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/TeamsState" } } } }
         "401": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
+        "400": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
 
   /stages/{stageId}/divisions:
     parameters: [{ name: stageId, in: path, required: true, schema: { type: integer } }]
@@ -693,6 +752,8 @@ components:
         substitute: { oneOf: [{ $ref: "#/components/schemas/PlayerRef" }, { type: "null" }] }
         kind: { type: string, enum: [full, partial] }
         source: { type: string, enum: [derived, recorded] }
+        recordedBy: { oneOf: [{ $ref: "#/components/schemas/PlayerRef" }, { type: "null" }], description: Who marked it (from audit_events); null for derived history }
+        recordedAt: { type: [string, "null"], format: date-time }
 
     PlayerSummary:
       allOf:
