@@ -1,23 +1,11 @@
 import io
-import itertools
-import os
-import tempfile
 
 import pytest
 from PIL import Image as PILImage
-from sqlalchemy import event
 
-from padel_league import create_app
 from padel_league.model import Image
-from padel_league.models import (
-    Association_PlayerDivision,
-    Association_PlayerMatch,
-    Division,
-    Edition,
-    League,
-    Match,
-    Player,
-)
+from padel_league.models.v2 import Competition, CompetitionGroup, Stage
+from padel_league.tests import factories as f
 from padel_league.services import artwork, artwork_generation
 from padel_league.services.artwork import (
     BANNER_SIZE,
@@ -27,68 +15,12 @@ from padel_league.services.artwork import (
     normalise,
     publish,
 )
-from padel_league.sql_db import db, init_db
-
-_COMPOSITE_PK_TABLES_WITH_AUTOINCREMENT = [
-    Association_PlayerMatch.__table__,
-    Association_PlayerDivision.__table__,
-]
-
+from padel_league.sql_db import db
 
 @pytest.fixture
-def app():
-    db_fd, db_path = tempfile.mkstemp()
-
-    original_autoincrement = [
-        table.c.id.autoincrement for table in _COMPOSITE_PK_TABLES_WITH_AUTOINCREMENT
-    ]
-    for table in _COMPOSITE_PK_TABLES_WITH_AUTOINCREMENT:
-        table.c.id.autoincrement = False
-
-    app = create_app(
-        {
-            "TESTING": True,
-            # Old-model unit test on SQLite: compat is a real schema here.
-            "ALLOW_COMPAT_WRITES": True,
-            "SQLALCHEMY_DATABASE_URI": f"sqlite:///{db_path}",
-            "SQLALCHEMY_TRACK_MODIFICATIONS": False,
-        }
-    )
-
-    with app.app_context():
-        init_db(app)
-        db.metadata.create_all(
-            bind=db.engine,
-            tables=[
-                League.__table__,
-                Edition.__table__,
-                Division.__table__,
-                Player.__table__,
-                Match.__table__,
-                Image.__table__,
-                Association_PlayerMatch.__table__,
-                Association_PlayerDivision.__table__,
-            ],
-        )
-
-    yield app
-
-    os.close(db_fd)
-    os.unlink(db_path)
-    for table, autoincrement in zip(
-        _COMPOSITE_PK_TABLES_WITH_AUTOINCREMENT, original_autoincrement
-    ):
-        table.c.id.autoincrement = autoincrement
-
-
-_assoc_ids = itertools.count(1)
-
-
-@event.listens_for(Association_PlayerMatch, "before_insert", propagate=True)
-@event.listens_for(Association_PlayerDivision, "before_insert", propagate=True)
-def _assign_assoc_id(_mapper, _connection, target):
-    if target.id is None:
-        target.id = next(_assoc_ids)
+def app(pg):
+    """Postgres clone of v2_template (conftest.pg); everything is rolled back."""
+    return pg
 
 
 def make_image_bytes(size, mode="RGB", fmt="PNG"):
@@ -176,11 +108,11 @@ def test_unknown_kind_raises():
 
 
 def _make_division(app, name="Outono 2026 - 1ª Divisão", rating=2000, edition=None):
-    with app.app_context():
-        division = Division(name=name, rating=rating, edition_id=edition)
-        db.session.add(division)
-        db.session.commit()
-        return division.id
+    comp = edition or f.competition(name="Artwork test")
+    stg = Stage.query.filter_by(competition_id=comp.id, number=1).first() or f.stage(comp)
+    group = f.group(stg, tier=1, rating=rating, name=name)
+    db.session.commit()
+    return group.id
 
 
 def test_publish_uploads_links_and_records_the_image(app):
@@ -188,7 +120,7 @@ def test_publish_uploads_links_and_records_the_image(app):
     uploader = FakeUploader()
 
     with app.app_context():
-        division = Division.query.get(division_id)
+        division = db.session.get(CompetitionGroup, division_id)
         info = publish(
             division,
             "poster",
@@ -203,9 +135,9 @@ def test_publish_uploads_links_and_records_the_image(app):
     assert dimensions(uploader.uploads[info["object_key"]]) == POSTER_SIZE
 
     with app.app_context():
-        division = Division.query.get(division_id)
+        division = db.session.get(CompetitionGroup, division_id)
         assert division.logo_image_id == info["image_id"]
-        image = Image.query.get(info["image_id"])
+        image = db.session.get(Image, info["image_id"])
         assert image.content_type == "image/jpeg"
         assert image.size_bytes == info["bytes"]
         assert image.is_public is True
@@ -216,7 +148,7 @@ def test_publish_banner_targets_the_large_picture_column(app):
     uploader = FakeUploader()
 
     with app.app_context():
-        division = Division.query.get(division_id)
+        division = db.session.get(CompetitionGroup, division_id)
         info = publish(
             division,
             "banner",
@@ -227,7 +159,7 @@ def test_publish_banner_targets_the_large_picture_column(app):
 
     assert info["object_key"] == "Division/20260901120001_large_picture_id.png"
     with app.app_context():
-        division = Division.query.get(division_id)
+        division = db.session.get(CompetitionGroup, division_id)
         assert division.large_picture_id == info["image_id"]
         assert division.logo_image_id is None
 
@@ -236,39 +168,32 @@ def test_publish_object_keys_match_the_production_naming(app):
     division_id = _make_division(app)
     uploader = FakeUploader()
     with app.app_context():
-        division = Division.query.get(division_id)
+        division = db.session.get(CompetitionGroup, division_id)
         publish(
             division,
             "poster",
             make_image_bytes((900, 900)),
-            stamp="20260529084600",
+            stamp="20991231235900",
             uploader=uploader,
         )
     # Same shape as the existing rows, e.g. Division/20260529084600_logo_image_id.png
-    assert "Division/20260529084600_logo_image_id.png" in uploader.uploads
+    assert "Division/20991231235900_logo_image_id.png" in uploader.uploads
 
 
 # ── generate_for_edition ─────────────────────────────────────────────────────
 
 
 def _make_edition(app, division_count=3):
-    with app.app_context():
-        league = League(name="Padel League")
-        db.session.add(league)
-        db.session.flush()
-        edition = Edition(name="22ª Edição", league_id=league.id)
-        db.session.add(edition)
-        db.session.flush()
-        for i in range(division_count):
-            db.session.add(
-                Division(
-                    name=f"Outono 2026 - {i + 1}ª Divisão",
-                    rating=2000 // (2**i),
-                    edition_id=edition.id,
-                )
-            )
-        db.session.commit()
-        return edition.id
+    comp = f.competition(name="22ª Edição artwork")
+    stg = f.stage(comp)
+    for i in range(division_count):
+        f.group(stg, tier=i + 1, rating=2000 // (2**i), name=f"Outono 2026 - {i + 1}ª Divisão")
+    db.session.commit()
+    return comp.id
+
+
+def _groups(edition_id):
+    return CompetitionGroup.query.join(Stage).filter(Stage.competition_id == edition_id).all()
 
 
 def test_generate_for_edition_covers_every_division_and_kind(app):
@@ -282,7 +207,7 @@ def test_generate_for_edition_covers_every_division_and_kind(app):
         return make_image_bytes(size)
 
     with app.app_context():
-        edition = Edition.query.get(edition_id)
+        edition = db.session.get(Competition, edition_id)
         results = generate_for_edition(
             edition, generator=fake_generator, uploader=uploader
         )
@@ -292,7 +217,7 @@ def test_generate_for_edition_covers_every_division_and_kind(app):
     assert len(uploader.uploads) == 6
 
     with app.app_context():
-        for division in Edition.query.get(edition_id).divisions:
+        for division in _groups(edition_id):
             assert division.logo_image_id is not None
             assert division.large_picture_id is not None
 
@@ -310,13 +235,13 @@ def test_generate_for_edition_skips_divisions_that_already_have_artwork(app):
         return make_image_bytes(size)
 
     with app.app_context():
-        edition = Edition.query.get(edition_id)
+        edition = db.session.get(Competition, edition_id)
         generate_for_edition(edition, generator=fake_generator, uploader=uploader)
 
     first_pass = len(uploader.uploads)
 
     with app.app_context():
-        edition = Edition.query.get(edition_id)
+        edition = db.session.get(Competition, edition_id)
         results = generate_for_edition(
             edition, generator=fake_generator, uploader=uploader
         )
@@ -333,14 +258,14 @@ def test_generate_for_edition_force_replaces(app):
         return make_image_bytes((1024, 1536))
 
     with app.app_context():
-        edition = Edition.query.get(edition_id)
+        edition = db.session.get(Competition, edition_id)
         generate_for_edition(
             edition, kinds=("poster",), generator=fake_generator, uploader=uploader
         )
-        first = Division.query.filter_by(edition_id=edition_id).first().logo_image_id
+        first = _groups(edition_id)[0].logo_image_id
 
     with app.app_context():
-        edition = Edition.query.get(edition_id)
+        edition = db.session.get(Competition, edition_id)
         generate_for_edition(
             edition,
             kinds=("poster",),
@@ -348,7 +273,7 @@ def test_generate_for_edition_force_replaces(app):
             generator=fake_generator,
             uploader=uploader,
         )
-        second = Division.query.filter_by(edition_id=edition_id).first().logo_image_id
+        second = _groups(edition_id)[0].logo_image_id
 
     assert second != first
 
@@ -366,7 +291,7 @@ def test_one_failing_division_does_not_lose_the_others(app):
         return make_image_bytes(size)
 
     with app.app_context():
-        edition = Edition.query.get(edition_id)
+        edition = db.session.get(Competition, edition_id)
         results = generate_for_edition(
             edition, generator=flaky_generator, uploader=uploader
         )
@@ -378,7 +303,7 @@ def test_one_failing_division_does_not_lose_the_others(app):
     with app.app_context():
         linked = [
             d
-            for d in Edition.query.get(edition_id).divisions
+            for d in _groups(edition_id)
             if d.logo_image_id or d.large_picture_id
         ]
         assert len(linked) >= 2  # the successful ones survived

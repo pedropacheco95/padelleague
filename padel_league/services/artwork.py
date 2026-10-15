@@ -110,7 +110,8 @@ def _object_key(kind, stamp):
 
 
 def publish(division, kind, image_bytes, stamp=None, uploader=None, commit=True):
-    """Normalise, upload to GCS, record an Image row and link it to `division`.
+    """Normalise, upload to GCS, record an Image row and link it to `division`
+    (a v2 CompetitionGroup: same logo_image_id / large_picture_id columns).
 
     `uploader` is injectable for tests; by default it uploads to the bucket in
     GCS_UPLOADS_BUCKET. Returns the info dict from `normalise` plus the image id
@@ -182,12 +183,18 @@ def generate_for_edition(
     not throw away the four already done. Returns one result dict per attempt,
     with `error` set on the ones that failed.
     """
+    from padel_league.models.v2 import CompetitionGroup, Stage
     from padel_league.services import artwork_generation
 
     generator = generator or artwork_generation.generate
-    divisions = sorted(
-        edition.divisions, key=lambda d: (-(d.rating or 0), d.name.lower())
+    # v2: write to the competition's groups (edition id = competition id); the
+    # pre-v2 Division is a read-only view and cannot take the image ids.
+    groups = (
+        CompetitionGroup.query.join(Stage, Stage.id == CompetitionGroup.stage_id)
+        .filter(Stage.competition_id == edition.id)
+        .all()
     )
+    divisions = sorted(groups, key=lambda d: (-(d.rating or 0), (d.name or "").lower()))
 
     results = []
     for index, division in enumerate(divisions):
