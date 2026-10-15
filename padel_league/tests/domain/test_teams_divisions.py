@@ -50,9 +50,9 @@ def _without_shuffle_awards():
 def test_seeding_refuses_while_the_shuffle_has_no_awards(pg):
     comp, stage = _teams_stage1()
     _without_shuffle_awards()
-    with pytest.raises(Conflict) as err:
+    with pytest.raises(teams_pairing.PairingError) as err:  # v1 endpoints catch PairingError only
         teams_pairing.close(stage)
-    assert err.value.code == "ranking_missing_awards"
+    assert err.value.__cause__.code == "ranking_missing_awards"
 
 
 def test_real_roster_pairs_divisions_and_first_group_close(pg):

@@ -27,7 +27,19 @@ def test_live_overall_order_matches_the_stored_final_positions(pg):
     assert live == stored
 
 
+def test_ended_shuffle_cannot_get_a_new_round(pg):
+    from padel_league.models.v2 import Competition
+
+    assert db.session.get(Competition, SHUFFLE).status == "ended"
+    with pytest.raises(Conflict) as err:
+        shuffle.generate_round(SHUFFLE)
+    assert err.value.code == "competition_ended"
+
+
 def test_generate_round_then_delete_it(pg):
+    from padel_league.models.v2 import Competition
+
+    db.session.get(Competition, SHUFFLE).status = "running"  # as if the Shuffle were still on
     before = {s.number for s in Stage.query.filter_by(competition_id=SHUFFLE)}
     divisions = shuffle.next_divisions(SHUFFLE)
     assert [len(divisions[t]) for t in sorted(divisions)] == [8] * 6

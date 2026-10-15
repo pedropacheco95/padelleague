@@ -105,6 +105,8 @@ def generate_round(competition_id, on=None, actor_user_id=None):
     stage. Refuses while any match of the Shuffle is unplayed. Caller commits.
     """
     competition = _competition(competition_id)
+    if competition.status == "ended":
+        raise Conflict("Esta Shuffle já terminou.", "competition_ended")
     if _unfinished(competition_id):
         raise Conflict("Há jogos por jogar; termina a jornada antes de gerar a seguinte.", "round_unfinished")
     divisions = next_divisions(competition_id)
