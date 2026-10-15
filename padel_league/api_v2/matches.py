@@ -225,3 +225,38 @@ def calendar():
         )
     matches = query.order_by(CompetitionMatch.scheduled_at, CompetitionMatch.id).all()
     return jsonify(serialize_matches(matches))
+
+
+@bp.route("/competitions/<int:competition_id>/standings", methods=["GET"])
+def competition_standings(competition_id):
+    """Shuffle overall / Teams edition total — S1's services.standings.competition_standings.
+    Empty until that service lands."""
+    from .competitions import get_competition
+
+    get_competition(competition_id)
+    service = _domain._service("standings", "competition_standings")
+    if service is None:
+        return jsonify([])
+    result = service(competition_id)
+    rows = getattr(result, "rows", result)
+    players = {p.id: p for p in Player.query.options(joinedload(Player.picture)).filter(Player.id.in_([r.player_id for r in rows]))}
+    return jsonify(
+        [
+            {
+                "place": r.place,
+                "player": ser.player_ref(players.get(r.player_id)),
+                "points": r.points,
+                "played": r.appearances,
+                "wins": r.wins,
+                "draws": r.draws,
+                "losses": r.losses,
+                "gamesWon": getattr(r, "games_won", None),
+                "gamesLost": getattr(r, "games_lost", None),
+                "setsWon": getattr(r, "sets_won", None),
+                "setsDrawn": getattr(r, "sets_drawn", None),
+                "attendancePct": getattr(r, "attendance_pct", None),
+                "nextGroupTier": getattr(r, "next_group_tier", None),
+            }
+            for r in rows
+        ]
+    )
