@@ -158,6 +158,8 @@ paths:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Competition" } } } }
         "401": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
     delete:
       tags: [admin]
       summary: Shuffle — delete the last (unplayed) round
@@ -167,6 +169,7 @@ paths:
         "409": { $ref: "#/components/responses/Error" }
         "401": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
 
   /competitions/{competitionId}/standings:
     parameters: [{ $ref: "#/components/parameters/competitionId" }]
