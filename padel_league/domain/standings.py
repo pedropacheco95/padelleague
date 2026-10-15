@@ -157,7 +157,13 @@ def teams_standings(members, matches):
         per_set = teams_match_points(match)
         for side, entries in _sides(match):
             if match.walkover_winner is not None and side != match.walkover_winner:
-                continue  # the pair that did not turn up scores nothing and loses the presence
+                # Walkover, losing side (Pedro, 2026-10-15): a player who turned up
+                # keeps the presence and scores 0; the absent partner was marked
+                # absent (no participant row) and loses it.
+                for entry_id in entries:
+                    if entry_id in rows:
+                        rows[entry_id].appearances += 1
+                continue
             for entry_id in entries:
                 row = rows.get(entry_id)
                 if row is None:
