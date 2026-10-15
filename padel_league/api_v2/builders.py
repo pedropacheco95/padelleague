@@ -145,7 +145,15 @@ def preview(body):
             "groups": [],
             "notes": ["Os grupos da Shuffle e da Teams formam-se em cada etapa, não na criação."],
         }
-    divisions, notes, _ = _plan_and_notes(body, strict=False)
+    divisions, notes, plan = _plan_and_notes(body, strict=False)
+    if plan is not None:
+        # S5 validates the plan exactly as create would (names unique, 8 players, …):
+        # a problem becomes a note here, a 400 on create.
+        try:
+            checked = editions_service.preview_plan(plan)
+            divisions = [(d["tier"], d["rating"], d["players"], d["name"]) for d in checked["divisions"]]
+        except editions_service.EditionPlanError as exc:
+            notes.append(f"O plano ainda não pode ser criado: {exc}")
     players = {
         p.id: p for p in Player.query.filter(Player.id.in_([pid for _, _, ids, _ in divisions for pid in ids]))
     }
@@ -204,3 +212,47 @@ def create_competition():
     db.session.commit()
     comp = get_competition(result["edition_id"])
     return jsonify(competition_detail(comp)), 201
+
+
+@bp.route("/competitions/<int:competition_id>/fixtures", methods=["POST"])
+@role_required("admin")
+def generate_fixtures(competition_id):
+    """Fixtures for every group of a stage (default: the current one), as one transaction
+    (S5 services.fixtures.generate_group_fixtures). firstRoundDate sets the start of
+    groups that have none yet (first round at the league's usual 21:30)."""
+    from padel_league.models.v2 import CompetitionGroup, Stage
+    from padel_league.services import fixtures as fixtures_service
+
+    from ._http import not_found, require_user
+    from .cards import current_stage
+
+    user = require_user()
+    comp = get_competition(competition_id)
+    if comp.format != "classica":
+        raise conflict("Só a Clássica gera calendário de uma vez.", "not_classica")
+    data = json_body()
+    stage_id = int_arg(data.get("stageId"), "stageId")
+    stages = Stage.query.filter_by(competition_id=comp.id).all()
+    stage = next((s for s in stages if s.id == stage_id), None) if stage_id else current_stage(stages)
+    if stage is None:
+        raise not_found("Etapa não encontrada nesta competição.", "stage_not_found")
+    first = data.get("firstRoundDate")
+    if first:
+        try:
+            first = datetime.combine(date.fromisoformat(first), DEFAULT_KICKOFF)
+        except (TypeError, ValueError):
+            raise bad_request("firstRoundDate inválido (AAAA-MM-DD).", "invalid_input")
+    groups = CompetitionGroup.query.filter_by(stage_id=stage.id).order_by(CompetitionGroup.tier).all()
+    if not groups:
+        raise conflict("Esta etapa não tem divisões.", "no_groups")
+    try:
+        for group in groups:
+            if first and group.starts_at is None:
+                group.starts_at = first
+            fixtures_service.generate_group_fixtures(group, commit=False, actor_user_id=user.id)
+    except fixtures_service.FixtureGenerationError as exc:
+        db.session.rollback()
+        raise conflict(str(exc), "fixtures_not_generated")
+    db.session.commit()
+    db.session.expire_all()
+    return jsonify(competition_detail(get_competition(competition_id)))
