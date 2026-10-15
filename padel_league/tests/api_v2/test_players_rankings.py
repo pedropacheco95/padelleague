@@ -29,7 +29,9 @@ def test_player_page(client):
     pid = _ranked_player_id()
     body = check(client.get(f"/api/v2/players/{pid}"), "/players/{playerId}")
     assert body["id"] == pid and body["history"]
-    assert body["stats"]["played"] == body["stats"]["wins"] + body["stats"]["draws"] + body["stats"]["losses"]
+    st = body["stats"]
+    assert st["matchesPlayed"] == st["matchesWon"] + st["matchesDrawn"] + st["matchesLost"]
+    assert 0 <= st["attendance"] <= 100 and st["tournamentsPlayed"] >= 1
     check(client.get("/api/v2/players/99999999"), "/players/{playerId}", status=404)
 
 
@@ -63,8 +65,17 @@ def test_rankings(client):
 
 def test_ranking_explanation(client):
     pid = _ranked_player_id()
-    body = check(client.get(f"/api/v2/rankings/players/{pid}"), "/rankings/players/{playerId}")
+    resp = client.get(f"/api/v2/rankings/players/{pid}")
+    if resp.status_code == 409:  # until the ranking bootstrap closes Shuffle 26 (S1)
+        assert resp.get_json()["code"] == "ranking_missing_awards"
+        return
+    body = check(resp, "/rankings/players/{playerId}")
     assert body["player"]["id"] == pid and isinstance(body["lines"], list)
+
+
+def test_unranked_players_have_null_position(client):
+    body = check(client.get("/api/v2/players"), "/players")
+    assert all((p["rankingPosition"] is None) == (p["rankingPoints"] == 0) for p in body)
 
 
 def test_player_page_query_count(client, count_queries):

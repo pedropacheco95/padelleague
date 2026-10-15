@@ -106,3 +106,16 @@ def test_divisions_guards(client, make_user):
     assert body["code"] in ("pairing_not_closed", "not_available")
     resp = client.post("/api/v2/stages/99999999/divisions", headers=bearer(make_user(role="admin")))
     assert resp.status_code == 404
+
+
+def test_closed_group_is_admin_only(client, make_user):
+    grp, (rnd,), entries, (m,) = _classica_group()
+    grp.has_ended = True
+    persist()
+    payload = {"sets": [{"homeGames": 6, "awayGames": 2, "outcome": "completed"}]}
+    resp = client.put(f"/api/v2/matches/{m.id}/result", json=payload, headers=bearer(make_user()))
+    assert resp.status_code == 409 and resp.get_json()["code"] == "group_closed"
+    resp = client.post(f"/api/v2/rounds/{rnd.id}/absences", json={"playerId": entries[0].player_id, "groupId": grp.id}, headers=bearer(make_user()))
+    assert resp.status_code == 409 and resp.get_json()["code"] == "group_closed"
+    resp = client.put(f"/api/v2/matches/{m.id}/result", json=payload, headers=bearer(make_user(role="admin")))
+    assert resp.status_code == 200

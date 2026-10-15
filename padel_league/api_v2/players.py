@@ -50,10 +50,13 @@ def current_snapshot():
 
 
 def ranking_table(snapshot):
-    """[(position, player_id, points)] ordered; a missing position follows the points order."""
+    """[(position, player_id, points)] ordered; a missing position follows the points order.
+
+    Players without points under the current rule are unranked (not listed; their
+    rankingPosition is null) — an intended difference from v1 (S6)."""
     if snapshot is None:
         return []
-    rows = RankingEntry.query.filter_by(snapshot_id=snapshot.id).all()
+    rows = [e for e in RankingEntry.query.filter_by(snapshot_id=snapshot.id) if (e.points or 0) > 0]
     rows.sort(key=lambda e: (-(e.points or 0), e.position or 10**9, e.player_id))
     return [(e.position or i, e.player_id, e.points) for i, e in enumerate(rows, 1)]
 
@@ -183,20 +186,61 @@ def _result_for(match, side):
 
 
 def match_stats(matches, player_id):
-    stats = {"played": 0, "wins": 0, "draws": 0, "losses": 0, "gamesWon": 0, "gamesLost": 0}
+    """S3's PlayerDetail.stats keys, from v2 facts (real jornadas, not v1's 3-per-week estimate)."""
+    played = won = drawn = lost = games_won = games_lost = 0
+    rounds_played = set()
     for m in matches:
         side = _side(m, player_id)
         result = _result_for(m, side)
         if result is None:
             continue
-        stats["played"] += 1
-        stats[{"win": "wins", "draw": "draws", "loss": "losses"}[result]] += 1
+        played += 1
+        won += result == "win"
+        drawn += result == "draw"
+        lost += result == "loss"
+        rounds_played.add((m.group_id, m.round_id))
         for s in m.sets:
             mine, theirs = (s.home_games, s.away_games) if side == "home" else (s.away_games, s.home_games)
-            stats["gamesWon"] += mine or 0
-            stats["gamesLost"] += theirs or 0
-    stats["winRate"] = stats["wins"] / stats["played"] * 100 if stats["played"] else 0.0
-    return stats
+            games_won += mine or 0
+            games_lost += theirs or 0
+
+    # Jornadas of the player's groups that were played (any result), whether or not they played.
+    member_groups = (
+        GroupMember.query.join(Entry, Entry.id == GroupMember.entry_id)
+        .filter(Entry.player_id == player_id)
+        .with_entities(GroupMember.group_id)
+    )
+    group_rounds = set(
+        CompetitionMatch.query.filter(
+            CompetitionMatch.group_id.in_(member_groups), CompetitionMatch.status.in_(("played", "walkover"))
+        )
+        .with_entities(CompetitionMatch.group_id, CompetitionMatch.round_id)
+        .distinct()
+    )
+    tournaments = (
+        Entry.query.join(GroupMember, GroupMember.entry_id == Entry.id)
+        .filter(Entry.player_id == player_id)
+        .with_entities(Entry.competition_id)
+        .distinct()
+        .count()
+    )
+    weeks_played = len(rounds_played)
+    weeks_missed = len(group_rounds - rounds_played)
+    weeks_total = weeks_played + weeks_missed
+    return {
+        "matchesPlayed": played,
+        "matchesWon": won,
+        "matchesLost": lost,
+        "matchesDrawn": drawn,
+        "efficiency": won / played * 100 if played else 0.0,
+        "tournamentsPlayed": tournaments,
+        "matchweeksPlayed": weeks_played,
+        "matchweeksMissed": weeks_missed,
+        "matchweeksPerTournament": weeks_played / tournaments if tournaments else 0.0,
+        "attendance": weeks_played / weeks_total * 100 if weeks_total else 0.0,
+        "gamesWon": games_won,
+        "gamesLost": games_lost,
+    }
 
 
 @bp.route("/players/<int:player_id>", methods=["GET"])

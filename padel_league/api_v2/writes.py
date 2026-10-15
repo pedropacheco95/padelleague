@@ -24,6 +24,7 @@ from . import serializers as ser
 from ._http import (
     bad_request,
     conflict,
+    has_role,
     int_arg,
     json_body,
     not_found,
@@ -64,6 +65,12 @@ def _parse_sets(raw):
     return sets
 
 
+def _guard_closed(group, user):
+    """An ended group's results belong to the admins: editing reopens it (S0, 15 Oct)."""
+    if group.has_ended and not has_role(user, "admin"):
+        raise conflict("Este grupo já terminou; só um admin pode alterar resultados.", "group_closed")
+
+
 def _close_if_complete(group):
     """Close the group once its last result lands (standings snapshot → awards → ranking).
 
@@ -87,6 +94,7 @@ def put_result(match_id):
     if walkover not in (None, "home", "away"):
         raise bad_request("walkoverWinner inválido.", "invalid_input")
     court = data.get("court")
+    _guard_closed(match.group, user)
     fmt = match.group.stage.competition.format
 
     record_sets = _service("results", "record_sets")
@@ -130,6 +138,7 @@ def post_absence(round_id):
     group = db.session.get(CompetitionGroup, group_id)
     if group is None or group.stage_id != rnd.stage_id:
         raise bad_request("O grupo não pertence a esta jornada.", "invalid_input")
+    _guard_closed(group, user)
     entry = results._member_entry(group_id, player_id)
     if entry is None:
         raise bad_request("O jogador não pertence a este grupo.", "not_a_member")
@@ -160,9 +169,17 @@ def delete_absence(absence_id):
         raise not_found("Falta não encontrada.", "absence_not_found")
     if absence.source != "recorded":
         raise conflict("Esta falta vem do histórico e não pode ser anulada aqui.", "absence_not_recorded")
+    user = require_user()
+    rnd_groups = (
+        CompetitionGroup.query.join(GroupMember, GroupMember.group_id == CompetitionGroup.id)
+        .filter(GroupMember.entry_id == absence.entry_id, CompetitionGroup.stage_id == absence.round.stage_id)
+        .all()
+    )
+    for group in rnd_groups:
+        _guard_closed(group, user)
     undo = _service("results", "undo_absence")
     if undo is not None:
-        undo(absence.id, actor_user_id=require_user().id)
+        undo(absence.id, actor_user_id=user.id)
         db.session.commit()
         return "", 204
     entry = absence.entry
