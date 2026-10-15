@@ -121,7 +121,7 @@ def _awards(group_id):
     return {a.entry_id: a for a in rows}
 
 
-def standing_rows(group_id, players):
+def standing_rows(group_id, players, fmt):
     standings = _domain.group_standings(group_id)
     awards = _awards(group_id)
     rows = []
@@ -132,7 +132,7 @@ def standing_rows(group_id, players):
                 "place": r.place,
                 "player": ser.player_ref(players.get(r.player_id) or Player.query.get(r.player_id)),
                 "points": r.points,
-                "played": r.appearances,
+                "played": ser.presences(fmt, r.appearances),
                 "wins": r.wins,
                 "draws": r.draws,
                 "losses": r.losses,
@@ -161,7 +161,7 @@ def group_detail(group):
         .all()
     )
     players = {p.id: p for p in members}
-    frozen, standings = standing_rows(group.id, players)
+    frozen, standings = standing_rows(group.id, players, comp.format)
     rounds = Round.query.filter_by(stage_id=stage.id).order_by(Round.number).all()
     matches = match_query().filter(CompetitionMatch.group_id == group.id).all()
 

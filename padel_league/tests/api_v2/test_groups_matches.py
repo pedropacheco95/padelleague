@@ -70,3 +70,16 @@ def test_calendar(client):
     assert one and {m["groupId"] for m in one} == {TIER1_22}
     resp = client.get("/api/v2/calendar?from=2026-09-30&to=2026-09-01")
     assert resp.status_code == 400 and resp.get_json()["code"] == "invalid_parameter"
+
+
+def test_played_is_presences_not_matches(client):
+    """S6 R6: Clássica stores one appearance per match (3 per jornada); played = jornadas (v1: int(n/3))."""
+    from padel_league.models.v2 import GroupMember, StandingSnapshot
+
+    snaps = {
+        s.entry_id: s.appearances
+        for s in StandingSnapshot.query.join(GroupMember, GroupMember.id == StandingSnapshot.group_member_id).filter(GroupMember.group_id == TIER1_22)
+    }
+    body = check(client.get(f"/api/v2/groups/{TIER1_22}"), "/groups/{groupId}")
+    assert all(r["played"] <= 7 for r in body["standings"])  # 7 jornadas per edition
+    assert sorted(r["played"] for r in body["standings"]) == sorted(int(a / 3) for a in snaps.values())

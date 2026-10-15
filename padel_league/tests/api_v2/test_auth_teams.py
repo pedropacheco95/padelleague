@@ -96,3 +96,13 @@ def test_teams_state_query_count(client, count_queries):
     counter = count_queries()
     client.get(f"/api/v2/competitions/{TEAMS}/teams")
     assert stop_counting(counter) <= 15
+
+
+def test_teams_ranking_matches_the_current_snapshot(client):
+    """D10: unranked players have no position; ranked ones match /players."""
+    _open_pairing()
+    teams = check(client.get(f"/api/v2/competitions/{TEAMS}/teams"), "/competitions/{competitionId}/teams")
+    listing = {p["id"]: p for p in check(client.get("/api/v2/players"), "/players")}
+    for p in teams["players"]:
+        assert p["rankingPosition"] == (listing[p["id"]]["rankingPosition"] or 0)
+        assert p["rankingPoints"] == listing[p["id"]]["rankingPoints"]

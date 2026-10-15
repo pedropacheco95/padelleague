@@ -58,7 +58,16 @@ def _preload_roster(mt):
 
 def state(mt, user=None):
     preloaded = _preload_roster(mt)  # noqa: F841 - keeps them in the (weak) identity map
-    players = sorted(teams_pairing.roster_players(mt), key=teams_pairing.ranking_key)
+    # Same ranking as /players and /rankings (current snapshot), not the legacy
+    # players.ranking_* mirror; unranked players have no position (0 in this schema).
+    from .players import current_snapshot, ranking_by_player
+
+    ranking = ranking_by_player(current_snapshot())
+
+    def rank(pid):
+        pos, pts = ranking.get(pid, (None, 0.0))
+        return pos or 0, pts or 0.0
+    players = teams_pairing.roster_players(mt)
     by_id = {p.id: p for p in players}
     pairs = teams_pairing.stage_pairs(mt)
     pair_players = {p.id: teams_pairing.pair_players(mt, p) for p in pairs}
@@ -69,6 +78,9 @@ def state(mt, user=None):
     my_id = user.player_id if user else None
     in_roster = my_id is not None and my_id in {p.id for p in players}
 
+    ranked = {pid: rank(pid) for pid in by_id}
+    players.sort(key=lambda p: (ranked[p.id][0] == 0, ranked[p.id][0], p.name))
+
     my_choice, chose_me = None, []
     if in_roster:
         my_choice = teams_pairing.choice_of(mt, my_id)
@@ -76,6 +88,7 @@ def state(mt, user=None):
 
     history = teams_pairing.times_together(mt)
     deadline = mt.pairing_deadline
+
     return {
         "miniTournament": {
             "id": mt.id,
@@ -87,8 +100,8 @@ def state(mt, user=None):
         "players": [
             {
                 **ser.player_ref(p),
-                "rankingPoints": p.ranking_points or 0,
-                "rankingPosition": p.ranking_position or 0,
+                "rankingPoints": rank(p.id)[1],
+                "rankingPosition": rank(p.id)[0],
                 "paired": p.id in paired,
                 # No partner already played with in 3 mini-tournaments.
                 "allowedForMe": bool(in_roster and p.id != my_id and teams_pairing.allowed(my_id, p.id, history)),
@@ -100,7 +113,7 @@ def state(mt, user=None):
                 "id": pair.id,
                 "source": ser.PAIR_SOURCE.get(pair.formed_by, "auto"),
                 "players": [ser.player_ref(by_id[pid]) for pid in pair_players[pair.id]],
-                "rankingPoints": sum((by_id[pid].ranking_points or 0) for pid in pair_players[pair.id]),
+                "rankingPoints": sum(rank(pid)[1] for pid in pair_players[pair.id]),
             }
             for pair in pairs
         ],
