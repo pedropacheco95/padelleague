@@ -40,7 +40,11 @@ class League(db.Model, model.Model):
         )
 
     def players_rankings_position(self, update_places=False):
-        players = list(set(self.all_players_that_played()))
+        # Also players ranked only through other formats (e.g. the Shuffle, once
+        # the v2 ranking is mirrored into players.*). Before that the two sets
+        # are the same (checked on the 2026-10-15 backup: 64 = 64).
+        ranked = Player.query.filter(Player.ranking_points > 0).all()
+        players = list(set(self.all_players_that_played()) | set(ranked))
         if any(player.ranking_position == 0 for player in players):
             self.update_rankings()
         players.sort(key=lambda x: (-x.ranking_points, x.ranking_position))
