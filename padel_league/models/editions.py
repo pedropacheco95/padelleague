@@ -36,6 +36,9 @@ class Edition(db.Model, model.Model):
         if not self.divisions:
             return "Sem data"
         division = self.divisions[0]
+        # A division created without dates (v1 POST allows it) has no range yet.
+        if division.beginning_datetime is None or division.end_date is None:
+            return "Sem data"
         start_day = division.beginning_datetime.day
         end_day = division.end_date.day
 

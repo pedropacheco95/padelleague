@@ -100,3 +100,13 @@ def test_post_division_to_unknown_edition_is_400(pg):
 def test_division_writes_require_admin(pg):
     assert pg.test_client().post("/api/v1/divisions", json={}).status_code == 401
     assert pg.test_client().post("/api/v1/editions", json={"name": "x"}).status_code == 401
+
+
+def test_post_division_without_end_date_answers_instead_of_500(pg):
+    """bug-500: the old serializer crashed on a division with no end_date."""
+    client = pg.test_client()
+    eid = _edition(client)
+    players = [f.player().id for _ in range(8)]
+    r = client.post("/api/v1/divisions", json=_body(eid, players, end_date=None), headers=_h())
+    assert r.status_code == 201, r.get_data(as_text=True)[:300]
+    assert r.get_json()["editionShortDateString"] == "Sem data"
