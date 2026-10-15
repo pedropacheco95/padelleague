@@ -77,9 +77,12 @@ def test_close_group_is_admin_and_needs_all_results(client, make_user):
 
 
 def test_competition_standings_endpoint(client):
-    body = check(client.get("/api/v2/competitions/26/standings"), "/competitions/{competitionId}/standings")
-    assert isinstance(body, list)
-
+    shuffle = check(client.get("/api/v2/competitions/26/standings"), "/competitions/{competitionId}/standings")
+    assert shuffle and [r["place"] for r in shuffle] == sorted(r["place"] for r in shuffle)
+    teams = check(client.get("/api/v2/competitions/27/standings"), "/competitions/{competitionId}/standings")
+    assert len(teams) == 48 and all(r["points"] == 0 for r in teams)  # nothing played yet
+    resp = client.get("/api/v2/competitions/25/standings")  # Clássica: per group only
+    assert resp.status_code == 404 and resp.get_json()["code"] == "no_competition_standings"
 
 def test_derived_absence_is_not_deleted(client, make_user):
     derived = Absence.query.filter_by(source="derived").first()
