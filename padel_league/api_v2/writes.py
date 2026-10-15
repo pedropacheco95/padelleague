@@ -65,19 +65,12 @@ def _parse_sets(raw):
 
 
 def _close_if_complete(group):
-    """v1 closes a division as its last result lands; keep that behaviour."""
-    close_group = _service("closeout", "close_group")
-    if close_group is not None:
-        if all(m.status in ("played", "walkover") for m in group.matches):
-            try:
-                close_group(group.id)
-                db.session.commit()
-            except Exception as exc:  # noqa: BLE001 - a Conflict (already closed) is fine here
-                if type(exc).__name__ != "Conflict":
-                    raise
-                db.session.rollback()
-        return
-    if group.stage.competition.format == "classica":
+    """Close the group once its last result lands (standings snapshot → awards → ranking).
+
+    S1's results.after_result_commit does that for every format and commits. Before S1's
+    domain is merged (no record_sets yet) the old version only understands Clássica.
+    """
+    if _service("results", "record_sets") is not None or group.stage.competition.format == "classica":
         results.after_result_commit(group)
 
 
@@ -167,6 +160,11 @@ def delete_absence(absence_id):
         raise not_found("Falta não encontrada.", "absence_not_found")
     if absence.source != "recorded":
         raise conflict("Esta falta vem do histórico e não pode ser anulada aqui.", "absence_not_recorded")
+    undo = _service("results", "undo_absence")
+    if undo is not None:
+        undo(absence.id, actor_user_id=require_user().id)
+        db.session.commit()
+        return "", 204
     entry = absence.entry
     group_ids = [m.group_id for m in GroupMember.query.filter_by(entry_id=entry.id)]
     matches = CompetitionMatch.query.filter(
@@ -233,3 +231,27 @@ def close_group(group_id):
     db.session.expire_all()
     return jsonify(group_detail(get_group(group_id)))
 
+
+
+@bp.route("/stages/<int:stage_id>/divisions", methods=["POST"])
+@role_required("admin")
+def build_divisions(stage_id):
+    """Teams: form a mini-tournament's divisions (pairs by summed ranking points, 4 per division)."""
+    from padel_league.models.v2 import Stage
+
+    from .cards import CardData
+
+    stage = db.session.get(Stage, stage_id)
+    if stage is None:
+        raise not_found("Mini-torneio não encontrado.", "stage_not_found")
+    if stage.competition.format != "teams":
+        raise conflict("Só a Teams forma divisões por parelhas.", "not_teams")
+    build = _service("teams_divisions", "build_divisions")
+    if build is None:
+        raise conflict("A formação de divisões ainda não está disponível.", "not_available")
+    build(stage)
+    db.session.commit()
+    db.session.expire_all()
+    stage = db.session.get(Stage, stage_id)
+    data = CardData([stage.competition])
+    return jsonify(ser.stage(stage, groups=data.groups.get(stage.id, []), images=data.images))

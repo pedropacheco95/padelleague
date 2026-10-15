@@ -326,7 +326,7 @@ def _explain_lines(player_id, snapshot):
                 "counted": line.counted,
                 "reason": line.reason,
             }
-            for line in explain(player_id, snapshot.id if snapshot else None)
+            for line in explain(player_id)  # S1: always the current ranking
         ]
     counted = set()
     if snapshot is not None:

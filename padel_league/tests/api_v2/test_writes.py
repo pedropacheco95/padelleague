@@ -93,3 +93,16 @@ def test_close_fallback_refuses_other_formats(client, make_user):
     persist()
     resp = client.post(f"/api/v2/groups/{grp.id}/close", headers=bearer(make_user(role="admin")))
     assert resp.status_code == 409
+
+
+def test_divisions_guards(client, make_user):
+    from padel_league.models.v2 import Stage
+
+    stage = Stage.query.filter_by(competition_id=27, number=1).one()
+    path = "/stages/{stageId}/divisions"
+    check(client.post(f"/api/v2/stages/{stage.id}/divisions", headers=bearer(make_user())), path, "post", 403)
+    # pairing still open (S1: pairing_not_closed) or service not merged yet (not_available): both 409
+    body = check(client.post(f"/api/v2/stages/{stage.id}/divisions", headers=bearer(make_user(role="admin"))), path, "post", 409)
+    assert body["code"] in ("pairing_not_closed", "not_available")
+    resp = client.post("/api/v2/stages/99999999/divisions", headers=bearer(make_user(role="admin")))
+    assert resp.status_code == 404
