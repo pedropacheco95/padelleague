@@ -330,64 +330,129 @@ def create_classica_competition(name, league_id, actor_user_id=None):
 
 
 def _retier(stage):
-    """Tier = position on the stage's ladder, highest rating first."""
+    """Tier = position on the stage's ladder, highest rating first.
+
+    Left alone once any group of the stage has ended: the next edition's
+    promotion reads the tier as the division.
+    """
     groups = CompetitionGroup.query.filter_by(stage_id=stage.id).all()
+    if any(g.has_ended for g in groups):
+        return
     for tier, group in enumerate(sorted(groups, key=lambda g: (-(g.rating or 0), g.id)), start=1):
         group.tier = tier
 
 
 def _drop_unused_entries(competition_id):
-    """Entries left with no group and no match in their competition."""
-    from padel_league.models.v2 import MatchParticipant
+    """Entries left with nothing attached: no group, match, award, absence or snapshot."""
+    from padel_league.models.v2 import Absence, Award, MatchParticipant, StandingSnapshot
 
     used = {gm.entry_id for gm in GroupMember.query.join(CompetitionGroup).join(Stage).filter(Stage.competition_id == competition_id)}
     for entry in Entry.query.filter_by(competition_id=competition_id):
-        if entry.id not in used and not MatchParticipant.query.filter_by(entry_id=entry.id).first():
-            db.session.delete(entry)
+        if entry.id in used:
+            continue
+        if any(m.query.filter_by(entry_id=entry.id).first() for m in (MatchParticipant, Award, Absence, StandingSnapshot)):
+            continue
+        db.session.delete(entry)
+
+
+def _entry_for(competition_id, player_id):
+    entry = Entry.query.filter_by(competition_id=competition_id, player_id=player_id).first()
+    if entry is None:
+        entry = Entry(competition_id=competition_id, player_id=player_id)
+        db.session.add(entry)
+        db.session.flush()
+    return entry
+
+
+def _set_members(group, competition_id, players):
+    """Make the group's members the given players (in order_index order).
+
+    Before anything is played or frozen the rows are recreated in order, as the
+    old code rewrote players_in_division (order = place). Afterwards only the
+    changed players are removed/added, so standings and history stay attached.
+    """
+    from padel_league.models.v2 import CompetitionMatch, StandingSnapshot
+
+    members = list(group.members)
+    started = (
+        CompetitionMatch.query.filter_by(group_id=group.id, status="played").first() is not None
+        or StandingSnapshot.query.filter(StandingSnapshot.group_member_id.in_([m.id for m in members] or [0])).first()
+        is not None
+    )
+    wanted = {item["player_id"]: item["order_index"] for item in players}
+    if not started:
+        for member in members:
+            db.session.delete(member)
+        db.session.flush()
+        for item in players:
+            entry = _entry_for(competition_id, item["player_id"])
+            db.session.add(GroupMember(group_id=group.id, entry_id=entry.id, seed=item["order_index"]))
+    else:
+        for member in members:
+            player_id = member.entry.player_id
+            if player_id in wanted:
+                member.seed = wanted.pop(player_id)
+            else:
+                db.session.delete(member)
+        db.session.flush()
+        for player_id, order_index in sorted(wanted.items(), key=lambda kv: kv[1]):
+            entry = _entry_for(competition_id, player_id)
+            db.session.add(GroupMember(group_id=group.id, entry_id=entry.id, seed=order_index))
+    db.session.flush()
+    db.session.expire(group, ["members"])
 
 
 def save_classica_group(payload, group=None, actor_user_id=None):
     """Create or update a classica group from the v1 division payload. Caller commits.
 
     ``payload`` is the validated body of POST/PUT /api/v1/divisions (edition_id
-    is the competition id). The member list is replaced in ``order_index``
-    order, as the old code rewrote players_in_division; matches are untouched.
+    is the competition id). An ended group keeps its frozen standings and
+    awards: its members, rating, open flag and competition cannot change here
+    (the editor's replace-player handles a swap), and it cannot be reopened.
+    Setting has_ended on a running group closes it through
+    services.closeout.close_group (snapshot, awards, ranking).
+    Raises EditionPlanError for a refused change.
     """
     competition = db.session.get(Competition, payload["edition_id"])
     stage = _main_stage(competition.id)
     previous_stage = group.stage if group is not None else None
     previous_competition_id = previous_stage.competition_id if previous_stage else None
     before = None
+    closing = False
     if group is None:
-        group = CompetitionGroup(stage_id=stage.id, structure="round_robin", standings_up_to_date=True)
+        group = CompetitionGroup(stage_id=stage.id, structure="round_robin", standings_up_to_date=True, has_ended=False)
         db.session.add(group)
+        if payload["has_ended"]:
+            raise EditionPlanError("a new division cannot start as ended")
     else:
-        before = {"name": group.name, "rating": group.rating, "members": [m.entry.player_id for m in group.members]}
+        members_before = [m.entry.player_id for m in group.members]
+        before = {"name": group.name, "rating": group.rating, "members": members_before}
+        if group.has_ended:
+            if not payload["has_ended"]:
+                raise EditionPlanError(f"division {group.id} has ended; reopening it is not supported")
+            if sorted(members_before) != sorted(i["player_id"] for i in payload["players"]):
+                raise EditionPlanError(
+                    f"division {group.id} has ended: use the editor's replace-player to change its players"
+                )
+            if payload["rating"] != group.rating or payload["open_division"] != bool(group.open_division):
+                raise EditionPlanError(f"division {group.id} has ended: its rating and open flag are final")
+            if previous_stage.id != stage.id:
+                raise EditionPlanError(f"division {group.id} has ended: it cannot move to another edition")
+        closing = payload["has_ended"] and not group.has_ended
         group.stage_id = stage.id
 
     group.name = payload["name"]
     group.starts_at = payload["beginning_datetime"]
     group.rating = payload["rating"]
     end_date = payload["end_date"]
-    group.end_date = datetime.datetime.combine(end_date, datetime.time.min) if end_date else None
-    group.has_ended = payload["has_ended"]
+    if not group.has_ended:
+        group.end_date = datetime.datetime.combine(end_date, datetime.time.min) if end_date else None
     group.open_division = payload["open_division"]
     group.logo_image_id = payload["logo_image_id"]
     group.large_picture_id = payload["large_picture_id"]
     db.session.flush()
 
-    for member in list(group.members):
-        db.session.delete(member)
-    db.session.flush()
-    db.session.expire(group, ["members"])
-    for item in payload["players"]:
-        entry = Entry.query.filter_by(competition_id=competition.id, player_id=item["player_id"]).first()
-        if entry is None:
-            entry = Entry(competition_id=competition.id, player_id=item["player_id"])
-            db.session.add(entry)
-            db.session.flush()
-        db.session.add(GroupMember(group_id=group.id, entry_id=entry.id, seed=item["order_index"]))
-    db.session.flush()
+    _set_members(group, competition.id, payload["players"])
 
     _retier(stage)
     if previous_stage is not None and previous_stage.id != stage.id:
@@ -404,6 +469,15 @@ def save_classica_group(payload, group=None, actor_user_id=None):
             after={"name": group.name, "rating": group.rating, "members": [i["player_id"] for i in payload["players"]]},
         )
     )
+    db.session.flush()
+    if closing:
+        from padel_league.domain.errors import Conflict
+        from padel_league.services import closeout
+
+        try:
+            closeout.close_group(group.id, actor_user_id=actor_user_id)
+        except Conflict as exc:
+            raise EditionPlanError(str(exc))
     return group
 
 
