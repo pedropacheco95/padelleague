@@ -55,3 +55,10 @@ def test_create_classica(client, make_user):
     assert resp.status_code == 201
     comp = resp.get_json()
     assert comp["format"] == "classica" and comp["groupCount"] == 6 and comp["playerCount"] == 48
+
+
+def test_shuffle_rounds_guards(client, make_user):
+    admin = bearer(make_user(role="admin"))
+    assert client.post("/api/v2/competitions/26/rounds", headers=bearer(make_user())).status_code == 403
+    resp = client.delete("/api/v2/competitions/25/rounds", headers=admin)
+    assert resp.status_code == 409 and resp.get_json()["code"] == "not_shuffle"

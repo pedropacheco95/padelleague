@@ -88,3 +88,14 @@ def test_player_page_query_count(client, count_queries):
     counter = count_queries()
     client.get(f"/api/v2/players/{pid}")
     assert stop_counting(counter) <= 25
+
+
+def test_upcoming_competition_shows_no_results(client):
+    """Regression: a Teams entry with no group used to pick up an unrelated legacy
+    snapshot (group_member_id NULL) — player 45 showed place 6, 21 wins in Teams 2026/27."""
+    body = check(client.get("/api/v2/players/45"), "/players/{playerId}")
+    teams = [h for h in body["history"] if h["competition"]["status"] == "upcoming"]
+    assert teams, "player 45 is on the Teams 2026/27 roster"
+    for row in teams:
+        assert row["groupId"] is None
+        assert all(row[k] is None for k in ("place", "points", "played", "wins", "draws", "losses", "awardPoints"))
