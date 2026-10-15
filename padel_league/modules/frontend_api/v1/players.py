@@ -3,7 +3,7 @@ import os
 
 import unidecode
 from flask import Blueprint, jsonify, request
-from flask_jwt_extended import get_jwt_identity, jwt_required
+from flask_jwt_extended import get_jwt, get_jwt_identity, jwt_required
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from padel_league.model import Image
@@ -106,8 +106,9 @@ def update_player(id):
         new_password = form.get("password") or ""
         if new_password:
             # Admins editing someone else don't know that person's password;
-            # everyone changing their own has to prove they know it.
-            if current_user.id == user.id:
+            # everyone changing their own has to prove they know it, unless they
+            # just proved who they are with the emailed code (forgot password).
+            if current_user.id == user.id and not get_jwt().get("password_reset"):
                 current_password = form.get("current_password") or ""
                 if not current_password or not check_password_hash(
                     user.password, current_password

@@ -20,9 +20,34 @@ class User(db.Model, UserMixin, model.Model):
     is_admin = Column(Boolean, default=False)
     super_admin = Column(Boolean, default=False)
     generated_code = Column(Integer)
+    # Wrong guesses at the current emailed code; the code dies after MAX_CODE_ATTEMPTS.
+    code_attempts = Column(Integer, nullable=False, default=0, server_default="0")
     player_id = Column(Integer, ForeignKey("players.id"))
 
     player = relationship("Player", back_populates="user")
+
+    MAX_CODE_ATTEMPTS = 5
+
+    def new_code(self):
+        """A fresh 5-digit code for the forgot-password email. Not committed."""
+        import secrets
+
+        self.generated_code = 10000 + secrets.randbelow(90000)
+        self.code_attempts = 0
+        return self.generated_code
+
+    def use_code(self, code):
+        """True and the code is spent if it matches; a wrong guess counts. Not committed."""
+        if self.generated_code is None:
+            return False
+        if code is not None and int(code) == self.generated_code:
+            self.generated_code = None
+            self.code_attempts = 0
+            return True
+        self.code_attempts = (self.code_attempts or 0) + 1
+        if self.code_attempts >= self.MAX_CODE_ATTEMPTS:
+            self.generated_code = None
+        return False
 
     orders = relationship("Order", back_populates="user")
 

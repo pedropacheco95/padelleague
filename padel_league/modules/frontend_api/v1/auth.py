@@ -1,11 +1,11 @@
 import datetime
 import os
-import random
 
 import unidecode
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import (
     create_access_token,
+    create_refresh_token,
     get_jwt_identity,
     jwt_required,
 )
@@ -16,6 +16,20 @@ from padel_league.models import Player, User
 from padel_league.tools import email_tools, image_tools
 
 bp = Blueprint("api_v1_auth", __name__, url_prefix="/api/v1/auth")
+
+
+def _tokens(user, password_reset=False):
+    """A short-lived access token plus the refresh token the site renews it with.
+
+    password_reset marks the access token issued after the emailed code, which
+    may set a new password without the current one.
+    """
+    identity = str(user.id)
+    claims = {"password_reset": True} if password_reset else None
+    return {
+        "access_token": create_access_token(identity=identity, additional_claims=claims),
+        "refresh_token": create_refresh_token(identity=identity),
+    }
 
 
 @bp.route("/login", methods=["POST"])
@@ -31,8 +45,17 @@ def login():
     if not check_password_hash(user.password, password):
         return jsonify({"error": "Enganaste-te na password oh burro."}), 401
 
-    access_token = create_access_token(identity=str(user.id))
-    return jsonify({"user": user.serialize(), "access_token": access_token})
+    return jsonify({"user": user.serialize(), **_tokens(user)})
+
+
+@bp.route("/refresh", methods=["POST"])
+@jwt_required(refresh=True)
+def refresh():
+    """Swap a valid refresh token for a new pair, so an active player never expires."""
+    user = User.query.get(int(get_jwt_identity()))
+    if user is None:
+        return jsonify({"error": "User not found"}), 401
+    return jsonify(_tokens(user))
 
 
 @bp.route("/logout", methods=["POST"])
@@ -60,8 +83,7 @@ def forgot_password():
     if user is None:
         return jsonify({"error": "Enganaste-te no username oh burro."}), 404
 
-    generated_code = random.randint(10000, 99999)
-    user.generated_code = generated_code
+    generated_code = user.new_code()
     user.save()
 
     mail_body = f"O teu código de autenticação é: {generated_code}"
@@ -78,14 +100,18 @@ def verify_generated_code(user_id):
     user = User.query.filter_by(id=user_id).first()
     if not user:
         return jsonify({"error": "Utilizador não encontrado."}), 404
-    if int(generated_code) != user.generated_code:
+    try:
+        code = int(generated_code)
+    except (TypeError, ValueError):
+        code = None
+    if not user.use_code(code):
+        user.save()
+        if user.generated_code is None:
+            return jsonify({"error": "Código expirado ou demasiadas tentativas. Pede um código novo."}), 400
         return jsonify({"error": "Código errado."}), 400
-
-    user.generated_code = None
     user.save()
 
-    access_token = create_access_token(identity=str(user.id))
-    return jsonify({"player_id": user.player_id, "access_token": access_token})
+    return jsonify({"player_id": user.player_id, "user": user.serialize(), **_tokens(user, password_reset=True)})
 
 
 @bp.route("/generate_new_code/<int:user_id>", methods=["POST"])
@@ -94,8 +120,7 @@ def generate_new_code(user_id):
     if not user:
         return jsonify({"error": "Utilizador não encontrado."}), 404
 
-    generated_code = random.randint(10000, 99999)
-    user.generated_code = generated_code
+    generated_code = user.new_code()
     user.save()
 
     mail_body = f"O teu novo código de autenticação é: {generated_code}"
@@ -166,5 +191,4 @@ def register():
     user = User(username=username, email=email, password=password, player_id=player.id)
     user.create()
 
-    access_token = create_access_token(identity=str(user.id))
-    return jsonify({"user": user.serialize(), "access_token": access_token}), 201
+    return jsonify({"user": user.serialize(), **_tokens(user)}), 201

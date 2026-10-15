@@ -1,6 +1,5 @@
 import datetime
 import os
-import random
 
 import unidecode
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
@@ -145,9 +144,7 @@ def forgot_password():
         if error is None:
 
             email = user.email
-            generated_code = random.randint(10000, 99999)
-
-            user.generated_code = generated_code
+            generated_code = user.new_code()
             user.save()
 
             mail_body = render_template(
@@ -176,11 +173,13 @@ def verify_generated_code(user_id):
         user = User.query.filter_by(id=user_id).first()
         error = None
 
-        if generated_code == user.generated_code:
+        if user is not None and user.use_code(generated_code):
+            user.save()
             session.clear()
             session["user"] = user
-            user.generated_code = None
             return redirect(url_for("players.edit", id=user.player_id))
+        if user is not None:
+            user.save()
 
         error = "Wrong code"
         flash(error)
@@ -191,8 +190,7 @@ def verify_generated_code(user_id):
 def generate_new_code(user_id):
     user = User.query.filter_by(id=user_id).first()
     email = user.email
-    generated_code = random.randint(10000, 99999)
-    user.generated_code = generated_code
+    generated_code = user.new_code()
     user.save()
     mail_body = render_template(
         "messages/forgot_password_email.html", user=user, generated_code=generated_code

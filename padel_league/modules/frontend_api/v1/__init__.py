@@ -7,6 +7,7 @@ from . import tournaments
 from . import calendar
 from . import divisions
 from . import editions
+from . import teams
 
 
 def register_api_blueprints(app):
@@ -19,6 +20,7 @@ def register_api_blueprints(app):
     app.register_blueprint(calendar.bp)
     app.register_blueprint(divisions.bp)
     app.register_blueprint(editions.bp)
+    app.register_blueprint(teams.bp)
 
 
 __all__ = [
@@ -31,4 +33,5 @@ __all__ = [
     "calendar",
     "divisions",
     "editions",
+    "teams",
 ]

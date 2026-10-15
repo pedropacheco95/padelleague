@@ -5,7 +5,7 @@ copies all data across (keeping public ids), and exposes the old table shapes
 as views in schema `compat`. See docs/v2/PLAN.md and migrations/sql/.
 
 Revision ID: b7d2e4c1a9f0
-Revises: 9c2f1a7d4e21
+Revises: a1d5c0e7b3f2
 Create Date: 2026-10-14
 """
 
@@ -14,7 +14,7 @@ from pathlib import Path
 from alembic import op
 
 revision = "b7d2e4c1a9f0"
-down_revision = "9c2f1a7d4e21"
+down_revision = "a1d5c0e7b3f2"
 branch_labels = None
 depends_on = None
 
