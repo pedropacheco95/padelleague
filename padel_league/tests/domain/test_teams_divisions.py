@@ -86,21 +86,24 @@ def test_real_roster_pairs_divisions_and_first_group_close(pg):
     assert comp.id in ranking.compute(comp.season.league_id).counted_competition_ids
 
 
-def test_walkover_on_a_built_match_gives_the_no_show_pair_nothing(pg):
+def test_walkover_on_a_built_match_only_the_absent_player_loses_the_presence(pg):
     comp, stage = _teams_stage1()
     ranking.bootstrap()
     teams_pairing.close(stage)
     group, division = teams_divisions.build_divisions(stage)[5]
     match = CompetitionMatch.query.filter_by(group_id=group.id).order_by(CompetitionMatch.id).first()
+    home = [p.entry_id for p in match.participants if p.side == "home"]
+    came, absent = [(p.entry_id, p.player_id) for p in match.participants if p.side == "away"]
+    results.mark_absent(group.id, match.round.number, absent[1])  # no substitute found
     results.record_sets(match.id, walkover_winner="home")
     db.session.flush()
+    db.session.expire_all()
     from padel_league.services.standings import group_standings
 
     rows = {r.entry_id: r for r in group_standings(group.id).rows}
-    home = [p.entry_id for p in match.participants if p.side == "home"]
-    away = [p.entry_id for p in match.participants if p.side == "away"]
     assert all((rows[e].points, rows[e].appearances, rows[e].sets_won) == (9, 1, 3) for e in home)
-    assert all((rows[e].points, rows[e].appearances) == (0, 0) for e in away)
+    assert (rows[came[0]].points, rows[came[0]].appearances) == (0, 1)  # turned up: keeps the presence
+    assert (rows[absent[0]].points, rows[absent[0]].appearances) == (0, 0)
 
 
 def test_mirror_keeps_previously_ranked_players_nonzero(pg):
