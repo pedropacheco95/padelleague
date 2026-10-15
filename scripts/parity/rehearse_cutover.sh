@@ -17,6 +17,9 @@ cd "$(dirname "$0")/../.."
 SRC="$1"; LABEL="${2:-$(date +%H%M)}"
 : "${TEST_DB_PREFIX:?set TEST_DB_PREFIX}"
 P="$TEST_DB_PREFIX"; DB="${P}_reh"; PORT="${PORT:-5064}"
+# Production restores, migrates and serves as padel_user (not a superuser), owner
+# of its database. The rehearsal does the same; ROLE=postgres to compare.
+ROLE="${ROLE:-padel_user}"; AS=(-h localhost -U "$ROLE")
 OUT="${OUT:-${TMPDIR:-/tmp}/${P}_rehearsal}"; mkdir -p "$OUT"
 PG=(-h localhost -U postgres)
 DUMP="$OUT/pre_cutover_$LABEL.sql.gz"
@@ -41,27 +44,30 @@ snapshot() {  # snapshot <db> → "table count" lines for every public table + a
 
 restore() {  # restore <gz> <db>
   psql "${PG[@]}" -d postgres -Atqc "select pg_terminate_backend(pid) from pg_stat_activity where datname='$2'" >/dev/null
-  dropdb "${PG[@]}" --if-exists "$2" && createdb "${PG[@]}" "$2" \
-    && gunzip -c "$1" | psql -q -v ON_ERROR_STOP=0 "${PG[@]}" -d "$2" >/dev/null
+  dropdb "${PG[@]}" --if-exists "$2" && createdb "${PG[@]}" -O "$ROLE" "$2" \
+    && gunzip -c "$1" | psql -q -v ON_ERROR_STOP=1 "${AS[@]}" -d "$2" >/dev/null
 }
 
 upgrade() {
-  POSTGRES_HOST=localhost POSTGRES_USER=postgres POSTGRES_PW= POSTGRES_DB="$DB" FLASK_APP=padel_league \
+  POSTGRES_HOST=localhost POSTGRES_USER="$ROLE" POSTGRES_PW= POSTGRES_DB="$DB" FLASK_APP=padel_league \
     .venv/bin/flask db upgrade
 }
 
 verify() {  # rule R3
+  # D7 may read 0/0 only if division 69 already holds the computed order (6, 3, 4).
+  local d7; d7=$(psql "${PG[@]}" -d "$DB" -Atc "select string_agg(place::text, ',' order by player_id) from legacy.players_in_division where division_id=69 and player_id in (38,52,86)")
+  echo "legacy division 69 places (38,52,86): $d7"
   scripts/v2/verify_migration.sh "$DB" "${PG[@]}" | tee "$OUT/verify_$LABEL.txt" | awk '
     /legacy-only=/ { split($3,a,"="); split($4,b,"=");
       if ($1=="matches") { if (!(a[2]==2 && b[2]==2)) { print "R3 matches expects 2/2 (D1): " $0; bad=1 } }
-      else if ($1=="players_in_division") { if (!((a[2]==3 && b[2]==3) || (a[2]==0 && b[2]==0))) { print "R3 D7: " $0; bad=1 } }
+      else if ($1=="players_in_division") { if (!((a[2]==3 && b[2]==3) || (a[2]==0 && b[2]==0 && d7=="6,3,4"))) { print "R3 D7: " $0; bad=1 } }
       else if (a[2]!=0 || b[2]!=0) { print "R3: " $0; bad=1 } }
     /changed-or-missing=/ { split($3,c,"="); if (c[2]!=0) { print "R3: " $0; bad=1 } }
-    END { exit bad }'
+    END { exit bad }' d7="$d7"
 }
 
 smoke() {
-  POSTGRES_HOST=localhost POSTGRES_USER=postgres POSTGRES_PW= POSTGRES_DB="$DB" FLASK_ENV=development \
+  POSTGRES_HOST=localhost POSTGRES_USER="$ROLE" POSTGRES_PW= POSTGRES_DB="$DB" FLASK_ENV=development \
     LLM_API_KEY= MAIL_PASSWORD= GCS_UPLOADS_BUCKET=parity-bucket \
     .venv/bin/flask --app padel_league run --port "$PORT" >"$OUT/flask_$LABEL.log" 2>&1 &
   local pid=$!
@@ -96,7 +102,7 @@ TOTAL=$(( $(date +%s) - T0 ))
 {
   echo "# Cut-over rehearsal $LABEL ($(date '+%Y-%m-%d %H:%M'))"
   echo
-  echo "Source: \`$SRC\` · code: \`$(git rev-parse --short HEAD)\` · head: $(git -c core.pager=cat log -1 --format=%s | cut -c1-60)"
+  echo "Source: \`$SRC\` · role: $ROLE · server: $(psql "${PG[@]}" -Atc 'show server_version') · code: \`$(git rev-parse --short HEAD)\` · head: $(git -c core.pager=cat log -1 --format=%s | cut -c1-60)"
   echo
   echo "| step | result | time |"; echo "|---|---|---|"; printf '%s\n' "${rows[@]}"
   echo

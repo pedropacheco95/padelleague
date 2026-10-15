@@ -12,7 +12,7 @@ check (15 Oct, `feature/teams-pairs` @ 10ecf65 against a database at `d5a2b8c6e1
 `editions`. So the site stays in maintenance from step 3 until the v2 code serves
 (step 6). No step may run the old container against the new schema.
 
-The reverse also holds: v2 code needs the migrated database, so deploy and migrate
+The reverse is asserted, not yet tested: v2 code needs the migrated database, so deploy and migrate
 together, and roll back both together.
 
 ## Steps (production)
@@ -50,7 +50,11 @@ Rehearsed time for restore + compare: 2 s locally.
 
 | Run | When | Backup | Code | Upgrade+verify | Smoke | Rollback | Verdict |
 |---|---|---|---|---|---|---|---|
-| r1 | 15 Oct 10:34 | `padel_league_2026-10-15_03-00.sql.gz` | f8b76d8 (= v2/integration 2fc29e2 + S6 files) | 11 s | 14/14 | identical | GREEN |
+| r1 | 15 Oct 10:34 | `padel_league_2026-10-15_03-00.sql.gz` | f8b76d8 (= v2/integration 2fc29e2 + S6 files), as superuser | 11 s | 14/14 | identical | GREEN |
+| r2 | 15 Oct 10:40 | same | 418da22, restore + upgrade + serve as `padel_user` (db owner, not superuser) | 11 s | 14/14 | identical | GREEN |
+
+Fidelity gaps still open: local server is PostgreSQL 14.13, production 13.23 (dump
+header); the rehearsal runs on a Mac, not the e2-micro.
 
 Gate G2 needs two green runs **on the 16 Oct morning backup**; r1 runs on the 15 Oct
 backup and counts only as a rehearsal of the procedure.
@@ -59,6 +63,9 @@ backup and counts only as a rehearsal of the procedure.
 
 - Step 1: maintenance page or stopped container? Nothing in the repo serves a maintenance
   page today; a stopped container shows nginx 502.
+- `CREATE SCHEMA legacy` / `compat` in the migration need CREATE on the database; r2
+  passes because `padel_user` owns its database locally. Confirm `padel_user` owns
+  `padel_league` in production (`\l padel_league`) before the night.
 - Step 3 runs from Pedro's Mac against the public 5432 (cerebrum). Who runs it, and is
   the v2 checkout's `.venv` ready there?
 - Today's backup already has division 69 in the computed order, so D7 shows 0/0, not 3/3;
