@@ -153,25 +153,60 @@ def division_name(competition_name, tier):
     return f"{competition_name} - {tier}ª Divisão"
 
 
+def _s1_plan(body):
+    """S1's services.classica_builder.next_classica_plan → (S5 plan, notes), or None if not merged.
+
+    It is the verified port of the league's rollover (reproduces 21ª → 22ª); the
+    local classica_divisions() is only the fallback until it lands on integration."""
+    try:
+        from padel_league.services.classica_builder import next_classica_plan
+    except ImportError:
+        return None
+    if body["from_id"] is None:
+        return None
+    if not body["starts_on"]:
+        raise bad_request("startsOn em falta.", "missing_parameter")
+    return next_classica_plan(
+        body["from_id"],
+        body["name"],
+        datetime.combine(body["starts_on"], DEFAULT_KICKOFF).isoformat(),
+        withdrawals=body["withdrawals"],
+        new_player_ids=body["new_players"],
+        season=body["season"].name,
+        event_slot=body["event_slot"],
+    )
+
+
+def _plan_and_notes(body):
+    """(plan divisions as [(tier, rating, player_ids, name)], notes, plan or None)."""
+    s1 = _s1_plan(body)
+    if s1 is not None:
+        plan, notes = s1
+        divisions = [(i, d["rating"], d["players"], d["name"]) for i, d in enumerate(plan["divisions"], 1)]
+        return divisions, list(notes), plan
+    divisions, notes = classica_divisions(body)
+    return [(t, r, ids, division_name(body["name"], t)) for t, r, ids in divisions], notes, None
+
+
 def preview(body):
     if body["format"] != "classica":
         return {
             "groups": [],
             "notes": ["Os grupos da Shuffle e da Teams formam-se em cada etapa, não na criação."],
         }
-    divisions, notes = classica_divisions(body)
+    divisions, notes, _ = _plan_and_notes(body)
     players = {
-        p.id: p for p in Player.query.filter(Player.id.in_([pid for _, _, ids in divisions for pid in ids]))
+        p.id: p for p in Player.query.filter(Player.id.in_([pid for _, _, ids, _ in divisions for pid in ids]))
     }
     return {
         "groups": [
             {
-                "name": division_name(body["name"], tier),
+                "name": name,
                 "tier": tier,
                 "rating": rating,
                 "players": [ser.player_ref(players[pid]) for pid in ids if pid in players],
             }
-            for tier, rating, ids in divisions
+            for tier, rating, ids, name in divisions
         ],
         "notes": notes,
     }
@@ -200,18 +235,16 @@ def create_competition():
         raise conflict("A criação deste formato ainda não está disponível.", "not_available")
     if not body["starts_on"]:
         raise bad_request("startsOn em falta.", "missing_parameter")
-    divisions, _ = classica_divisions(body)
-    plan = {
-        "edition_name": body["name"],
-        "season": body["season"].name,
-        "beginning_datetime": datetime.combine(body["starts_on"], DEFAULT_KICKOFF).isoformat(),
-        "divisions": [
-            {"name": division_name(body["name"], tier), "rating": rating, "players": ids}
-            for tier, rating, ids in divisions
-        ],
-    }
-    if body["event_slot"]:
-        plan["event_slot"] = body["event_slot"]
+    divisions, _, plan = _plan_and_notes(body)
+    if plan is None:
+        plan = {
+            "edition_name": body["name"],
+            "season": body["season"].name,
+            "beginning_datetime": datetime.combine(body["starts_on"], DEFAULT_KICKOFF).isoformat(),
+            "divisions": [{"name": name, "rating": rating, "players": ids} for _, rating, ids, name in divisions],
+        }
+        if body["event_slot"]:
+            plan["event_slot"] = body["event_slot"]
     try:
         result = editions_service.create_edition_from_plan(plan, actor_user_id=user.id)
     except editions_service.EditionPlanError as exc:
