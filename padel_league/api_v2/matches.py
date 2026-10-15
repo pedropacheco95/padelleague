@@ -8,6 +8,7 @@ from sqlalchemy.orm import joinedload, selectinload
 
 from padel_league.model import Image
 from padel_league.models import Player
+from padel_league.services.standings import group_standings
 from padel_league.models.v2 import (
     Absence,
     Award,
@@ -22,7 +23,6 @@ from padel_league.models.v2 import (
     Stage,
 )
 
-from . import _domain
 from . import serializers as ser
 from ._http import bad_request, int_arg, not_found, register_error_handlers
 from .cards import CardData, card
@@ -122,7 +122,7 @@ def _awards(group_id):
 
 
 def standing_rows(group_id, players, fmt):
-    standings = _domain.group_standings(group_id)
+    standings = group_standings(group_id)  # S1: frozen snapshot or live
     awards = _awards(group_id)
     rows = []
     for r in standings.rows:
@@ -143,7 +143,7 @@ def standing_rows(group_id, players, fmt):
                 "attendancePct": r.attendance_pct,
                 "rankingPlacePoints": award.place_points if award else None,
                 "rankingBonusPoints": award.bonus_points if award else None,
-                "nextGroupTier": r.next_group_tier,
+                "nextGroupTier": getattr(r, "next_group_tier", None),  # group rows: none
             }
         )
     return standings.frozen, rows

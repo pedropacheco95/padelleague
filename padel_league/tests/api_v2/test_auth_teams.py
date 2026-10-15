@@ -4,7 +4,6 @@ from werkzeug.security import generate_password_hash
 
 from padel_league.models import Player
 from padel_league.models.v2 import Entry, Stage
-from padel_league.sql_db import db
 from padel_league.tests.api_v2.conftest import bearer, check, persist
 
 TEAMS = 27

@@ -1,22 +1,17 @@
-"""Result entry, absences and group close-out. Any signed-in player enters results and
-absences; closing a group is admin. The domain work is S1's (services.results.record_sets,
-services.closeout.close_group); older service paths cover Clássica/Shuffle until then.
+"""Result entry, absences, group close-out, Teams divisions and Shuffle rounds.
+
+Any signed-in player enters results and absences (admins only once a group has
+ended); the rest is admin. All domain work is S1's services (results, closeout,
+teams_divisions, shuffle); this module validates input and maps errors.
 """
 
 import logging
 
 from flask import Blueprint, jsonify
 
-from padel_league.models.v2 import (
-    Absence,
-    GroupMember,
-    AuditEvent,
-    CompetitionGroup,
-    CompetitionMatch,
-    MatchParticipant,
-    Round,
-)
-from padel_league.services import results
+from padel_league.models import Player
+from padel_league.models.v2 import Absence, CompetitionGroup, CompetitionMatch, GroupMember, Round, Stage
+from padel_league.services import closeout, results, shuffle, teams_divisions
 from padel_league.services.results import ResultError
 from padel_league.sql_db import db
 
@@ -32,20 +27,14 @@ from ._http import (
     require_user,
     role_required,
 )
+from .cards import CardData
+from .competitions import competition_detail, get_competition
 from .matches import get_group, group_detail, match_query, serialize_matches
 
 bp = Blueprint("api_v2_writes", __name__, url_prefix="/api/v2")
 register_error_handlers(bp)
 
 SET_OUTCOMES = ("completed", "timeout_draw", "not_started")
-
-
-def _service(module, name):
-    try:
-        mod = __import__(f"padel_league.services.{module}", fromlist=[name])
-    except ImportError:
-        return None
-    return getattr(mod, name, None)
 
 
 def _parse_sets(raw):
@@ -71,16 +60,6 @@ def _guard_closed(group, user):
         raise conflict("Este grupo já terminou; só um admin pode alterar resultados.", "group_closed")
 
 
-def _close_if_complete(group):
-    """Close the group once its last result lands (standings snapshot → awards → ranking).
-
-    S1's results.after_result_commit does that for every format and commits. Before S1's
-    domain is merged (no record_sets yet) the old version only understands Clássica.
-    """
-    if _service("results", "record_sets") is not None or group.stage.competition.format == "classica":
-        results.after_result_commit(group)
-
-
 @bp.route("/matches/<int:match_id>/result", methods=["PUT"])
 @role_required("player")
 def put_result(match_id):
@@ -95,25 +74,16 @@ def put_result(match_id):
         raise bad_request("walkoverWinner inválido.", "invalid_input")
     court = data.get("court")
     _guard_closed(match.group, user)
-    fmt = match.group.stage.competition.format
 
-    record_sets = _service("results", "record_sets")
     try:
-        if record_sets is not None:
-            record_sets(match.id, sets=sets, walkover_winner=walkover, court=court, actor_user_id=user.id)
-        elif walkover is None and fmt != "teams" and len(sets) == 1 and sets[0]["outcome"] == "completed":
-            s = sets[0]
-            if s["home_games"] is None or s["away_games"] is None:
-                raise bad_request("Indica os jogos das duas equipas.", "invalid_set_score")
-            results.record_result(match.id, s["home_games"], s["away_games"], court=court, actor_user_id=user.id)
-        else:
-            raise conflict("Este tipo de resultado ainda não está disponível.", "not_available")
+        results.record_sets(match.id, sets=sets, walkover_winner=walkover, court=court, actor_user_id=user.id)
     except ResultError as exc:
         db.session.rollback()
         raise bad_request(str(exc), "invalid_result")
     db.session.commit()
     try:
-        _close_if_complete(match.group)
+        # Closes the group once its last result lands (snapshot → awards → ranking); commits.
+        results.after_result_commit(match.group)
     except Exception:  # noqa: BLE001 - the result is saved; v1 also logs and carries on
         db.session.rollback()
         logging.getLogger(__name__).exception("close-out after result on match %s failed", match_id)
@@ -144,16 +114,27 @@ def post_absence(round_id):
         raise bad_request("O jogador não pertence a este grupo.", "not_a_member")
     if substitute_id is not None and substitute_id == player_id:
         raise bad_request("O substituto não pode ser o próprio jogador.", "invalid_input")
+    match_ids = data.get("matchIds")
+    if match_ids is not None:
+        if not isinstance(match_ids, list) or not match_ids:
+            raise bad_request("matchIds tem de ser uma lista de jogos.", "invalid_input")
+        match_ids = [int_arg(m, "matchIds", required=True) for m in match_ids]
+    if kind == "partial" and not match_ids:
+        raise bad_request("Uma falta parcial indica os jogos (matchIds).", "match_ids_required")
 
-    results.mark_absent(group_id, rnd.number, player_id, actor_user_id=user.id, substitute_player_id=substitute_id)
+    results.mark_absent(
+        group_id,
+        rnd.number,
+        player_id,
+        actor_user_id=user.id,
+        substitute_player_id=substitute_id,
+        match_ids=match_ids if kind == "partial" else None,
+    )
     absence = Absence.query.filter_by(entry_id=entry.id, round_id=rnd.id).first()
     if absence is None:  # the group has no matches in this round
         absence = Absence(entry_id=entry.id, round_id=rnd.id, kind=kind, source="recorded", created_by_user_id=user.id)
         db.session.add(absence)
-    absence.kind = kind
     db.session.commit()
-    from padel_league.models import Player
-
     substitute = db.session.get(Player, substitute_id) if substitute_id else None
     return jsonify(ser.absence(absence, group_id, substitute, user.player)), 201
 
@@ -161,9 +142,8 @@ def post_absence(round_id):
 @bp.route("/absences/<int:absence_id>", methods=["DELETE"])
 @role_required("player")
 def delete_absence(absence_id):
-    """Undo a recorded absence: the player gets their slot back in every match of that
-    round where the absence moved them out (from the audit trail), then the record goes.
-    Migrated (derived) absences are history and are not deleted here."""
+    """Undo a recorded absence (S1 results.undo_absence: the member gets their slot back
+    in the round's unplayed matches). Migrated (derived) absences are history."""
     absence = db.session.get(Absence, absence_id)
     if absence is None:
         raise not_found("Falta não encontrada.", "absence_not_found")
@@ -177,48 +157,7 @@ def delete_absence(absence_id):
     )
     for group in rnd_groups:
         _guard_closed(group, user)
-    undo = _service("results", "undo_absence")
-    if undo is not None:
-        undo(absence.id, actor_user_id=user.id)
-        db.session.commit()
-        return "", 204
-    entry = absence.entry
-    group_ids = [m.group_id for m in GroupMember.query.filter_by(entry_id=entry.id)]
-    matches = CompetitionMatch.query.filter(
-        CompetitionMatch.round_id == absence.round_id, CompetitionMatch.group_id.in_(group_ids)
-    ).all()
-    for match in matches:
-        if any(p.player_id == entry.player_id for p in match.participants):
-            continue
-        audit = (
-            AuditEvent.query.filter_by(entity="match", entity_id=match.id, action="absence")
-            .order_by(AuditEvent.id.desc())
-            .all()
-        )
-        slot = next(
-            (
-                (p["side"], p["slot"])
-                for a in audit
-                for p in (a.before or {}).get("participants", [])
-                if p["player_id"] == entry.player_id
-            ),
-            None,
-        )
-        if slot is None:
-            continue
-        occupant = next((p for p in match.participants if (p.side, p.slot) == slot), None)
-        if occupant is not None:
-            if occupant.role == "member":  # someone else holds it now; leave it alone
-                continue
-            match.participants.remove(occupant)
-            db.session.delete(occupant)
-            db.session.flush()
-        match.participants.append(
-            MatchParticipant(side=slot[0], slot=slot[1], role="member", entry_id=entry.id, player_id=entry.player_id)
-        )
-        if match.status in ("played", "walkover"):
-            results.unfreeze_group_standings(match.group_id)
-    db.session.delete(absence)
+    results.undo_absence(absence.id, actor_user_id=user.id)
     db.session.commit()
     return "", 204
 
@@ -228,45 +167,24 @@ def delete_absence(absence_id):
 def close_group(group_id):
     user = require_user()
     group = get_group(group_id)
-    close = _service("closeout", "close_group")
-    if close is not None:
-        close(group.id, actor_user_id=user.id)
-        db.session.commit()
-    else:
-        if group.stage.competition.format != "classica":
-            raise conflict("O fecho deste formato ainda não está disponível.", "not_available")
-        if group.has_ended:
-            raise conflict("Este grupo já está fechado.", "group_already_closed")
-        if not results.close_group_if_complete(group):
-            raise conflict("Ainda há jogos por jogar neste grupo.", "group_not_complete")
-        db.session.commit()
-        if group.stage.competition.format == "classica":
-            from padel_league.models import League
-
-            db.session.expire_all()
-            League.query.first().update_rankings()
+    # S1: standings snapshot → awards → ranking snapshot + mirror. Conflict
+    # group_not_complete / group_already_closed → 409.
+    closeout.close_group(group.id, actor_user_id=user.id)
+    db.session.commit()
     db.session.expire_all()
     return jsonify(group_detail(get_group(group_id)))
-
 
 
 @bp.route("/stages/<int:stage_id>/divisions", methods=["POST"])
 @role_required("admin")
 def build_divisions(stage_id):
     """Teams: form a mini-tournament's divisions (pairs by summed ranking points, 4 per division)."""
-    from padel_league.models.v2 import Stage
-
-    from .cards import CardData
-
     stage = db.session.get(Stage, stage_id)
     if stage is None:
         raise not_found("Mini-torneio não encontrado.", "stage_not_found")
     if stage.competition.format != "teams":
         raise conflict("Só a Teams forma divisões por parelhas.", "not_teams")
-    build = _service("teams_divisions", "build_divisions")
-    if build is None:
-        raise conflict("A formação de divisões ainda não está disponível.", "not_available")
-    build(stage)
+    teams_divisions.build_divisions(stage)
     db.session.commit()
     db.session.expire_all()
     stage = db.session.get(Stage, stage_id)
@@ -275,8 +193,6 @@ def build_divisions(stage_id):
 
 
 def _shuffle(competition_id):
-    from .competitions import get_competition
-
     comp = get_competition(competition_id)
     if comp.format != "shuffle":
         raise conflict("Só a Shuffle tem jornadas geradas.", "not_shuffle")
@@ -284,8 +200,6 @@ def _shuffle(competition_id):
 
 
 def _competition_page(competition_id):
-    from .competitions import competition_detail, get_competition
-
     db.session.expire_all()
     return jsonify(competition_detail(get_competition(competition_id)))
 
@@ -295,10 +209,7 @@ def _competition_page(competition_id):
 def shuffle_next_round(competition_id):
     """Shuffle: the next round's groups from the overall standings (S1 services.shuffle)."""
     _shuffle(competition_id)
-    generate = _service("shuffle", "generate_round")
-    if generate is None:
-        raise conflict("A geração de jornadas da Shuffle ainda não está disponível.", "not_available")
-    generate(competition_id)
+    shuffle.generate_round(competition_id)
     db.session.commit()
     return _competition_page(competition_id)
 
@@ -307,9 +218,6 @@ def shuffle_next_round(competition_id):
 @role_required("admin")
 def shuffle_delete_round(competition_id):
     _shuffle(competition_id)
-    delete = _service("shuffle", "delete_last_round")
-    if delete is None:
-        raise conflict("Ainda não está disponível.", "not_available")
-    delete(competition_id)
+    shuffle.delete_last_round(competition_id)
     db.session.commit()
     return _competition_page(competition_id)

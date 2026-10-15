@@ -6,13 +6,13 @@ writes groups, entries and fixtures.
 Shuffle / Teams builders are not written yet (409 not_available).
 """
 
-import inspect
 from datetime import date, datetime, time
 
 from flask import Blueprint, jsonify
 from padel_league.models import Player
 from padel_league.models.v2 import FORMATS, Season
 from padel_league.services import editions as editions_service
+from padel_league.services.classica_builder import next_classica_plan
 from padel_league.sql_db import db
 
 from . import serializers as ser
@@ -106,8 +106,6 @@ def division_name(competition_name, tier):
 def _s1_plan(body, strict=True):
     """S1's services.classica_builder.next_classica_plan → (S5 plan, notes): the verified
     port of the league's rollover (2 up / 2 down, withdrawals cascade, newcomers fill)."""
-    from padel_league.services.classica_builder import next_classica_plan
-
     if body["from_id"] is None:
         return None
     if get_competition(body["from_id"]).format != "classica":
@@ -123,8 +121,7 @@ def _s1_plan(body, strict=True):
         placed_new_players=body["placed"],
         season=body["season"].name,
         event_slot=body["event_slot"],
-        # Lenient for the preview (short divisions become notes); strict for create.
-        **({"strict": strict} if "strict" in inspect.signature(next_classica_plan).parameters else {}),
+        strict=strict,  # lenient for the preview (short divisions become notes); strict for create
     )
 
 
@@ -171,12 +168,6 @@ def preview(body):
     }
 
 
-def _s5_on_v2():
-    """S5's create_edition_from_plan writes v2 rows (it takes actor_user_id); the old one doesn't."""
-    params = inspect.signature(editions_service.create_edition_from_plan).parameters
-    return "actor_user_id" in params
-
-
 @bp.route("/competitions/preview", methods=["POST"])
 @role_required("admin")
 def post_preview():
@@ -190,7 +181,7 @@ def create_competition():
 
     user = require_user()
     body = parse_body()
-    if body["format"] != "classica" or not _s5_on_v2():
+    if body["format"] != "classica":
         raise conflict("A criação deste formato ainda não está disponível.", "not_available")
     if not body["starts_on"]:
         raise bad_request("startsOn em falta.", "missing_parameter")

@@ -57,7 +57,8 @@ def _preload_roster(mt):
 
 
 def state(mt, user=None):
-    preloaded = _preload_roster(mt)  # noqa: F841 - keeps them in the (weak) identity map
+    roster = _preload_roster(mt)  # held: keeps them in the (weak) identity map
+    assert roster is not None
     # Same ranking as /players and /rankings (current snapshot), not the legacy
     # players.ranking_* mirror; unranked players have no position (0 in this schema).
     from .players import current_snapshot, ranking_by_player

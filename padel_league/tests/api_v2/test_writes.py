@@ -1,4 +1,4 @@
-from padel_league.models.v2 import Absence, CompetitionMatch
+from padel_league.models.v2 import Absence
 from padel_league.sql_db import db
 from padel_league.tests import factories as f
 from padel_league.tests.api_v2.conftest import bearer, check, persist
