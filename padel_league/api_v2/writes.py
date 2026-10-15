@@ -272,3 +272,44 @@ def build_divisions(stage_id):
     stage = db.session.get(Stage, stage_id)
     data = CardData([stage.competition])
     return jsonify(ser.stage(stage, groups=data.groups.get(stage.id, []), images=data.images))
+
+
+def _shuffle(competition_id):
+    from .competitions import get_competition
+
+    comp = get_competition(competition_id)
+    if comp.format != "shuffle":
+        raise conflict("Só a Shuffle tem jornadas geradas.", "not_shuffle")
+    return comp
+
+
+def _competition_page(competition_id):
+    from .competitions import competition_detail, get_competition
+
+    db.session.expire_all()
+    return jsonify(competition_detail(get_competition(competition_id)))
+
+
+@bp.route("/competitions/<int:competition_id>/rounds", methods=["POST"])
+@role_required("admin")
+def shuffle_next_round(competition_id):
+    """Shuffle: the next round's groups from the overall standings (S1 services.shuffle)."""
+    _shuffle(competition_id)
+    generate = _service("shuffle", "generate_round")
+    if generate is None:
+        raise conflict("A geração de jornadas da Shuffle ainda não está disponível.", "not_available")
+    generate(competition_id)
+    db.session.commit()
+    return _competition_page(competition_id)
+
+
+@bp.route("/competitions/<int:competition_id>/rounds", methods=["DELETE"])
+@role_required("admin")
+def shuffle_delete_round(competition_id):
+    _shuffle(competition_id)
+    delete = _service("shuffle", "delete_last_round")
+    if delete is None:
+        raise conflict("Ainda não está disponível.", "not_available")
+    delete(competition_id)
+    db.session.commit()
+    return _competition_page(competition_id)

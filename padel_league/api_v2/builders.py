@@ -63,7 +63,17 @@ def parse_body():
         "withdrawals": _ids(data.get("withdrawals"), "withdrawals"),
         "new_players": _ids(data.get("newPlayerIds"), "newPlayerIds"),
         "player_ids": _ids(data.get("playerIds"), "playerIds"),
+        "placed": _placed(data.get("placedNewPlayers")),
     }
+
+
+def _placed(value):
+    """placedNewPlayers: {tier: [player ids]} (Golden Ticket straight into a division)."""
+    if value is None:
+        return None
+    if not isinstance(value, dict):
+        raise bad_request("placedNewPlayers tem de ser um objeto {divisão: [jogadores]}.", "invalid_input")
+    return {int_arg(t, "placedNewPlayers", required=True): _ids(ids, "placedNewPlayers") for t, ids in value.items()}
 
 
 def _ratings(n, previous=()):
@@ -93,7 +103,7 @@ def division_name(competition_name, tier):
     return f"{competition_name} - {tier}ª Divisão"
 
 
-def _s1_plan(body):
+def _s1_plan(body, strict=True):
     """S1's services.classica_builder.next_classica_plan → (S5 plan, notes): the verified
     port of the league's rollover (2 up / 2 down, withdrawals cascade, newcomers fill)."""
     from padel_league.services.classica_builder import next_classica_plan
@@ -110,14 +120,17 @@ def _s1_plan(body):
         datetime.combine(starts_on, DEFAULT_KICKOFF).isoformat(),
         withdrawals=body["withdrawals"],
         new_player_ids=body["new_players"],
+        placed_new_players=body["placed"],
         season=body["season"].name,
         event_slot=body["event_slot"],
+        # Lenient for the preview (short divisions become notes); strict for create.
+        **({"strict": strict} if "strict" in inspect.signature(next_classica_plan).parameters else {}),
     )
 
 
-def _plan_and_notes(body):
+def _plan_and_notes(body, strict=True):
     """(plan divisions as [(tier, rating, player_ids, name)], notes, plan or None)."""
-    s1 = _s1_plan(body)
+    s1 = _s1_plan(body, strict)
     if s1 is not None:
         plan, notes = s1
         divisions = [(i, d["rating"], d["players"], d["name"]) for i, d in enumerate(plan["divisions"], 1)]
@@ -132,7 +145,7 @@ def preview(body):
             "groups": [],
             "notes": ["Os grupos da Shuffle e da Teams formam-se em cada etapa, não na criação."],
         }
-    divisions, notes, _ = _plan_and_notes(body)
+    divisions, notes, _ = _plan_and_notes(body, strict=False)
     players = {
         p.id: p for p in Player.query.filter(Player.id.in_([pid for _, _, ids, _ in divisions for pid in ids]))
     }
