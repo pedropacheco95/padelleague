@@ -6,9 +6,9 @@ from flask import Blueprint, jsonify, request
 from sqlalchemy.orm import joinedload
 
 from padel_league.models import Player
+from padel_league.services import ranking
 from padel_league.models.v2 import (
     Award,
-    AwardEvent,
     Competition,
     CompetitionMatch,
     CompetitionGroup,
@@ -17,7 +17,6 @@ from padel_league.models.v2 import (
     MatchParticipant,
     RankingEntry,
     RankingSnapshot,
-    RankingSlotValue,
     Season,
     Stage,
     StandingSnapshot,
@@ -36,17 +35,7 @@ register_error_handlers(bp)
 
 
 def current_snapshot():
-    try:
-        from padel_league.services.ranking import current_snapshot as s1_current
-    except ImportError:
-        s1_current = None
-    if s1_current is not None:
-        return s1_current()
-    return (
-        RankingSnapshot.query.filter_by(is_dry_run=False)
-        .order_by(RankingSnapshot.id.desc())
-        .first()
-    )
+    return ranking.current_snapshot()
 
 
 def ranking_table(snapshot):
@@ -360,51 +349,19 @@ def ranking_snapshot(snapshot_id):
     return jsonify(ranking_json(snapshot))
 
 
-def _explain_lines(player_id, snapshot):
-    """S1's ranking.explain when present; else awards, counted when their competition holds a slot value."""
-    try:
-        from padel_league.services.ranking import explain
-    except ImportError:
-        explain = None
-    if explain is not None:
-        return [
-            {
-                "competition_id": line.competition_id,
-                "stage_number": line.stage_number,
-                "place": line.place,
-                "place_points": line.place_points,
-                "bonus_points": line.bonus_points,
-                "counted": line.counted,
-                "reason": line.reason,
-            }
-            for line in explain(player_id)  # S1: always the current ranking
-        ]
-    counted = set()
-    if snapshot is not None:
-        counted = {
-            v.competition_id
-            for v in RankingSlotValue.query.filter_by(snapshot_id=snapshot.id, player_id=player_id)
-        }
-    rows = (
-        Award.query.join(AwardEvent, AwardEvent.id == Award.award_event_id)
-        .filter(Award.player_id == player_id)
-        .with_entities(Award, AwardEvent.competition_id, AwardEvent.stage_id)
-        .all()
-    )
-    stage_numbers = dict(
-        Stage.query.filter(Stage.id.in_([s for _, _, s in rows if s])).with_entities(Stage.id, Stage.number)
-    )
+def _explain_lines(player_id):
+    """S1 ranking.explain: one line per award, counted or not, with the reason (Portuguese)."""
     return [
         {
-            "competition_id": cid,
-            "stage_number": stage_numbers.get(sid),
-            "place": award.place,
-            "place_points": award.place_points,
-            "bonus_points": award.bonus_points,
-            "counted": cid in counted,
-            "reason": "conta para o ranking" if cid in counted else "fora da janela do ranking",
+            "competition_id": line.competition_id,
+            "stage_number": line.stage_number,
+            "place": line.place,
+            "place_points": line.place_points,
+            "bonus_points": line.bonus_points,
+            "counted": line.counted,
+            "reason": line.reason,
         }
-        for award, cid, sid in rows
+        for line in ranking.explain(player_id)
     ]
 
 
@@ -412,7 +369,7 @@ def _explain_lines(player_id, snapshot):
 def explain_player(player_id):
     player = get_player(player_id)
     snapshot = current_snapshot()
-    lines = _explain_lines(player.id, snapshot)
+    lines = _explain_lines(player.id)
     comps = base_query().filter(Competition.id.in_({line["competition_id"] for line in lines})).all()
     data = CardData(comps)
     by_id = {c.id: c for c in comps}

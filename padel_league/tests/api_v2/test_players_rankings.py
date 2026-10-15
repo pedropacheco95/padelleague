@@ -1,5 +1,5 @@
-from padel_league.models.v2 import RankingEntry, RankingSnapshot
-from padel_league.tests.api_v2.conftest import check, persist, stop_counting
+from padel_league.models.v2 import RankingEntry
+from padel_league.tests.api_v2.conftest import check, stop_counting
 
 
 def _ranked_player_id():

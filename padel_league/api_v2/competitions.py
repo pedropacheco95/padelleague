@@ -5,7 +5,7 @@ from datetime import date
 from flask import Blueprint, jsonify, request
 from sqlalchemy.orm import joinedload
 
-from padel_league.models.v2 import FORMATS, Competition, Round, Season, Stage
+from padel_league.models.v2 import FORMATS, Competition, Season, Stage
 
 from . import serializers as ser
 from ._http import bad_request, int_arg, not_found, register_error_handlers
