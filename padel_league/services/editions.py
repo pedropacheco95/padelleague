@@ -1,24 +1,35 @@
-"""Create a whole edition — divisions, players and fixtures — from a plan.
+"""Create a whole Clássica edition — groups, players and fixtures — from a plan.
 
 The plan is a plain dict (normally a reviewed JSON file) describing the new
 edition. It is the artifact a human approves before anything is written, so
 validation is deliberately strict and happens up front: either the entire
 edition is created or nothing is.
+
+On v2 an edition is a classica competition with one stage (seeded by
+promotion, emits awards) whose groups are the divisions; every player gets an
+entry in the competition and a member row in their group. Optional plan keys:
+``season`` (name, otherwise the season containing ``beginning_datetime``) and
+``event_slot`` (key such as ``classica-2``; never inferred).
 """
 
 import datetime
 
 from padel_league.model import Image
-from padel_league.models import (
-    Association_PlayerDivision,
-    Division,
-    Edition,
-    League,
-    Player,
+from padel_league.models import League, Player
+from padel_league.models.v2 import (
+    AuditEvent,
+    Competition,
+    CompetitionGroup,
+    Entry,
+    EventSlot,
+    GroupMember,
+    Season,
+    Stage,
 )
 from padel_league.services.fixtures import (
+    MATCHWEEK_COUNT,
     PLAYERS_PER_DIVISION,
-    generate_division_fixtures,
+    generate_group_fixtures,
 )
 from padel_league.sql_db import db
 
@@ -48,7 +59,7 @@ def validate_plan(plan):
     edition_name = (plan.get("edition_name") or "").strip()
     if not edition_name:
         raise EditionPlanError("edition_name is required")
-    if Edition.query.filter_by(name=edition_name).first():
+    if Competition.query.filter_by(name=edition_name, format="classica").first():
         raise EditionPlanError(f"an edition named {edition_name!r} already exists")
 
     league_id = plan.get("league_id")
@@ -61,6 +72,24 @@ def validate_plan(plan):
         raise EditionPlanError(f"league_id {league_id} was not found")
 
     beginning = _parse_datetime(plan.get("beginning_datetime"))
+
+    seasons = Season.query.filter_by(league_id=league_id)
+    if plan.get("season"):
+        season = seasons.filter_by(name=plan["season"]).first()
+        if not season:
+            raise EditionPlanError(f"season {plan['season']!r} was not found")
+    else:
+        day = beginning.date()
+        season = seasons.filter(Season.starts_on <= day, Season.ends_on >= day).first()
+        if not season:
+            raise EditionPlanError(f"no season contains {day}; pass \"season\" in the plan")
+
+    event_slot_id = None
+    if plan.get("event_slot"):
+        slot = EventSlot.query.filter_by(key=plan["event_slot"]).first()
+        if not slot or slot.format != "classica":
+            raise EditionPlanError(f"event_slot {plan['event_slot']!r} is not a classica slot")
+        event_slot_id = slot.id
 
     divisions = plan.get("divisions")
     if not isinstance(divisions, list) or not divisions:
@@ -76,7 +105,7 @@ def validate_plan(plan):
             raise EditionPlanError(f"division {index} has no name")
         if name in seen_names:
             raise EditionPlanError(f"duplicate division name in plan: {name!r}")
-        if Division.query.filter_by(name=name).first():
+        if CompetitionGroup.query.filter_by(name=name).first():
             raise EditionPlanError(
                 f"a division named {name!r} already exists — division names are unique"
             )
@@ -137,54 +166,87 @@ def validate_plan(plan):
     return {
         "edition_name": edition_name,
         "league_id": league_id,
+        "season_id": season.id,
+        "event_slot_id": event_slot_id,
         "beginning_datetime": beginning,
         "divisions": normalised,
     }
 
 
-def create_edition_from_plan(plan):
-    """Create the edition, its divisions, the player assignments and fixtures.
+def create_edition_from_plan(plan, actor_user_id=None, rng=None):
+    """Create the competition, its stage, groups, entries, members and fixtures.
 
     Everything is validated before the first write. Any failure rolls the whole
     edition back, so a partial edition is never left behind.
     """
     validated = validate_plan(plan)
+    beginning = validated["beginning_datetime"]
 
     try:
-        edition = Edition(
-            name=validated["edition_name"], league_id=validated["league_id"]
+        competition = Competition(
+            season_id=validated["season_id"],
+            event_slot_id=validated["event_slot_id"],
+            name=validated["edition_name"],
+            format="classica",
+            status="planned",
+            starts_on=beginning.date(),
+            ends_on=(beginning + datetime.timedelta(days=7 * (MATCHWEEK_COUNT - 1))).date(),
         )
-        db.session.add(edition)
+        db.session.add(competition)
+        db.session.flush()
+        stage = Stage(
+            competition_id=competition.id,
+            number=1,
+            seeding_method="promotion",
+            emits_award=True,
+            status="planned",
+        )
+        db.session.add(stage)
         db.session.flush()
 
+        ladder = sorted(validated["divisions"], key=lambda d: -d["rating"])
         created = []
         for spec in validated["divisions"]:
-            division = Division(
-                edition_id=edition.id,
+            group = CompetitionGroup(
+                stage_id=stage.id,
+                tier=ladder.index(spec) + 1,
                 name=spec["name"],
-                beginning_datetime=validated["beginning_datetime"],
+                structure="round_robin",
+                starts_at=beginning,
                 rating=spec["rating"],
                 has_ended=False,
                 open_division=False,
                 logo_image_id=spec["logo_image_id"],
                 large_picture_id=spec["large_picture_id"],
             )
-            db.session.add(division)
+            db.session.add(group)
             db.session.flush()
 
+            # Members in plan order: the live standings break the all-zero tie
+            # by member id, which reproduces the old `place` = plan order.
             for place, player_id in enumerate(spec["players"], start=1):
-                db.session.add(
-                    Association_PlayerDivision(
-                        player_id=player_id, division_id=division.id, place=place
-                    )
-                )
+                entry = Entry(competition_id=competition.id, player_id=player_id, kind="regular", status="active")
+                db.session.add(entry)
+                db.session.flush()
+                db.session.add(GroupMember(group_id=group.id, entry_id=entry.id, seed=place))
             db.session.flush()
-            created.append(division)
+            created.append(group)
 
-        # commit=False so a failure on the last division still rolls back the
+        db.session.add(
+            AuditEvent(
+                actor_user_id=actor_user_id,
+                entity="competition",
+                entity_id=competition.id,
+                action="created_from_plan",
+                after={"name": competition.name, "groups": [g.id for g in created]},
+            )
+        )
+        # commit=False so a failure on the last group still rolls back the
         # first — a half-built edition is worse than none.
+        db.session.expire(stage, ["groups"])
         summaries = [
-            generate_division_fixtures(division, commit=False) for division in created
+            generate_group_fixtures(group, commit=False, rng=rng, actor_user_id=actor_user_id)
+            for group in created
         ]
         db.session.commit()
     except Exception:
@@ -192,7 +254,7 @@ def create_edition_from_plan(plan):
         raise
 
     return {
-        "edition_id": edition.id,
-        "edition_name": edition.name,
+        "edition_id": competition.id,
+        "edition_name": competition.name,
         "divisions": summaries,
     }
