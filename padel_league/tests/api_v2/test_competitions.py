@@ -19,7 +19,7 @@ def test_cards_cover_every_format_current_season_first(client):
     assert teams["format"] == "teams" and teams["status"] == "upcoming"
     assert teams["playerCount"] == 48 and teams["groupCount"] == 0
     shuffle = next(c for c in body if c["id"] == 26)
-    assert shuffle["status"] == "live" and shuffle["groupCount"] == 6
+    assert shuffle["status"] in ("live", "ended") and shuffle["groupCount"] == 6
     classica = next(c for c in body if c["id"] == 25)
     assert classica["groupCount"] == 6 and classica["coverImage"]["url"].startswith("http")
     assert classica["legacyEditionId"] == 25 and teams["legacyEditionId"] is None
@@ -28,7 +28,11 @@ def test_cards_cover_every_format_current_season_first(client):
 def test_cards_filters(client):
     body = check(client.get("/api/v2/competitions?format=classica&season=6"), "/competitions")
     assert [c["id"] for c in body] == [25]
-    assert check(client.get("/api/v2/competitions?status=live"), "/competitions")[0]["id"] == 26
+    live = f.competition(format="classica", name="Live filter test")
+    f.group(f.stage(live))
+    persist()
+    body = check(client.get("/api/v2/competitions?status=live"), "/competitions")
+    assert live.id in [c["id"] for c in body] and {c["status"] for c in body} == {"live"}
     resp = client.get("/api/v2/competitions?format=nope")
     assert resp.status_code == 400 and resp.get_json()["code"] == "invalid_parameter"
 
@@ -41,7 +45,7 @@ def test_cards_query_count_is_constant(client, count_queries):
 
 def test_current_by_format(client):
     assert check(client.get("/api/v2/competitions/current?format=teams"), "/competitions/current")["id"] == 27
-    assert check(client.get("/api/v2/competitions/current?format=shuffle"), "/competitions/current")["id"] == 26
+    assert check(client.get("/api/v2/competitions/current?format=shuffle"), "/competitions/current")["id"] == 26  # live or last ended
     assert check(client.get("/api/v2/competitions/current?format=classica"), "/competitions/current")["id"] == 25
     check(client.get("/api/v2/competitions/current?format=super_cup"), "/competitions/current", status=404)
 

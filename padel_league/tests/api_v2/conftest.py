@@ -3,6 +3,7 @@
 import re
 
 import pytest
+from flask.testing import FlaskClient
 from flask_jwt_extended import create_access_token, create_refresh_token
 from sqlalchemy import event
 
@@ -11,9 +12,53 @@ from padel_league.sql_db import db
 from padel_league.tests.contract import assert_matches_spec
 
 
+def _spec_routes():
+    """[(regex, template)] for every spec path; literal paths win over templated ones."""
+    from padel_league.tests.contract import spec
+
+    routes = []
+    for template in spec()["paths"]:
+        pattern = re.sub(r"\{[^}]+\}", r"[^/]+", template)
+        routes.append((template.count("{"), re.compile(f"^/api/v2{pattern}$"), template))
+    return [(rx, t) for _, rx, t in sorted(routes, key=lambda r: r[0])]
+
+
+# Asked of S0 (spec owner); remove each line once the spec documents it.
+PENDING_SPEC_PATHS = ("/api/v2/news",)
+PENDING_SPEC_STATUSES = {
+    ("get", "/rankings/players/{playerId}", 409),  # ranking_missing_awards before the bootstrap
+    ("post", "/stages/{stageId}/divisions", 404),
+}
+
+
+class ContractClient(FlaskClient):
+    """Every /api/v2 response is validated against the spec: its status must be
+    documented and its JSON body must match, whatever the test asserts after."""
+
+    def open(self, *args, **kwargs):
+        response = super().open(*args, **kwargs)
+        request = response.request
+        path, method = request.path, request.method.lower()
+        if path.startswith("/api/v2"):
+            template = next((t for rx, t in _spec_routes() if rx.match(path)), None)
+            if template is None and path.startswith(PENDING_SPEC_PATHS):
+                return response
+            assert template is not None, f"{method.upper()} {path} is not in the spec"
+            if (method, template, response.status_code) in PENDING_SPEC_STATUSES:
+                return response
+            assert_matches_spec(response, template, method)
+            if response.is_json:
+                assert_v2_shape(response.get_json())
+        return response
+
+
 @pytest.fixture
 def client(pg):
-    return pg.test_client()
+    pg.test_client_class = ContractClient
+    try:
+        yield pg.test_client()
+    finally:
+        pg.test_client_class = None
 
 
 def persist():

@@ -158,7 +158,9 @@ def participants(m):
     return out
 
 
-def absence(a, group_id=None, substitute=None):
+def absence(a, group_id=None, substitute=None, recorded_by=None):
+    """recorded_by: the Player of the user who marked it (audit); derived history has none."""
+    recorded = a.source == "recorded"
     return {
         "id": a.id,
         "roundId": a.round_id,
@@ -167,6 +169,8 @@ def absence(a, group_id=None, substitute=None):
         "substitute": player_ref(substitute),
         "kind": a.kind,
         "source": a.source,
+        "recordedBy": player_ref(recorded_by) if recorded else None,
+        "recordedAt": iso_datetime(a.created_at) if recorded else None,
     }
 
 

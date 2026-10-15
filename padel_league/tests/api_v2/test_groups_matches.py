@@ -17,6 +17,7 @@ def test_frozen_group_page(client):
 def test_group_page_query_count(client, count_queries):
     counter = count_queries()
     client.get(f"/api/v2/groups/{TIER1_22}")
+    # constant per page (no per-row queries): 18 selects + the fixture's 2 savepoint statements
     assert stop_counting(counter) <= 20
 
 
