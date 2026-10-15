@@ -67,6 +67,7 @@ paths:
         "201": { description: Created, content: { application/json: { schema: { $ref: "#/components/schemas/Competition" } } } }
         "400": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
 
   /competitions/current:
     get:
@@ -104,6 +105,8 @@ paths:
       responses:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Competition" } } } }
         "409": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
 
   /competitions/{competitionId}/rounds:
     parameters: [{ $ref: "#/components/parameters/competitionId" }]
@@ -113,6 +116,8 @@ paths:
       security: [{ bearer: [] }]
       responses:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Competition" } } } }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
     delete:
       tags: [admin]
       summary: Shuffle — delete the last (unplayed) round
@@ -120,6 +125,8 @@ paths:
       responses:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Competition" } } } }
         "409": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
 
   /competitions/{competitionId}/standings:
     parameters: [{ $ref: "#/components/parameters/competitionId" }]
@@ -164,6 +171,8 @@ paths:
       responses:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/GroupDetail" } } } }
         "409": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
 
   /matches/{matchId}:
     parameters: [{ $ref: "#/components/parameters/matchId" }]
@@ -180,7 +189,7 @@ paths:
       summary: Record a result (any signed-in player)
       description: |
         Clássica / Shuffle send one set with the games. Teams send exactly 3 sets,
-        each `completed` or `timeout_draw`; a walkover is `walkover` with `walkoverWinner`.
+        each `completed`, `timeout_draw` or `not_started`; a walkover sends no sets and `walkoverWinner` (Teams: 3-0).
       security: [{ bearer: [] }]
       requestBody:
         required: true
@@ -191,6 +200,7 @@ paths:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Match" } } } }
         "400": { $ref: "#/components/responses/Error" }
         "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
 
   /rounds/{roundId}/absences:
     parameters: [{ name: roundId, in: path, required: true, schema: { type: integer } }]
@@ -213,6 +223,8 @@ paths:
       responses:
         "201": { description: Created, content: { application/json: { schema: { $ref: "#/components/schemas/Absence" } } } }
         "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
 
   /absences/{absenceId}:
     parameters: [{ name: absenceId, in: path, required: true, schema: { type: integer } }]
@@ -221,6 +233,8 @@ paths:
       security: [{ bearer: [] }]
       responses:
         "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
 
   /calendar:
     get:
@@ -282,6 +296,7 @@ paths:
       tags: [rankings]
       responses:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Ranking" } } } }
+        "404": { $ref: "#/components/responses/Error" }
 
   /rankings/{snapshotId}:
     parameters: [{ name: snapshotId, in: path, required: true, schema: { type: integer } }]
@@ -319,11 +334,15 @@ paths:
       responses:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/TeamsState" } } } }
         "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
     delete:
       tags: [teams]
       security: [{ bearer: [] }]
       responses:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/TeamsState" } } } }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
 
   /competitions/{competitionId}/pairs:
     parameters: [{ $ref: "#/components/parameters/competitionId" }]
@@ -341,6 +360,8 @@ paths:
               properties: { playerIds: { type: array, items: { type: integer }, minItems: 2, maxItems: 2 } }
       responses:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/TeamsState" } } } }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
 
   /competitions/{competitionId}/pairs/{pairId}:
     parameters:
@@ -351,6 +372,8 @@ paths:
       security: [{ bearer: [] }]
       responses:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/TeamsState" } } } }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
 
   /competitions/{competitionId}/pairs/close:
     parameters: [{ $ref: "#/components/parameters/competitionId" }]
@@ -360,6 +383,8 @@ paths:
       security: [{ bearer: [] }]
       responses:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/TeamsState" } } } }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
 
   /competitions/{competitionId}/roster/{playerId}:
     parameters:
@@ -370,11 +395,15 @@ paths:
       security: [{ bearer: [] }]
       responses:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/TeamsState" } } } }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
     delete:
       tags: [admin]
       security: [{ bearer: [] }]
       responses:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/TeamsState" } } } }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
 
   /stages/{stageId}/divisions:
     parameters: [{ name: stageId, in: path, required: true, schema: { type: integer } }]
@@ -385,6 +414,8 @@ paths:
       responses:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Stage" } } } }
         "409": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
 
   /auth/login:
     post:
@@ -415,6 +446,8 @@ paths:
       security: [{ bearer: [] }]
       responses:
         "200": { description: OK, content: { application/json: { schema: { type: object, required: [user], properties: { user: { $ref: "#/components/schemas/User" } } } } } }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
 
 components:
   securitySchemes:
@@ -601,7 +634,7 @@ components:
         setNo: { type: integer }
         homeGames: { type: [integer, "null"] }
         awayGames: { type: [integer, "null"] }
-        outcome: { type: string, enum: [completed, timeout_draw, not_started_draw, walkover] }
+        outcome: { type: string, enum: [completed, timeout_draw, not_started], description: "completed = played to a winner, games required and different; timeout_draw = in progress at time-out (games optional); not_started = never started. Teams scores timeout_draw and not_started as a drawn set (1 point each)." }
 
     Match:
       type: object
@@ -629,15 +662,16 @@ components:
       properties:
         sets:
           type: array
-          minItems: 1
+          minItems: 0
           maxItems: 3
+          description: Teams requires exactly 3 unless walkoverWinner is set; Clássica/Shuffle send one set with the games.
           items:
             type: object
             required: [outcome]
             properties:
               homeGames: { type: [integer, "null"] }
               awayGames: { type: [integer, "null"] }
-              outcome: { type: string, enum: [completed, timeout_draw, not_started_draw, walkover] }
+              outcome: { type: string, enum: [completed, timeout_draw, not_started], description: "completed = played to a winner, games required and different; timeout_draw = in progress at time-out (games optional); not_started = never started. Teams scores timeout_draw and not_started as a drawn set (1 point each)." }
         walkoverWinner: { type: [string, "null"], enum: [home, away, null] }
         court: { type: [string, "null"] }
 
@@ -744,10 +778,11 @@ components:
       properties:
         miniTournament:
           type: object
+          required: [id, number, pairingDeadline, pairingClosed, pairingOpen]
           properties:
             id: { type: integer, description: stage id }
             number: { type: integer }
-            pairingDeadline: { type: string, format: date-time }
+            pairingDeadline: { type: [string, "null"], format: date-time }
             pairingClosed: { type: boolean }
             pairingOpen: { type: boolean }
         players:
@@ -756,6 +791,7 @@ components:
             allOf:
               - $ref: "#/components/schemas/PlayerRef"
               - type: object
+                required: [rankingPoints, rankingPosition, paired, allowedForMe]
                 properties:
                   rankingPoints: { type: number }
                   rankingPosition: { type: integer }
@@ -765,13 +801,15 @@ components:
           type: array
           items:
             type: object
+            required: [id, source, players, rankingPoints]
             properties:
               id: { type: integer }
-              source: { type: string, enum: [mutual, auto, admin] }
+              source: { type: string, enum: [mutual, auto, admin], description: "formed_by mutual→mutual; ranking/draw/rotation→auto; manual→admin" }
               players: { type: array, items: { $ref: "#/components/schemas/PlayerRef" } }
               rankingPoints: { type: number }
         me:
           type: object
+          required: [playerId, inRoster, myChoice, choseMe, pairId, isAdmin]
           properties:
             playerId: { type: [integer, "null"] }
             inRoster: { type: boolean }
