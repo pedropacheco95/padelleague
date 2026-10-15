@@ -303,6 +303,17 @@ def close_group_if_complete(group):
 
 
 def after_result_commit(group):
-    """Close the group if complete (awards before the ranking: B1 fixed). Commits."""
+    """Close the group if complete (awards before the ranking: B1 fixed), or,
+    for a group closed earlier, refresh its snapshot, awards and the ranking so
+    an edited result never leaves them stale. Commits."""
+    from padel_league.services import closeout
+
+    if group.has_ended:
+        if not StandingSnapshot.query.join(GroupMember, GroupMember.id == StandingSnapshot.group_member_id).filter(
+            GroupMember.group_id == group.id
+        ).first():  # unfrozen by an edit
+            closeout.refresh_closed_group(group.id)
+            db.session.commit()
+        return
     if close_group_if_complete(group):
         db.session.commit()
