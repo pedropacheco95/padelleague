@@ -44,7 +44,7 @@ def current_snapshot():
         return s1_current()
     return (
         RankingSnapshot.query.filter_by(is_dry_run=False)
-        .order_by(RankingSnapshot.computed_at.desc(), RankingSnapshot.id.desc())
+        .order_by(RankingSnapshot.id.desc())
         .first()
     )
 
@@ -305,15 +305,23 @@ def compare():
 # --- rankings ------------------------------------------------------------------------
 
 
+# ranking_rules.name is English in the database; the site speaks Portuguese.
+RULE_NAMES = {
+    "legacy-last-4-by-id": "Últimas 4 edições (regra até 2026)",
+    "transitional-2026-27": "Últimas 3 terminadas + a atual (2026/27)",
+    "per-slot": "Cada evento substitui o homólogo (a partir de 2027/28)",
+}
+
+
 def ranking_json(snapshot):
     table = ranking_table(snapshot)
     previous = (
         RankingSnapshot.query.filter(
             RankingSnapshot.is_dry_run.is_(False),
             RankingSnapshot.league_id == snapshot.league_id,
-            RankingSnapshot.computed_at < snapshot.computed_at,
+            RankingSnapshot.id < snapshot.id,
         )
-        .order_by(RankingSnapshot.computed_at.desc())
+        .order_by(RankingSnapshot.id.desc())
         .first()
     )
     before = ranking_by_player(previous) if previous else {}
@@ -323,7 +331,7 @@ def ranking_json(snapshot):
     }
     return {
         "snapshotId": snapshot.id,
-        "rule": {"key": snapshot.rule.key, "name": snapshot.rule.name},
+        "rule": {"key": snapshot.rule.key, "name": RULE_NAMES.get(snapshot.rule.key, snapshot.rule.name)},
         "computedAt": ser.iso_datetime(snapshot.computed_at),
         "entries": [
             {
@@ -395,7 +403,7 @@ def _explain_lines(player_id, snapshot):
             "place_points": award.place_points,
             "bonus_points": award.bonus_points,
             "counted": cid in counted,
-            "reason": "counted" if cid in counted else "not counted",
+            "reason": "conta para o ranking" if cid in counted else "fora da janela do ranking",
         }
         for award, cid, sid in rows
     ]
