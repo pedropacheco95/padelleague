@@ -11,6 +11,7 @@ from padel_league.models import Player
 from padel_league.models.v2 import (
     Absence,
     Award,
+    Competition,
     AwardEvent,
     CompetitionGroup,
     CompetitionMatch,
@@ -85,7 +86,10 @@ def serialize_matches(matches):
 
 def get_group(group_id):
     group = (
-        CompetitionGroup.query.options(joinedload(CompetitionGroup.stage).joinedload(Stage.competition))
+        CompetitionGroup.query.options(
+            joinedload(CompetitionGroup.stage).joinedload(Stage.competition).joinedload(Competition.season),
+            joinedload(CompetitionGroup.stage).joinedload(Stage.competition).joinedload(Competition.event_slot),
+        )
         .filter(CompetitionGroup.id == group_id)
         .first()
     )
