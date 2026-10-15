@@ -26,7 +26,6 @@ def _spec_routes():
 # Asked of S0 (spec owner); remove each line once the spec documents it.
 PENDING_SPEC_PATHS = ()
 PENDING_SPEC_STATUSES = {
-    ("post", "/competitions", 409),  # not_available until S5's v2 create-edition is merged
 }
 
 

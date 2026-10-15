@@ -305,14 +305,6 @@ def compare():
 # --- rankings ------------------------------------------------------------------------
 
 
-# ranking_rules.name is English in the database; the site speaks Portuguese.
-RULE_NAMES = {
-    "legacy-last-4-by-id": "Últimas 4 edições (regra até 2026)",
-    "transitional-2026-27": "Últimas 3 terminadas + a atual (2026/27)",
-    "per-slot": "Cada evento substitui o homólogo (a partir de 2027/28)",
-}
-
-
 def ranking_json(snapshot):
     table = ranking_table(snapshot)
     previous = (
@@ -331,7 +323,7 @@ def ranking_json(snapshot):
     }
     return {
         "snapshotId": snapshot.id,
-        "rule": {"key": snapshot.rule.key, "name": RULE_NAMES.get(snapshot.rule.key, snapshot.rule.name)},
+        "rule": {"key": snapshot.rule.key, "name": snapshot.rule.name},
         "computedAt": ser.iso_datetime(snapshot.computed_at),
         "entries": [
             {
