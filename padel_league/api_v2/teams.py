@@ -1,0 +1,174 @@
+"""Teams pair choice, scoped to one competition (services/teams_pairing does the work).
+
+Same TeamsState shape as v1 GET /api/v1/teams/, but per competition id.
+"""
+
+from datetime import datetime
+
+from flask import Blueprint, jsonify
+
+from padel_league.models import Player
+from padel_league.models.v2 import Stage
+from padel_league.services import teams_pairing
+from padel_league.services.teams_pairing import PairingError
+from padel_league.sql_db import db
+
+from . import serializers as ser
+from ._http import (
+    ApiError,
+    bad_request,
+    has_role,
+    int_arg,
+    json_body,
+    not_found,
+    register_error_handlers,
+    require_user,
+    role_required,
+    viewer,
+)
+from .competitions import get_competition
+
+bp = Blueprint("api_v2_teams", __name__, url_prefix="/api/v2")
+register_error_handlers(bp)
+
+
+def mini_tournament(competition_id):
+    """The latest stage that opened pair choice; before that, the first stage."""
+    comp = get_competition(competition_id)
+    if comp.format != "teams":
+        raise not_found("Esta competição não é uma Teams.", "not_teams")
+    stages = Stage.query.filter_by(competition_id=comp.id).order_by(Stage.number).all()
+    if not stages:
+        raise not_found("Ainda não há mini-torneios.", "no_mini_tournament")
+    opened = [s for s in stages if s.pairing_deadline is not None]
+    return opened[-1] if opened else stages[0]
+
+
+def state(mt, user=None):
+    players = sorted(teams_pairing.roster_players(mt), key=teams_pairing.ranking_key)
+    by_id = {p.id: p for p in players}
+    pairs = teams_pairing.stage_pairs(mt)
+    pair_players = {p.id: teams_pairing.pair_players(mt, p) for p in pairs}
+    missing = {pid for ids in pair_players.values() for pid in ids} - set(by_id)
+    if missing:  # a paired player who left the roster
+        by_id.update({p.id: p for p in Player.query.filter(Player.id.in_(missing))})
+    paired = {pid for ids in pair_players.values() for pid in ids}
+    my_id = user.player_id if user else None
+    in_roster = my_id is not None and my_id in {p.id for p in players}
+
+    my_choice, chose_me = None, []
+    if in_roster:
+        my_choice = teams_pairing.choice_of(mt, my_id)
+        chose_me = [pid for pid in teams_pairing.chose(mt, my_id) if pid not in paired]
+
+    history = teams_pairing.times_together(mt)
+    deadline = mt.pairing_deadline
+    return {
+        "miniTournament": {
+            "id": mt.id,
+            "number": mt.number,
+            "pairingDeadline": ser.iso_datetime(deadline),
+            "pairingClosed": bool(mt.pairing_closed),
+            "pairingOpen": bool(not mt.pairing_closed and deadline and datetime.utcnow() <= deadline),
+        },
+        "players": [
+            {
+                **ser.player_ref(p),
+                "rankingPoints": p.ranking_points or 0,
+                "rankingPosition": p.ranking_position or 0,
+                "paired": p.id in paired,
+                # No partner already played with in 3 mini-tournaments.
+                "allowedForMe": bool(in_roster and p.id != my_id and teams_pairing.allowed(my_id, p.id, history)),
+            }
+            for p in players
+        ],
+        "pairs": [
+            {
+                "id": pair.id,
+                "source": ser.PAIR_SOURCE.get(pair.formed_by, "auto"),
+                "players": [ser.player_ref(by_id[pid]) for pid in pair_players[pair.id]],
+                "rankingPoints": sum((by_id[pid].ranking_points or 0) for pid in pair_players[pair.id]),
+            }
+            for pair in pairs
+        ],
+        "me": {
+            "playerId": my_id,
+            "inRoster": in_roster,
+            "myChoice": my_choice,
+            "choseMe": chose_me,
+            "pairId": next((pid for pid, ids in pair_players.items() if my_id in ids), None),
+            "isAdmin": has_role(user, "admin"),
+        },
+    }
+
+
+def _run(competition_id, action):
+    """Run a pairing action, then answer the fresh state or the rule it broke (400)."""
+    mt = mini_tournament(competition_id)
+    user = require_user()
+    try:
+        action(mt, user)
+    except PairingError as exc:
+        db.session.rollback()
+        raise ApiError(400, str(exc), "pairing_rule")
+    return jsonify(state(mt, user))
+
+
+def _own_player(user):
+    if user.player_id is None:
+        raise PairingError("A tua conta não está associada a um jogador.")
+    return user.player_id
+
+
+@bp.route("/competitions/<int:competition_id>/teams", methods=["GET"])
+def get_state(competition_id):
+    return jsonify(state(mini_tournament(competition_id), viewer()))
+
+
+@bp.route("/competitions/<int:competition_id>/partner-requests", methods=["POST"])
+@role_required("player")
+def choose_partner(competition_id):
+    partner_id = int_arg(json_body().get("partnerId"), "partnerId", required=True)
+    return _run(competition_id, lambda mt, user: teams_pairing.declare(mt, _own_player(user), partner_id))
+
+
+@bp.route("/competitions/<int:competition_id>/partner-requests", methods=["DELETE"])
+@role_required("player")
+def withdraw_partner(competition_id):
+    return _run(competition_id, lambda mt, user: teams_pairing.withdraw(mt, _own_player(user)))
+
+
+@bp.route("/competitions/<int:competition_id>/pairs", methods=["POST"])
+@role_required("admin")
+def admin_set_pair(competition_id):
+    ids = json_body().get("playerIds") or []
+    if not isinstance(ids, list) or len(ids) != 2:
+        raise bad_request("Indica dois jogadores.")
+    a, b = (int_arg(i, "playerIds", required=True) for i in ids)
+    return _run(competition_id, lambda mt, user: teams_pairing.set_pair(mt, a, b))
+
+
+@bp.route("/competitions/<int:competition_id>/pairs/<int:pair_id>", methods=["DELETE"])
+@role_required("admin")
+def admin_unpair(competition_id, pair_id):
+    return _run(competition_id, lambda mt, user: teams_pairing.unpair(mt, pair_id))
+
+
+@bp.route("/competitions/<int:competition_id>/pairs/close", methods=["POST"])
+@role_required("admin")
+def admin_close_pairing(competition_id):
+    return _run(competition_id, lambda mt, user: teams_pairing.close(mt))
+
+
+@bp.route("/competitions/<int:competition_id>/roster/<int:player_id>", methods=["POST"])
+@role_required("admin")
+def admin_add_to_roster(competition_id, player_id):
+    if Player.query.get(player_id) is None:
+        raise not_found("Jogador não encontrado.", "player_not_found")
+    return _run(competition_id, lambda mt, user: teams_pairing.add_to_roster(mt, player_id))
+
+
+@bp.route("/competitions/<int:competition_id>/roster/<int:player_id>", methods=["DELETE"])
+@role_required("admin")
+def admin_remove_from_roster(competition_id, player_id):
+    return _run(competition_id, lambda mt, user: teams_pairing.remove_from_roster(mt, player_id))

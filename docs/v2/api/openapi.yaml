@@ -54,6 +54,7 @@ paths:
           content:
             application/json:
               schema: { type: array, items: { $ref: "#/components/schemas/CompetitionCard" } }
+        "400": { $ref: "#/components/responses/Error" }
     post:
       tags: [admin]
       summary: Create a competition (Clássica from the previous one via promotion, Shuffle, Teams)
@@ -78,6 +79,7 @@ paths:
       responses:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/CompetitionCard" } } } }
         "404": { $ref: "#/components/responses/Error" }
+        "400": { $ref: "#/components/responses/Error" }
 
   /competitions/{competitionId}:
     parameters: [{ $ref: "#/components/parameters/competitionId" }]
@@ -161,6 +163,7 @@ paths:
           content:
             application/json:
               schema: { type: array, items: { $ref: "#/components/schemas/Match" } }
+        "400": { $ref: "#/components/responses/Error" }
 
   /groups/{groupId}/close:
     parameters: [{ $ref: "#/components/parameters/groupId" }]
@@ -250,6 +253,7 @@ paths:
           content:
             application/json:
               schema: { type: array, items: { $ref: "#/components/schemas/Match" } }
+        "400": { $ref: "#/components/responses/Error" }
 
   /players:
     get:
@@ -269,6 +273,7 @@ paths:
         - { name: b, in: query, required: true, schema: { type: integer } }
       responses:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/PlayerComparison" } } } }
+        "400": { $ref: "#/components/responses/Error" }
 
   /players/{playerId}:
     parameters: [{ $ref: "#/components/parameters/playerId" }]
@@ -290,6 +295,7 @@ paths:
           content:
             application/json:
               schema: { type: array, items: { $ref: "#/components/schemas/Match" } }
+        "400": { $ref: "#/components/responses/Error" }
 
   /rankings/current:
     get:
@@ -320,6 +326,7 @@ paths:
       summary: Teams pair choice state for the current mini-tournament (same shape as v1 /teams/)
       responses:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/TeamsState" } } } }
+        "404": { $ref: "#/components/responses/Error" }
 
   /competitions/{competitionId}/partner-requests:
     parameters: [{ $ref: "#/components/parameters/competitionId" }]
