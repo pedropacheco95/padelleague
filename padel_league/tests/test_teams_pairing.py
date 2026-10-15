@@ -217,3 +217,50 @@ def test_refresh_token_renews_the_session(app):
     assert client.post("/api/v1/auth/refresh", headers={"Authorization": f"Bearer {access}"}).status_code == 422
     me = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {refresh}"})
     assert me.status_code == 422
+
+
+def _player_user(app):
+    from padel_league.models import User
+    from padel_league.sql_db import db
+
+    with app.app_context():
+        user = User.query.filter(User.player_id.isnot(None), User.super_admin.isnot(True)).order_by(User.id).first()
+        code = user.new_code()
+        db.session.commit()
+        return user.id, user.player_id, code
+
+
+def test_reset_code_signs_in_and_allows_a_new_password(app):
+    from werkzeug.security import check_password_hash
+
+    from padel_league.models import User
+
+    user_id, player_id, code = _player_user(app)
+    client = app.test_client()
+    body = client.post(f"/api/v1/auth/verify_generated_code/{user_id}", json={"generated_code": code}).get_json()
+    assert body["access_token"] and body["refresh_token"] and body["user"]["id"] == user_id
+
+    headers = {"Authorization": f"Bearer {body['access_token']}"}
+    response = client.put(f"/api/v1/players/{player_id}", data={"password": "nova-password-1"}, headers=headers)
+    assert response.status_code == 200, response.get_json()
+    with app.app_context():
+        assert check_password_hash(User.query.get(user_id).password, "nova-password-1")
+
+
+def test_a_normal_login_still_needs_the_current_password(app):
+    user_id, player_id, _ = _player_user(app)
+    response = app.test_client().put(
+        f"/api/v1/players/{player_id}", data={"password": "nova-password-1"}, headers=_as(app, user_id)
+    )
+    assert response.status_code == 400
+
+
+def test_reset_code_dies_after_five_wrong_guesses(app):
+    user_id, _, code = _player_user(app)
+    client = app.test_client()
+    wrong = 10000 if code != 10000 else 10001
+    for _ in range(5):
+        assert client.post(f"/api/v1/auth/verify_generated_code/{user_id}", json={"generated_code": wrong}).status_code == 400
+    response = client.post(f"/api/v1/auth/verify_generated_code/{user_id}", json={"generated_code": code})
+    assert response.status_code == 400
+    assert "código novo" in response.get_json()["error"]

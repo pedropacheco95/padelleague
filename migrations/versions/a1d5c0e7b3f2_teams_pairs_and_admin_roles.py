@@ -11,6 +11,7 @@ Create Date: 2026-10-15 15:00:00.000000
 - Only the super admins keep is_admin. Every signed-in player can still enter
   results; is_admin now means the editor and competition set-up only.
   The downgrade cannot restore the old flags: restore them from the backup.
+- users.code_attempts: the forgot-password code dies after 5 wrong guesses.
 """
 
 from alembic import op
@@ -70,9 +71,11 @@ def upgrade():
         "VALUES (1, '2026-10-18 22:59:59', false)"
     )
     op.execute("UPDATE users SET is_admin = coalesce(super_admin, false)")
+    op.add_column("users", sa.Column("code_attempts", sa.Integer(), nullable=False, server_default="0"))
 
 
 def downgrade():
+    op.drop_column("users", "code_attempts")
     op.drop_table("teams_pairs")
     op.drop_table("teams_partner_requests")
     op.drop_table("teams_mini_tournaments")
