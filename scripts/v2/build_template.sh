@@ -26,6 +26,10 @@ POSTGRES_HOST=localhost POSTGRES_USER=postgres POSTGRES_PW= POSTGRES_DB="$BUILD"
 bad=$(scripts/v2/verify_migration.sh "$BUILD" "${PG[@]}" | awk '/legacy-only=/ && ($3!="legacy-only=0" || $4!="compat-only=0") && $1!="matches"; /changed-or-missing=/ && $3!="changed-or-missing=0"')
 if [[ -n "$bad" ]]; then echo "verification failed:"; echo "$bad"; exit 1; fi
 
+# Real ranking (Shuffle 2025/26 awards + snapshot under the season rule), after verification.
+POSTGRES_HOST=localhost POSTGRES_USER=postgres POSTGRES_PW= POSTGRES_DB="$BUILD" FLASK_APP=padel_league \
+  .venv/bin/flask v2 bootstrap-ranking
+
 # Connections to the template block cloning; terminate stragglers first.
 psql "${PG[@]}" -d postgres -Atqc "select pg_terminate_backend(pid) from pg_stat_activity where datname='v2_template'" >/dev/null
 dropdb "${PG[@]}" --if-exists v2_template
