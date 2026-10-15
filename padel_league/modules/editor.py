@@ -1,6 +1,5 @@
 from flask import (
     Blueprint,
-    abort,
     current_app,
     flash,
     redirect,
@@ -11,12 +10,21 @@ from flask import (
 
 from padel_league.models import (
     MODELS,
-    Association_PlayerDivision,
-    Association_PlayerMatch,
     Backend_App,
     Division,
     Player,
 )
+from padel_league.models.v2 import (
+    Absence,
+    Award,
+    CompetitionGroup,
+    CompetitionMatch,
+    Entry,
+    GroupMember,
+    MatchParticipant,
+    Round,
+)
+from padel_league.services.results import _audit, _match_state, unfreeze_group_standings
 from padel_league.sql_db import db
 from padel_league.tools import auth_tools
 
@@ -78,93 +86,149 @@ def create(model):
 # ---------------------------------------------------------------------------
 
 
-def _swap_player_in_division(division, player_a, player_b):
-    """Replace player_a with player_b in the division roster and in every
-    Association_PlayerMatch row for matches that belong to the division.
-
-    Uses db.session.add/delete + flush; does NOT commit, does NOT call
-    update_table. Caller is responsible for committing the session and
-    invoking update_table afterwards.
-    """
-    pd_row = Association_PlayerDivision.query.filter_by(
-        division_id=division.id, player_id=player_a.id
-    ).first()
-    if pd_row is None:
-        raise ValueError("Jogador A não pertence à divisão.")
-
-    place = pd_row.place
-    db.session.delete(pd_row)
-    db.session.flush()
-
-    new_pd = Association_PlayerDivision(
-        player_id=player_b.id,
-        division_id=division.id,
-        place=place,
+def _member_of(group, player_id):
+    return (
+        GroupMember.query.join(Entry, GroupMember.entry_id == Entry.id)
+        .filter(GroupMember.group_id == group.id, Entry.player_id == player_id)
+        .first()
     )
-    db.session.add(new_pd)
-    db.session.flush()
 
-    match_ids = [m.id for m in division.matches]
-    if match_ids:
-        pm_rows = Association_PlayerMatch.query.filter(
-            Association_PlayerMatch.player_id == player_a.id,
-            Association_PlayerMatch.match_id.in_(match_ids),
-        ).all()
-        for row in pm_rows:
-            team = row.team
-            match_id = row.match_id
-            db.session.delete(row)
-            db.session.flush()
-            new_pm = Association_PlayerMatch(
-                player_id=player_b.id,
-                match_id=match_id,
-                team=team,
+
+def _swap_player_in_division(division, player_a, player_b, actor_user_id=None):
+    """Replace player_a with player_b in the group and in every match of it.
+
+    B takes A's group member row (same seed and position), A's slots in every
+    match of the group (played or not), A's recorded absences in the group's
+    rounds and A's awards for the group; A's entry is kept as "replaced".
+    Frozen standings are unfrozen so they are recomputed live, as the old
+    update_table did. Flushes only; the caller commits.
+    """
+    group = db.session.get(CompetitionGroup, division.id)
+    member = _member_of(group, player_a.id) if group else None
+    if member is None:
+        raise ValueError("Jogador A não pertence à divisão.")
+    entry_a = member.entry
+    competition_id = entry_a.competition_id
+
+    entry_b = Entry.query.filter_by(competition_id=competition_id, player_id=player_b.id).first()
+    if entry_b is None:
+        entry_b = Entry(competition_id=competition_id, player_id=player_b.id)
+        db.session.add(entry_b)
+        db.session.flush()
+    entry_b.status = "active"
+
+    matches = CompetitionMatch.query.filter_by(group_id=group.id).all()
+    clash = [m.id for m in matches if any(p.player_id == player_b.id for p in m.participants)]
+    if clash:
+        raise ValueError(f"O novo jogador já joga (como substituto) nos jogos {clash}.")
+
+    for match in matches:
+        participant = next((p for p in match.participants if p.player_id == player_a.id), None)
+        if participant is None:
+            continue
+        before = _match_state(match)
+        # A new row, as the old code inserted one: B is listed after the partner.
+        side, slot, role = participant.side, participant.slot, participant.role
+        match.participants.remove(participant)
+        db.session.delete(participant)
+        db.session.flush()
+        match.participants.append(
+            MatchParticipant(
+                side=side, slot=slot, role=role, player_id=player_b.id,
+                entry_id=entry_b.id if role == "member" else None,
             )
-            db.session.add(new_pm)
-            db.session.flush()
+        )
+        db.session.flush()
+        _audit(actor_user_id, "match", match.id, "replace_player", before, _match_state(match))
 
-    return len(match_ids)
+    round_ids = [r.id for r in Round.query.filter_by(stage_id=group.stage_id)]
+    if round_ids:
+        Absence.query.filter(Absence.entry_id == entry_a.id, Absence.round_id.in_(round_ids)).update(
+            {"entry_id": entry_b.id}, synchronize_session=False
+        )
+    Award.query.filter_by(group_id=group.id, entry_id=entry_a.id).update(
+        {"entry_id": entry_b.id, "player_id": player_b.id}, synchronize_session=False
+    )
+
+    unfreeze_group_standings(group.id)
+    member.entry_id = entry_b.id
+    entry_a.status = "replaced"
+    group.standings_up_to_date = True
+    _audit(
+        actor_user_id, "group", group.id, "replace_player",
+        {"player_id": player_a.id, "entry_id": entry_a.id},
+        {"player_id": player_b.id, "entry_id": entry_b.id},
+    )
+    db.session.flush()
+    return len(matches)
 
 
-def _readd_player_to_matchweek(division, player, partner, matchweek):
-    """For every match in the given matchweek of the division, add a
-    players_in_match row binding `player` to the same team as `partner`.
+def _readd_player_to_matchweek(division, player, partner, matchweek, actor_user_id=None):
+    """Put ``player`` back next to ``partner`` in every match of a jornada.
 
-    Skips matches where partner is not present or where player is already
-    present. Uses db.session.add + flush only; does NOT commit.
+    The undo of an absence: skips matches where the partner is not present or
+    the player already is; a substitute standing in on the partner's side
+    gives their slot back. Clears the recorded absence for that round.
+    Flushes only; the caller commits.
     """
     results = {
         "reinserted": [],
         "skipped_no_partner": [],
         "skipped_already_present": [],
     }
-
-    matches = [m for m in division.matches if int(m.matchweek) == int(matchweek)]
+    group = db.session.get(CompetitionGroup, division.id)
+    member = _member_of(group, player.id)
+    matches = (
+        CompetitionMatch.query.filter_by(group_id=group.id)
+        .join(CompetitionMatch.round)
+        .filter(Round.number == int(matchweek))
+        .order_by(CompetitionMatch.id)
+        .all()
+    )
+    played_affected = False
     for match in matches:
-        partner_rel = Association_PlayerMatch.query.filter_by(
-            match_id=match.id, player_id=partner.id
-        ).first()
-        if not partner_rel:
+        partner_rel = next((p for p in match.participants if p.player_id == partner.id), None)
+        if partner_rel is None:
             results["skipped_no_partner"].append(match.id)
             continue
-
-        existing = Association_PlayerMatch.query.filter_by(
-            match_id=match.id, player_id=player.id
-        ).first()
-        if existing:
+        if any(p.player_id == player.id for p in match.participants):
             results["skipped_already_present"].append(match.id)
             continue
 
-        new_rel = Association_PlayerMatch(
-            player_id=player.id,
-            match_id=match.id,
-            team=partner_rel.team,
+        before = _match_state(match)
+        side = [p for p in match.participants if p.side == partner_rel.side]
+        stand_in = next((p for p in side if p.role == "substitute"), None)
+        if stand_in is not None:
+            slot = stand_in.slot
+            match.participants.remove(stand_in)
+            db.session.delete(stand_in)
+            db.session.flush()
+        else:
+            taken = {p.slot for p in side}
+            free = [s for s in (1, 2) if s not in taken]
+            if not free:
+                results["skipped_already_present"].append(match.id)
+                continue
+            slot = free[0]
+        match.participants.append(
+            MatchParticipant(side=partner_rel.side, slot=slot, role="member", entry_id=member.entry_id, player_id=player.id)
         )
-        db.session.add(new_rel)
         db.session.flush()
+        played_affected = played_affected or match.played
+        _audit(actor_user_id, "match", match.id, "readd_player", before, _match_state(match))
         results["reinserted"].append(match.id)
 
+    if results["reinserted"]:
+        Absence.query.filter_by(entry_id=member.entry_id, round_id=matches[0].round_id).delete(synchronize_session=False)
+    if played_affected:
+        unfreeze_group_standings(group.id)
     return results
+
+
+def _actor_id():
+    from flask_login import current_user
+
+    return current_user.id if current_user.is_authenticated else None
 
 
 def _division_roster(division):
@@ -250,7 +314,7 @@ def division_replace_player(division_id):
         return render_form()
 
     try:
-        match_count = _swap_player_in_division(division, player_a, player_b)
+        match_count = _swap_player_in_division(division, player_a, player_b, actor_user_id=_actor_id())
         db.session.commit()
     except Exception as exc:  # noqa: BLE001
         db.session.rollback()
@@ -263,17 +327,6 @@ def division_replace_player(division_id):
         )
         flash(f"Falha ao substituir jogador: {exc}", "error")
         return render_form()
-
-    division.standings_up_to_date = False
-    division.save()
-    try:
-        division.update_table(force_update=True)
-    except Exception as exc:  # noqa: BLE001
-        current_app.logger.exception(
-            "[admin-action] replace_player update_table failed division=%s: %s",
-            division.id,
-            exc,
-        )
 
     current_app.logger.info(
         "[admin-action] replace_player division=%s a=%s b=%s matches=%s",
@@ -350,7 +403,7 @@ def division_readd_player(division_id):
 
     try:
         results = _readd_player_to_matchweek(
-            division, player, partner, matchweek
+            division, player, partner, matchweek, actor_user_id=_actor_id()
         )
         db.session.commit()
     except Exception as exc:  # noqa: BLE001
@@ -364,17 +417,6 @@ def division_readd_player(division_id):
         )
         flash(f"Falha ao readicionar jogador: {exc}", "error")
         return render_form()
-
-    division.standings_up_to_date = False
-    division.save()
-    try:
-        division.update_table(force_update=True)
-    except Exception as exc:  # noqa: BLE001
-        current_app.logger.exception(
-            "[admin-action] readd_player update_table failed division=%s: %s",
-            division.id,
-            exc,
-        )
 
     current_app.logger.info(
         "[admin-action] readd_player division=%s player=%s matchweek=%s results=%s",
