@@ -12,6 +12,12 @@ Public pages on the v2 API: competitions list, competition, group page (standing
 4. Routes `/competitions/:id`, `/groups/:id`, `/players/:id`, `/ranking`, `/calendar`; redirects from `/tournaments/:id` → `/groups/:id` (send route changes to S0, who owns App.tsx).
 5. Phone width first; root font-size is 10px — use px Tailwind values.
 
+## Tournaments list and nav (Pedro, 2026-10-15)
+- Remove the Shuffle and Teams nav tabs; everything is under **Torneios**.
+- Tournaments page: one card per competition with a format badge (Clássica / Teams / Shuffle / Super Cup), grouped by season, current season first (alternative Pedro accepts: 4 format cards opening their competitions). Data from `GET /competitions?season&format`.
+- Redirects: `/shuffle` and `/teams` → current competition of that format; `/tournaments/:id` → `/groups/:id` (route list goes to S0, who owns App.tsx).
+- Goal tonight: everything running locally on the new database.
+
 ## Done when
 Each page matches the old page's content (S6 visual + semantic checks), works at 375px, no v1 calls left in these features.
 

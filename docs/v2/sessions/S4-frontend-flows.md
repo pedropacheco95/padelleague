@@ -12,6 +12,10 @@ Everything that writes: result entry, absences with substitute, Teams (pair choi
 4. Admin: competition wizard (promotion preview from S1), fixtures generation, Shuffle rounds, close group.
 5. Optimistic updates with React Query; errors shown inline; phone width first.
 
+## Navigation (Pedro, 2026-10-15)
+- Teams and Shuffle no longer have nav tabs: their pages become **competition pages** (`/competitions/:id`) reachable from the Tournaments list built by S3. Pair choice, divisions, results and standings are sections/tabs inside the Teams competition page; Shuffle rounds and admin inside the Shuffle competition page.
+- `/teams` and `/shuffle` redirect to the current competition of that format.
+
 ## Done when
 E2E flows (S6) pass on desktop and phone; no v1 calls left in these features.
 

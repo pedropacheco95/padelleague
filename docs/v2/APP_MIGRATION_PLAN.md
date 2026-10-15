@@ -106,6 +106,15 @@ Writes:
 - Competitions (admin): `POST /competitions` (Clássica from previous via promotion, Shuffle, Teams), `POST /competitions/{id}/fixtures`, Shuffle `POST|DELETE /competitions/{id}/rounds`
 - Teams: `GET|POST|DELETE /competitions/{id}/partner-requests`, `POST /competitions/{id}/pairs/close`, `POST /stages/{id}/divisions`
 
+## 4b. Frontend navigation (Pedro, 2026-10-15)
+
+- Tonight's goal: **everything running locally on the new database**; deploy decision tomorrow morning.
+- **Shuffle and Teams lose their own nav tabs.** Everything lives under **Torneios**.
+- Tournaments list: one card per competition (like today's tournament cards) with a format badge (Clássica / Teams / Shuffle / Super Cup), grouped by season, current season first. Accepted alternative: 4 cards, one per format, each opening its competitions.
+- Each card opens the competition page; Teams and Shuffle pages are competition pages reachable from the list.
+- Old `/shuffle` and `/teams` redirect to the current competition of that format; `/tournaments/:id` redirects to `/groups/:id`.
+- Data: `GET /competitions?season&format` returns format, season, status (`upcoming | live | ended`), dates, group count and a cover image per competition: enough to render the cards.
+
 ## 5. Acceptance
 
 - **Semantic parity (S6):** for every group/player/ranking, v2 numbers equal v1 compat output except listed intended differences.
