@@ -61,10 +61,10 @@ the league's working language is Portuguese. Ask for exactly:
    isn't.
 2. **Onde entram os jogadores novos** — new players have no standings, so he has
    to place them. Offer `players.ranking_points` as a hint if useful.
-3. **Nome da edição** (e.g. "22ª Edição") and **nome base das divisões**
-   (e.g. "Outono 2026"). Note the DB skips "20ª Edição" — do not assume the
-   numbering is contiguous, check
-   `select name from competitions where format = 'classica' order by starts_on desc`.
+3. **Nome da edição** and **nome base das divisões** (e.g. "Inverno 2027").
+   The number runs across every format (20ª = Shuffle, 22ª = Masters de Outono,
+   23ª = Teams 2026/27), so propose `services.editions.next_edition_number()`
+   (24ª as of 2026-10-15) and only ask whether he wants a suffix.
 4. **Data de início, dia da semana e hora** (e.g. terças às 21:30).
 5. **Confirmação da regra de subidas/descidas** — default 2 sobem / 2 descem.
 6. **Campos** — Campo 1 / Campo 2 as usual?

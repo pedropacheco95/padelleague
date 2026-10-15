@@ -45,7 +45,8 @@ def register_cli(app):
 
     @app.cli.command("propose-edition")
     @click.option("--previous", "previous_id", type=int, required=True, help="Competition id of the last Clássica.")
-    @click.option("--name", "edition_name", required=True, help='e.g. "23ª Edição"')
+    @click.option("--name", "edition_name", default=None,
+                  help='Default "<N>ª Edição", N = next number across every format')
     @click.option("--start", "beginning", required=True, help="ISO datetime of jornada 1, e.g. 2027-01-12T21:30:00")
     @click.option("--prefix", "division_prefix", default=None, help='Division base name, e.g. "Inverno 2027"')
     @click.option("--withdrawals", default="", help="Comma-separated player ids leaving")
@@ -59,9 +60,11 @@ def register_cli(app):
         """Write the next Clássica's plan (promotion from --previous) to --out. Writes nothing to the DB."""
         from padel_league.domain.errors import InvalidInput, Conflict, NotFound
         from padel_league.services.classica_builder import next_classica_plan
+        from padel_league.services.editions import default_edition_name
 
         ids = lambda raw: [int(x) for x in raw.split(",") if x.strip()]  # noqa: E731
         with app.app_context():
+            edition_name = edition_name or default_edition_name()
             try:
                 plan, notes = next_classica_plan(
                     previous_id, edition_name, beginning,
