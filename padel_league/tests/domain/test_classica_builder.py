@@ -31,3 +31,11 @@ def test_vacancies_must_match_newcomers(pg):
     with pytest.raises(InvalidInput) as err:
         next_classica_plan(24, "Teste", "2026-09-01T19:00:00", withdrawals=WITHDRAWN, new_player_ids=[])
     assert err.value.code == "vacancies_mismatch"
+
+
+def test_lenient_preview_reports_short_divisions(pg):
+    plan, notes = next_classica_plan(
+        24, "Teste", "2026-09-01T19:00:00", withdrawals=WITHDRAWN, new_player_ids=[], strict=False
+    )
+    assert any("faltam" in n for n in notes)
+    assert sum(len(d["players"]) for d in plan["divisions"]) == 42
