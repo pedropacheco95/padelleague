@@ -138,3 +138,25 @@ def test_close_shuffle_twice_is_refused(pg):
     closeout.close_shuffle(26, recompute_ranking=False)
     with pytest.raises(Conflict):
         closeout.close_shuffle(26, recompute_ranking=False)
+
+
+def test_result_edited_after_close_refreshes_awards_and_ranking(pg):
+    comp, grp, e = _teams_reference_group()
+    event = closeout.close_group(grp.id)
+    db.session.flush()
+    # J3 B–C was 3-0 to B; correct it to 0-3 (C wins every set)
+    from padel_league.models.v2 import CompetitionMatch
+
+    j3 = [m for m in CompetitionMatch.query.filter_by(group_id=grp.id) if m.round.number == 3]
+    bc = next(m for m in j3 if any(p.entry_id == e[3].id for p in m.participants))
+    results.record_sets(bc.id, [L, L, L])
+    db.session.flush()
+    results.after_result_commit(grp)
+    db.session.expire_all()
+    awards = {a.entry_id: a for a in Award.query.filter_by(award_event_id=event.id)}
+    assert len(awards) == 8
+    assert awards[e[5].id].wins == 5  # C: 2 sets before + 3
+    snap = RankingSnapshot.query.order_by(RankingSnapshot.id.desc()).first()
+    assert snap.note.endswith("edited after close")
+    pts = {r.player_id: r.points for r in snap.entries}
+    assert pts[e[5].player_id] == pytest.approx(awards[e[5].id].total)

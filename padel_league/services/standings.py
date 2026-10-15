@@ -228,9 +228,9 @@ def _teams_edition_rows(competition):
 def _shuffle_overall_rows(competition):
     """Overall Shuffle table, from the matches: 3 × group multiplier a win,
     1 × a draw (as compat.players_in_shuffle_tournament), ordered by the
-    Shuffle rule (services.shuffle.overall_order). When the final places were
-    stored (the competition-level standing rows), place and next group come
-    from them."""
+    Shuffle rule (services.shuffle.overall_order). An ended Shuffle shows its
+    stored final places; the next group is the calculated division when stored
+    (competition-level standing rows)."""
     from padel_league.models.v2 import Stage
 
     entries = Entry.query.filter_by(competition_id=competition.id).all()
@@ -257,9 +257,12 @@ def _shuffle_overall_rows(competition):
             Entry.competition_id == competition.id, StandingSnapshot.group_member_id.is_(None)
         )
     }
-    if stored and len(stored) == len(rows) and all(s.place is not None for s in stored.values()):
+    complete = stored and len(stored) == len(rows) and all(s.place is not None for s in stored.values())
+    if complete and competition.status == "ended":
         for row in ordered:
             row.place = stored[row.entry_id].place
-            row.next_group_tier = stored[row.entry_id].next_division
         ordered.sort(key=lambda r: (r.place, r.order))
+    for row in ordered:  # the calculated division for the next round, when stored
+        if row.entry_id in stored and stored[row.entry_id].next_division:
+            row.next_group_tier = stored[row.entry_id].next_division
     return ordered
