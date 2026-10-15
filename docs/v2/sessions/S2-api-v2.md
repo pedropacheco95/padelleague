@@ -1,4 +1,4 @@
-# S2 — API v2 (Wave B, after gate G0)
+# S2 — API v2 (start now; contract draft in plan section 4)
 
 Worktree `padelleague-s2`, branch `v2/s2-api`, `TEST_DB_PREFIX=s2`, Flask port 5061.
 
@@ -15,6 +15,9 @@ Worktree `padelleague-s2`, branch `v2/s2-api`, `TEST_DB_PREFIX=s2`, Flask port 5
 
 ## Done when
 All spec endpoints implemented, contract tests green, S6 semantic parity green for the corresponding v1 pages.
+
+## Timeline
+Everything lands on `v2/integration` **today (15 Oct)**; Teams launches on v2 tomorrow morning. Prioritise what Teams launch and the DB cut-over need, merge small and often, report to S0 every finished task.
 
 ## Read first (every session)
 - `docs/v2/APP_MIGRATION_PLAN.md` (whole plan, ownership table, conventions), `docs/v2/PLAN.md` (DB migration), `docs/v2/INTENDED_DIFFERENCES.md`.

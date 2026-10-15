@@ -1,4 +1,4 @@
-# S1 — Domain engine (Wave A)
+# S1 — Domain engine (start now)
 
 Worktree `padelleague-s1`, branch `v2/s1-domain`, `TEST_DB_PREFIX=s1`, no ports.
 
@@ -16,6 +16,9 @@ All competition logic as pure, tested functions plus thin services on the v2 mod
 
 ## Done when
 Unit tests for every rule above pass on Postgres; services covered with factories; no imports from old models or `compat`.
+
+## Timeline
+Everything lands on `v2/integration` **today (15 Oct)**; Teams launches on v2 tomorrow morning. Prioritise what Teams launch and the DB cut-over need, merge small and often, report to S0 every finished task.
 
 ## Read first (every session)
 - `docs/v2/APP_MIGRATION_PLAN.md` (whole plan, ownership table, conventions), `docs/v2/PLAN.md` (DB migration), `docs/v2/INTENDED_DIFFERENCES.md`.

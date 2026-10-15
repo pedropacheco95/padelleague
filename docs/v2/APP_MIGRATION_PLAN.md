@@ -1,6 +1,8 @@
 # Whole-app migration to the v2 data model
 
-Status: **proposal, awaiting Pedro's decisions (section 1)**. Owner: coordinator session (S0).
+Status: **approved 2026-10-15. Target: everything done today; Teams launches on v2 tomorrow morning (16 Oct)**.
+
+**Go/no-go 16 Oct 08:00 (S0 with Pedro):** go only if gate G2 holds (parity green, two clean rehearsals on that morning's backup, rollback tested). If not: ship the ready fallback `feature/teams-pairs` (Teams pair choice on the old system) so picks still close Sunday, and cut over at the next quiet evening. Owner: coordinator session (S0).
 Canonical copy for all sessions. Companion docs: `PLAN.md` (DB migration), `INTENDED_DIFFERENCES.md`, `sessions/*.md` (one brief per session).
 
 ## 0. Where we are (2026-10-15)
@@ -22,16 +24,16 @@ Production runs `master` (old schema). The Teams pair-choice release (`feature/t
 
 | # | Decision | Recommendation |
 |---|---|---|
-| D1 | Ship the Teams pair-choice release this week (on the old system) | **Yes**: picks close Sunday 18 Oct |
-| D2 | How Teams mini-tournament 1 (20 Oct – ~3 Nov) runs before the cut-over | Divisions, fixtures and set results in thin `teams_*` tables on master; the v2 engine computes standings and awards once v2 is live; data folded into v2 at the cut-over |
-| D3 | Strategy | **Database first, then code**: move prod to the v2 database with the compat layer (old API keeps working), then ship v2 API + frontend in code-only releases, then delete the compat layer |
+| D1 | Teams on v2 from launch (16 Oct morning) | **Yes**; `feature/teams-pairs` is the fallback if the go/no-go fails |
+| D2 | Teams mini-tournament 1 | Runs entirely on v2 (only needed if the fallback ships: thin `teams_*` tables, folded in at cut-over) |
+| D3 | Strategy | **Database + Teams first (16 Oct), then remaining page switches**: move prod to the v2 database with the compat layer (old API keeps working), then ship v2 API + frontend in code-only releases, then delete the compat layer |
 | D4 | URLs | New routes (`/competitions/:id`, `/groups/:id`), old ones redirect (ids are preserved: division id = group id) |
-| D5 | Sessions | Coordinator + 4 workers at a time, in two waves (section 4) |
+| D5 | Sessions | Coordinator + 6 workers, all at once |
 | D6 | Admin editor | Stays in Flask, rebuilt on v2 models |
 
 ## 2. Phases and gates
 
-### Phase 0: foundations (S0 only, blocks Wave B) — 1–2 days
+### Phase 0: foundations (S0 only) — first hours of 15 Oct
 1. Merge `master` into the v2 branch (standings tie-break c2540a7, lockdown, Teams release). Re-point `b7d2e4c1a9f0.down_revision` to the Teams revision `a1d5c0e7b3f2`. Recapture the golden parity set (it predates c2540a7) and re-run parity.
 2. Migration vs Teams tables: the archive step copies every public table into `legacy` and keeps it in `public`, so `teams_*` and `users.code_attempts` survive. Add a step folding `teams_*` into `competitions/entries/pairs/partner_requests` (new competition "Teams 2026/27"). Add preconditions for the new state.
 3. Integration branch `v2/integration`; every session branches from it into its own worktree.
@@ -45,7 +47,7 @@ Production runs `master` (old schema). The Teams pair-choice release (`feature/t
 
 **Gate G0:** integration branch green on Postgres, parity green after the master merge, spec v0 merged, briefs published.
 
-### Phase 1: parallel build — ~2 weeks
+### Phase 1: parallel build — 15 Oct, all sessions at once
 Workstreams in section 3. Backend v2 API is added **beside** v1; nothing is removed.
 
 ### Phase 2: production database cut-over
@@ -84,8 +86,7 @@ Only the owner edits a path. Shared files go through S0 (ask via SendMessage; S0
 | **S5 Platform & cleanup** | Port remaining v1 writes (cut-over critical path), editor on v2 models, legacy Jinja removal, chatbot schema, skills (`create-edition`, `start-next-edition`, `do-linear-ticket`), CSV tools, substitutes Excel import | `modules/editor.py`, `modules/*.py` (legacy), `templates/**`, `core/**`, `.claude/skills/**`, `services/imports/**` | B (writes first) |
 | **S6 QA & parity** | Semantic parity v1↔v2 per page, Playwright e2e smoke, visual diff old vs new pages, migration rehearsals | `scripts/parity/**`, `e2e/**`, `docs/v2/qa/**` | A |
 
-Wave A starts with Phase 0 (no shared-infra dependency): S1, S3 (mocks from spec draft), S6.
-Wave B after G0: S2, S4, S5. S1/S3/S6 continue.
+All sessions start now. Until S0 publishes `docs/v2/api/openapi.yaml` and the Postgres test template on `v2/integration`, build against the draft in section 4 and pull from `v2/integration` as soon as S0 announces G0.
 
 ## 4. API v2 (draft for spec v0)
 

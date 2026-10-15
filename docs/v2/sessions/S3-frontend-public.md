@@ -1,4 +1,4 @@
-# S3 — Frontend public pages (Wave A with mocks, then real API)
+# S3 — Frontend public pages (start now, mocks until S2 lands)
 
 Worktree `padel_league_frontend-s3`, branch `v2/s3-public`, Vite port 8081.
 
@@ -14,6 +14,9 @@ Public pages on the v2 API: competitions list, competition, group page (standing
 
 ## Done when
 Each page matches the old page's content (S6 visual + semantic checks), works at 375px, no v1 calls left in these features.
+
+## Timeline
+Everything lands on `v2/integration` **today (15 Oct)**; Teams launches on v2 tomorrow morning. Prioritise what Teams launch and the DB cut-over need, merge small and often, report to S0 every finished task.
 
 ## Read first (every session)
 - `docs/v2/APP_MIGRATION_PLAN.md` (whole plan, ownership table, conventions), `docs/v2/PLAN.md` (DB migration), `docs/v2/INTENDED_DIFFERENCES.md`.

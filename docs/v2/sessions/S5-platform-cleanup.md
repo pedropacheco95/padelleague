@@ -1,4 +1,4 @@
-# S5 — Platform & cleanup (Wave B; cut-over critical path first)
+# S5 — Platform & cleanup (start now; cut-over critical path first)
 
 Worktree `padelleague-s5`, branch `v2/s5-platform`, `TEST_DB_PREFIX=s5`, Flask port 5063.
 
@@ -15,6 +15,9 @@ Make every remaining write work on v2 (so prod can move to the v2 database), the
 
 ## Done when
 No code path writes through `compat`; editor, chatbot and skills only use v2 tables; tests green.
+
+## Timeline
+Everything lands on `v2/integration` **today (15 Oct)**; Teams launches on v2 tomorrow morning. Prioritise what Teams launch and the DB cut-over need, merge small and often, report to S0 every finished task.
 
 ## Read first (every session)
 - `docs/v2/APP_MIGRATION_PLAN.md` (whole plan, ownership table, conventions), `docs/v2/PLAN.md` (DB migration), `docs/v2/INTENDED_DIFFERENCES.md`.

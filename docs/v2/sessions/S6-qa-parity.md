@@ -1,4 +1,4 @@
-# S6 — QA & parity (Wave A)
+# S6 — QA & parity (start now)
 
 Worktree `padelleague-s6` (+ frontend checkout for e2e), branch `v2/s6-qa`, `TEST_DB_PREFIX=s6`, ports 5064/8084.
 
@@ -14,6 +14,9 @@ Make 'done' measurable and the cut-over boring.
 
 ## Done when
 One command reports parity + e2e for the integration branch; two clean rehearsals recorded.
+
+## Timeline
+Everything lands on `v2/integration` **today (15 Oct)**; Teams launches on v2 tomorrow morning. Prioritise what Teams launch and the DB cut-over need, merge small and often, report to S0 every finished task.
 
 ## Read first (every session)
 - `docs/v2/APP_MIGRATION_PLAN.md` (whole plan, ownership table, conventions), `docs/v2/PLAN.md` (DB migration), `docs/v2/INTENDED_DIFFERENCES.md`.

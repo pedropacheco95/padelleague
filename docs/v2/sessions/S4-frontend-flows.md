@@ -1,4 +1,4 @@
-# S4 — Frontend flows (Wave B)
+# S4 — Frontend flows (start now)
 
 Worktree `padel_league_frontend-s4`, branch `v2/s4-flows`, Vite port 8082 (Flask 5062 for local API).
 
@@ -14,6 +14,9 @@ Everything that writes: result entry, absences with substitute, Teams (pair choi
 
 ## Done when
 E2E flows (S6) pass on desktop and phone; no v1 calls left in these features.
+
+## Timeline
+Everything lands on `v2/integration` **today (15 Oct)**; Teams launches on v2 tomorrow morning. Prioritise what Teams launch and the DB cut-over need, merge small and often, report to S0 every finished task.
 
 ## Read first (every session)
 - `docs/v2/APP_MIGRATION_PLAN.md` (whole plan, ownership table, conventions), `docs/v2/PLAN.md` (DB migration), `docs/v2/INTENDED_DIFFERENCES.md`.
