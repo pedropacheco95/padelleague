@@ -39,10 +39,15 @@ Both captured by S6 on `s6_*` databases, clock frozen, same request list.
 
 - **Green:** every table `legacy-only=0 compat-only=0` / `changed-or-missing=0`, except
   `matches` (D1: exactly 2 rows each side, ids 85 and 86) and `players_in_division`
-  (D7: exactly 3 rows each side, division 69, players 38/52/86).
-- **Red:** any other non-zero count, or the D1/D7 counts differing from 2 and 3.
-- **Surprising:** D1/D7 counts of 0 — means the fix did not apply or the view
-  hides it; red until explained.
+  (D7: 3 rows each side, division 69, players 38/52/86; **or 0/0 when the backup
+  already carries the computed order**: confirm with
+  `select player_id, place from legacy.players_in_division where division_id=69 and player_id in (38,52,86)` → 6, 3, 4).
+- **Red:** any other non-zero count, or D1 differing from 2/2, or D7 neither 3/3 nor 0/0-with-computed-order.
+- **Surprising:** D1 count of 0 means the fix did not apply or the view hides it; red
+  until explained.
+- *Amended 15 Oct 10:30, after the first verify run and before any gating run: the
+  15 Oct backup already has division 69 in the computed order (6, 3, 4 in `legacy`
+  and in the raw backup), so D7 reads 0/0. Original rule required exactly 3.*
 
 ## R4. Cut-over rehearsal (`scripts/parity/rehearse_cutover.sh`)
 
