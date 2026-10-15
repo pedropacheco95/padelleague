@@ -122,3 +122,32 @@ def test_closed_group_is_admin_only(client, make_user):
     assert resp.status_code == 409 and resp.get_json()["code"] == "group_closed"
     resp = client.put(f"/api/v2/matches/{m.id}/result", json=payload, headers=bearer(make_user(role="admin")))
     assert resp.status_code == 200
+
+
+def test_teams_standings_stage_lines_after_close(client):
+    """S4: a closed mini-tournament's line carries the ranking points awarded (and the set points)."""
+    from datetime import datetime
+
+    from padel_league.models.v2 import Award, AwardEvent
+
+    comp = f.competition(format="teams", name="Teams stage-lines test")
+    stg = f.stage(comp, emits_award=True)
+    grp = f.group(stg, rating=500)
+    rnd = f.round_(stg)
+    entries = [f.entry(comp, f.player()) for _ in range(4)]
+    for e in entries:
+        f.member(grp, e)
+    f.match(grp, rnd, home=entries[:2], away=entries[2:], status="played", sets=[(6, 2), (6, 3), (1, 6)])
+    grp.has_ended = True
+    event = AwardEvent(competition_id=comp.id, stage_id=stg.id, group_id=grp.id, awarded_at=datetime.utcnow())
+    db.session.add(event)
+    db.session.flush()
+    for place, e in enumerate(entries, 1):
+        db.session.add(Award(award_event_id=event.id, entry_id=e.id, player_id=e.player_id, group_id=grp.id,
+                             place=place, place_points=500.0 / place, bonus_points=1.5))
+    persist()
+    rows = check(client.get(f"/api/v2/competitions/{comp.id}/standings"), "/competitions/{competitionId}/standings")
+    top = next(r for r in rows if r["player"]["id"] == entries[0].player_id)
+    (line,) = top["stages"]
+    assert line["groupId"] == grp.id and line["points"] == 501.5 and top["points"] == 501.5
+    assert line["setPoints"] == 6  # two sets won × 3
