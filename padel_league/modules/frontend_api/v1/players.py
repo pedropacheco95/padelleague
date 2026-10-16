@@ -4,7 +4,6 @@ import os
 import unidecode
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt, get_jwt_identity, jwt_required
-from sqlalchemy import text
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from padel_league.model import Image
@@ -26,7 +25,7 @@ PREFERED_POSITIONS = ("Lado direito", "Lado esquerdo", "Tanto faz")
 
 # Outside substitutes (players.status = 'external', SUBS_ import) stay out of the
 # lists and the ranking; their profile is still reachable by id.
-NOT_EXTERNAL = text("players.status <> 'external'")
+NOT_EXTERNAL = Player.status != "external"
 
 
 def _seats(player_ids):
@@ -91,13 +90,7 @@ def player_detail(player, seats):
 def ranking():
     league = League.query.first()
     players = league.players_rankings_position()
-    hidden = {
-        pid
-        for pid, in Player.query.filter(
-            Player.id.in_([p.id for p in players]), text("players.status = 'external'")
-        ).with_entities(Player.id)
-    }
-    return jsonify([serialize_player_ranking(p) for p in players if p.id not in hidden])
+    return jsonify([serialize_player_ranking(p) for p in players if p.status != "external"])
 
 
 @bp.route("/<int:id>")

@@ -113,8 +113,6 @@ def test_history_played_is_matches_not_jornadas(client):
 
 def _sub_setup():
     """A member who also played once as a substitute in another group, and an outside sub."""
-    from sqlalchemy import text
-
     from padel_league.models.v2 import MatchParticipant
     from padel_league.services.ranking import current_snapshot
     from padel_league.sql_db import db
@@ -133,10 +131,8 @@ def _sub_setup():
     # me subs for ents[4] in group 2 and loses
     sub = f.match(g2, rnd, home=ents[5:6], away=ents[6:8], sets=[(1, 6)], status="played")
     db.session.add(MatchParticipant(match_id=sub.id, side="home", slot=2, role="substitute", player_id=me.id))
-    outsider = f.player()
+    outsider = f.player(status="external")
     db.session.add(RankingEntry(snapshot_id=current_snapshot().id, player_id=outsider.id, points=99999, position=None))
-    db.session.flush()
-    db.session.execute(text("update players set status = 'external' where id = :id"), {"id": outsider.id})
     persist()
     return me.id, sub.id, outsider.id
 

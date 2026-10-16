@@ -3,7 +3,6 @@
 from collections import defaultdict
 
 from flask import Blueprint, jsonify, request
-from sqlalchemy import text
 from sqlalchemy.orm import joinedload
 
 from padel_league.models import Player
@@ -33,7 +32,7 @@ register_error_handlers(bp)
 
 # Outside substitutes (players.status = 'external', SUBS_ import) stay out of the
 # players list and the ranking; their profile is still reachable by id.
-NOT_EXTERNAL = text("players.status <> 'external'")
+NOT_EXTERNAL = Player.status != "external"
 
 
 def external_ids(player_ids):
@@ -41,7 +40,7 @@ def external_ids(player_ids):
         return set()
     return {
         pid
-        for pid, in Player.query.filter(Player.id.in_(player_ids), text("players.status = 'external'")).with_entities(
+        for pid, in Player.query.filter(Player.id.in_(player_ids), Player.status == "external").with_entities(
             Player.id
         )
     }
