@@ -362,7 +362,7 @@ paths:
   /rankings/subs:
     get:
       tags: [rankings]
-      summary: Substitutes ranking (points as a sub in the last completed competition × division multiplier)
+      summary: Substitutes ranking (points as a sub in the ranking window × division multiplier)
       responses:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/SubsRanking" } } } }
         "404": { $ref: "#/components/responses/Error" }
@@ -892,11 +892,10 @@ components:
       required: [entries]
       properties:
         computedAt: { type: [string, "null"], format: date-time }
-        competition:
-          description: The last completed competition the subs points come from
-          oneOf:
-            - { type: object, required: [id, name], properties: { id: { type: integer }, name: { type: string } } }
-            - { type: "null" }
+        competitions:
+          type: array
+          description: The competitions in the ranking window the subs points come from (same window as the main ranking)
+          items: { type: object, required: [id, name], properties: { id: { type: integer }, name: { type: string } } }
         entries:
           type: array
           items:
