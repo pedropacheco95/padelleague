@@ -1,6 +1,7 @@
 """Substitute points and Art. 12 (Pedro, 2026-10-16): pure rules, the ranking
-fallback on Postgres, and João Mendonça's 22ª total on a template with the
-SUBS_ import (V2_TEMPLATE=s1_subs_tpl; skipped elsewhere)."""
+fallback on Postgres, and João Mendonça's totals (273 over the ranking window,
+132 in the 22ª) on a template with the SUBS_ import (V2_TEMPLATE=s1_subs_tpl;
+skipped elsewhere)."""
 
 from datetime import date
 
@@ -108,9 +109,8 @@ def _sit_value(seat):
 
 def test_art12_members_only_and_regulars_keep_their_points(pg):
     ranking.bootstrap()
-    sr = ranking.subs_ranking()
-    assert len(sr.competition_ids) == 1
-    last = sr.competition_ids[0]
+    last = engine.last_completed(ranking.league_facts(1)[0]).id
+    assert last in ranking.subs_ranking().competition_ids
     before = {l.player_id: l for l in ranking.compute(1).lines}
     regular = next(l.player_id for l in before.values() if l.source == "awards")
     seats = [
@@ -142,12 +142,13 @@ def test_art12_members_only_and_regulars_keep_their_points(pg):
     assert db.session.get(Player, newcomer.id).ranking_points == round(expected[newcomer.id])
 
 
-def test_subs_window_ranking_option(pg):
+def test_subs_window_defaults_to_the_ranking_window(pg):
     ranking.bootstrap()
     rule = ranking.rule_for(1)
-    rule.options = {**(rule.options or {}), "subs_window": "ranking"}
-    sr = ranking.subs_ranking(1, rule)
-    assert set(sr.competition_ids) == set(ranking.compute(1, rule).counted_competition_ids)
+    assert set(ranking.subs_ranking(1).competition_ids) == set(ranking.compute(1).counted_competition_ids)
+    rule.options = {**(rule.options or {}), "subs_window": "last_completed"}
+    last = engine.last_completed(ranking.league_facts(1)[0]).id
+    assert ranking.subs_ranking(1, rule).competition_ids == [last]
     rule.options = {**rule.options, "subs_window": "everything"}
     with pytest.raises(Exception) as err:
         ranking.subs_ranking(1, rule)
@@ -161,24 +162,33 @@ def _mendonca():
     return player
 
 
-def test_mendonca_22a_is_132_and_seeds_once_a_member(pg):
+def test_mendonca_273_over_the_ranking_window_and_seeds_once_a_member(pg):
+    # sheet: Shuffle 20ª 18 + 15, 21ª 3 × 36, 22ª 132
     mendonca = _mendonca()
     ranking.bootstrap()
-    subs = {l.player_id: l.points for l in ranking.subs_ranking().lines}
-    assert subs[mendonca.id] == 132
+    sr = ranking.subs_ranking()
+    assert {24, 25, 26} <= set(sr.competition_ids)
+    assert {l.player_id: l.points for l in sr.lines}[mendonca.id] == 273
     assert mendonca.id not in {l.player_id for l in ranking.compute(1).lines}  # external: subs ranking only
     mendonca.status = "member"  # swap-roster: he replaces Miguel Lemos on the Teams roster
     db.session.flush()
     assert not Award.query.filter_by(player_id=mendonca.id).first()
     line = next(l for l in ranking.compute(1).lines if l.player_id == mendonca.id)
-    assert (line.points, line.source) == (132, "subs")
+    assert (line.points, line.source) == (273, "subs")
     points, positions = ranking.seeding(1)
-    assert points[mendonca.id] == 132 and positions[mendonca.id] == line.position
+    assert points[mendonca.id] == 273 and positions[mendonca.id] == line.position
+    # no new award event, but the stored ranking is stale: bootstrap writes it
+    assert "written" in ranking.bootstrap()[-1]
+    entry = RankingEntry.query.filter_by(snapshot_id=ranking.latest_snapshot(1).id, player_id=mendonca.id).one()
+    assert (entry.points, entry.source) == (273, "subs")
+    assert "already current" in ranking.bootstrap()[-1]
 
 
-def test_mendonca_ranking_window_is_273(pg):
+def test_mendonca_last_completed_window_is_132(pg):
     mendonca = _mendonca()
     ranking.bootstrap()
     rule = ranking.rule_for(1)
-    rule.options = {**(rule.options or {}), "subs_window": "ranking"}
-    assert {l.player_id: l.points for l in ranking.subs_ranking(1, rule).lines}[mendonca.id] == 273
+    rule.options = {**(rule.options or {}), "subs_window": "last_completed"}
+    sr = ranking.subs_ranking(1, rule)
+    assert sr.competition_ids == [25]
+    assert {l.player_id: l.points for l in sr.lines}[mendonca.id] == 132

@@ -5,8 +5,8 @@ deleted (phase 4), mirrors it into players.ranking_points / ranking_position,
 which v1 and the Teams pairing still read. Points stay unrounded in v2; the
 bigint mirror rounds half up, as the old column effectively did.
 
-subs_ranking(): substitute points in the last completed competition
-(domain.subs); compute() gives them, flagged source "subs", to players
+subs_ranking(): substitute points over the rule's subs window (default the
+main ranking's window; domain.subs); compute() gives them, flagged source "subs", to players
 without a counted award (art. 12).
 """
 
@@ -144,13 +144,13 @@ class SubsRanking:
 
 
 SUBS_COUNTED_STATUSES = ("played", "walkover")
-# ranking_rules.options["subs_window"]: "last_completed" (default) or "ranking"
-# (every competition the main ranking counts).
+# ranking_rules.options["subs_window"]: "ranking" (default, Pedro 2026-10-16:
+# every competition the main ranking counts) or "last_completed".
 SUBS_WINDOWS = ("last_completed", "ranking")
 
 
 def _subs_competitions(rule, comps, awards):
-    window = (rule.options or {}).get("subs_window", "last_completed")
+    window = (rule.options or {}).get("subs_window", "ranking")
     if window not in SUBS_WINDOWS:
         raise Conflict(f"Janela de pontos de substituto desconhecida: {window}.", "unknown_subs_window")
     if window == "ranking":
@@ -286,10 +286,19 @@ def explain(player_id, league_id=1):
     return compute(league_id).explain.get(player_id, [])
 
 
+def _same_lines(snapshot, result):
+    """The snapshot still holds what compute() gives (substitute rows or a player's
+    status can change it without a new award event)."""
+    stored = {(e.player_id, round(e.points, 6), e.source) for e in snapshot.entries}
+    return stored == {(l.player_id, round(l.points, 6), l.source) for l in result.lines}
+
+
 def bootstrap(league_id=1):
     """Cut-over step, idempotent: award every ended Shuffle that has no awards,
     then write a ranking snapshot (and mirror players.*) unless the latest one
-    already reflects the latest award event. Returns a short report."""
+    already reflects the latest award event and still equals compute() (the
+    substitutes import or a player becoming a member changes it without an
+    award event). Returns a short report."""
     from padel_league.services import closeout
 
     report = []
@@ -305,7 +314,12 @@ def bootstrap(league_id=1):
     last_event = db.session.query(db.func.max(AwardEvent.id)).scalar()
     latest = latest_snapshot(league_id)
     rule = rule_for(league_id)
-    if latest and latest.rule_id == rule.id and latest.after_award_event_id == last_event:
+    if (
+        latest
+        and latest.rule_id == rule.id
+        and latest.after_award_event_id == last_event
+        and _same_lines(latest, compute(league_id, rule))
+    ):
         report.append(f"ranking snapshot {latest.id} already current")
         return report
     snap = recompute(league_id, after_award_event_id=last_event, note="bootstrap-ranking")
