@@ -40,6 +40,13 @@ Both commands are one transaction each; `--dry-run` rolls back.
 
 ## Before running on production
 
+- **Player profiles do change.** The dry run's check covers standings (live, published, v1 division
+  views, Shuffle overall) and they are unchanged, but `/api/v1/players/<id>` and `/api/v2/players/<id>`
+  count every `match_participants` row, so an existing player who also subbed gains matches played,
+  wins, games and attendance (78 of 182 profile responses changed on the clone; v1 attendance reaches
+  107% and matchweeksMissed −1). Decide whether sub appearances count, and filter `role = 'member'` in
+  those stats if not, before importing.
+
 - `/api/v1/players` and `/api/v2/players` list every player, so the 70
   external subs would appear in the public players list. Filter
   `status = 'external'` there first (or accept it).

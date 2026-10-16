@@ -26,6 +26,7 @@ from padel_league.models import Player, User
 from padel_league.models.v2 import (
     Absence,
     AuditEvent,
+    Competition,
     CompetitionGroup,
     CompetitionMatch,
     Entry,
@@ -304,7 +305,7 @@ def run(rows, name_map, decisions, actor_user_id=None, dry_run=True):
         db.session.flush()
         db.session.expire_all()
         after = _tables(groups)
-        changed = [g for g in groups if before[g] != after[g]]
+        changed = [g for g in before if before[g] != after[g]]
         if changed:
             raise ImportError_(f"standings changed in groups {changed}; nothing written")
         report = {
@@ -316,6 +317,7 @@ def run(rows, name_map, decisions, actor_user_id=None, dry_run=True):
             "rows_skipped": skipped,
             "points_mismatch_rows": mismatches,
             "groups_checked_unchanged": len(groups),
+            "competitions_checked_unchanged": len(before) - len(groups),
             "dry_run": dry_run,
         }
         if dry_run:
@@ -332,7 +334,7 @@ def _tables(group_ids):
     """Everything a substitute must not move: live v2 rows, published rows, and the v1 view."""
     from dataclasses import asdict
 
-    from padel_league.services.standings import compute_rows, group_standings
+    from padel_league.services.standings import competition_standings, compute_rows, group_standings
 
     out = {}
     for gid in group_ids:
@@ -342,6 +344,18 @@ def _tables(group_ids):
             [asdict(r) for r in group_standings(gid).rows],
             [tuple(r) for r in db.session.execute(
                 text("select * from compat.players_in_division where division_id = :g order by id"), {"g": gid})],
+        )
+    comps = {cid for (cid,) in db.session.query(Stage.competition_id).join(CompetitionGroup, CompetitionGroup.stage_id == Stage.id)
+             .filter(CompetitionGroup.id.in_(group_ids))}
+    for cid in sorted(comps):
+        if Competition.query.get(cid).format == "classica":
+            continue  # no competition table; its groups are checked above
+        out[f"competition {cid}"] = (
+            [asdict(r) for r in competition_standings(cid).rows],
+            [tuple(r) for r in db.session.execute(
+                text("select t.* from compat.players_in_shuffle_tournament t join compat.shuffle_tournaments s "
+                     "on s.id = t.shuffle_tournament_id where s.competition_id = :c order by t.id"),
+                {"c": cid})],
         )
     return out
 
