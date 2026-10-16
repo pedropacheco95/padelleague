@@ -1118,6 +1118,7 @@ components:
                   tier: { type: [integer, "null"] }
                   seed: { type: [integer, "null"] }
                   delta: { type: [integer, "null"], description: baseline tier − tier (positive = moves up) }
+                  reason: { type: [string, "null"], description: Why the candidate is not allowed (Portuguese) }
                   playedTogether: { type: array, items: { type: integer } }
 
     User:
