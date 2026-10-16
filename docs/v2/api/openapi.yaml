@@ -885,7 +885,7 @@ components:
               player: { $ref: "#/components/schemas/PlayerRef" }
               points: { type: number, description: Unrounded }
               previousPosition: { type: [integer, "null"] }
-              fromSubs: { type: boolean, default: false, description: "Art. 12: a new player whose points come from substitute appearances" }
+              fromSubs: { type: boolean, description: "Art. 12: a new player whose points come from substitute appearances" }
 
     SubsRanking:
       type: object
