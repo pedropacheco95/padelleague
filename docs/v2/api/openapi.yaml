@@ -394,6 +394,28 @@ paths:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/TeamsState" } } } }
         "404": { $ref: "#/components/responses/Error" }
 
+  /competitions/{competitionId}/teams/projection:
+    parameters: [{ $ref: "#/components/parameters/competitionId" }]
+    get:
+      tags: [teams]
+      summary: Projected divisions for the current mini-tournament (what close + form divisions would produce now)
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/TeamsProjection" } } } }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /competitions/{competitionId}/teams/simulate:
+    parameters: [{ $ref: "#/components/parameters/competitionId" }]
+    get:
+      tags: [teams]
+      summary: Partner simulator (where would player + partner land)
+      parameters:
+        - { name: player, in: query, schema: { type: integer }, description: defaults to the signed-in user's player }
+        - { name: partner, in: query, schema: { type: integer }, description: omitted = no declaration (paired by ranking) }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/TeamsSimulation" } } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+
   /competitions/{competitionId}/partner-requests:
     parameters: [{ $ref: "#/components/parameters/competitionId" }]
     post:
@@ -999,6 +1021,103 @@ components:
         - type: object
           required: [text]
           properties: { text: { type: string } }
+
+    TeamsPairProjection:
+      type: object
+      required: [seed, pairId, players, sum, formedBy, provisional, unpairedSlots, pending, mine]
+      properties:
+        seed: { type: integer, description: 1..4 within the division }
+        pairId: { type: [integer, "null"] }
+        players:
+          type: array
+          items:
+            allOf:
+              - $ref: "#/components/schemas/PlayerRef"
+              - type: object
+                properties: { rankingPoints: { type: number }, rankingPosition: { type: [integer, "null"] } }
+        sum: { type: number }
+        formedBy: { type: string, enum: [mutual, manual, ranking, extra] }
+        provisional: { type: boolean }
+        unpairedSlots: { type: [array, "null"], items: { type: integer } }
+        pending: { type: array, items: { $ref: "#/components/schemas/TeamsDeclaration" } }
+        mine: { type: boolean }
+
+    TeamsDeclaration:
+      type: object
+      required: [from, to]
+      properties: { from: { $ref: "#/components/schemas/PlayerRef" }, to: { $ref: "#/components/schemas/PlayerRef" } }
+
+    TeamsDivisionProjection:
+      type: object
+      required: [tier, name, rating, minSum, maxSum, maxPlacePoints, maxBonusPoints, pairs]
+      properties:
+        tier: { type: integer }
+        name: { type: string }
+        rating: { type: number }
+        minSum: { type: number }
+        maxSum: { type: number }
+        maxPlacePoints: { type: number }
+        maxBonusPoints: { type: number }
+        pairs: { type: array, items: { $ref: "#/components/schemas/TeamsPairProjection" } }
+
+    TeamsProjection:
+      type: object
+      required: [stage, counts, pending, divisions]
+      properties:
+        stage:
+          type: object
+          required: [id, number, pairingDeadline, pairingOpen, pairingClosed]
+          properties: { id: { type: integer }, number: { type: integer }, pairingDeadline: { type: [string, "null"], format: date-time }, pairingOpen: { type: boolean }, pairingClosed: { type: boolean } }
+        counts:
+          type: object
+          required: [players, pairsTotal, pairsConfirmed, unpaired, pendingDeclarations]
+          properties: { players: { type: integer }, pairsTotal: { type: integer }, pairsConfirmed: { type: integer }, unpaired: { type: integer }, pendingDeclarations: { type: integer } }
+        pending: { type: array, items: { $ref: "#/components/schemas/TeamsDeclaration" } }
+        divisions: { type: array, items: { $ref: "#/components/schemas/TeamsDivisionProjection" } }
+
+    TeamsSimulation:
+      allOf:
+        - $ref: "#/components/schemas/TeamsProjection"
+        - type: object
+          required: [player, partner, locked, result, baseline, candidates]
+          properties:
+            player: { $ref: "#/components/schemas/PlayerRef" }
+            partner: { oneOf: [{ $ref: "#/components/schemas/PlayerRef" }, { type: "null" }] }
+            locked: { type: boolean }
+            result:
+              type: object
+              required: [tier, seed, rating, maxPlacePoints, maxBonusPoints, sum, sumBreakdown, gapUp, marginDown, playedTogether]
+              properties:
+                tier: { type: integer }
+                seed: { type: integer }
+                rating: { type: number }
+                maxPlacePoints: { type: number }
+                maxBonusPoints: { type: number }
+                partner: { type: object }
+                sum: { type: number }
+                sumBreakdown: { type: array, items: { type: object, properties: { player: { $ref: "#/components/schemas/PlayerRef" }, points: { type: number } } } }
+                gapUp: { type: [number, "null"] }
+                marginDown: { type: [number, "null"] }
+                playedTogether: { type: array, items: { type: integer } }
+            baseline:
+              type: object
+              required: [tier, seed, sum]
+              properties: { tier: { type: integer }, seed: { type: integer }, partner: { oneOf: [{ $ref: "#/components/schemas/PlayerRef" }, { type: "null" }] }, sum: { type: number } }
+            candidates:
+              type: array
+              items:
+                type: object
+                required: [player, status, allowed, sum, tier, seed, delta, playedTogether]
+                properties:
+                  player: { type: object }
+                  status: { type: string, enum: [free, confirmed, declaredYou, youDeclared] }
+                  pairedWith: { oneOf: [{ $ref: "#/components/schemas/PlayerRef" }, { type: "null" }] }
+                  allowed: { type: boolean }
+                  sum: { type: number }
+                  tier: { type: [integer, "null"] }
+                  seed: { type: [integer, "null"] }
+                  delta: { type: [integer, "null"], description: baseline tier − tier (positive = moves up) }
+                  playedTogether: { type: array, items: { type: integer } }
 
     User:
       type: object
