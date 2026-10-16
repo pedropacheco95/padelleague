@@ -109,3 +109,59 @@ def test_history_played_is_matches_not_jornadas(client):
     assert row["played"] == 21
     group = check(client.get("/api/v2/groups/11"), "/groups/{groupId}")
     assert next(r for r in group["standings"] if r["player"]["id"] == 10)["played"] == 7
+
+
+def _sub_setup():
+    """A member who also played once as a substitute in another group, and an outside sub."""
+    from sqlalchemy import text
+
+    from padel_league.models.v2 import MatchParticipant
+    from padel_league.services.ranking import current_snapshot
+    from padel_league.sql_db import db
+    from padel_league.tests import factories as f
+    from padel_league.tests.api_v2.conftest import persist
+
+    comp = f.competition(name="Subs test")
+    stg = f.stage(comp)
+    rnd = f.round_(stg)
+    me, *others = [f.player() for _ in range(8)]
+    g1, g2 = f.group(stg, tier=1, name="Subs test - 1ª Divisão"), f.group(stg, tier=2, name="Subs test - 2ª Divisão")
+    ents = [f.entry(comp, p) for p in [me, *others]]
+    for i, e in enumerate(ents):
+        f.member(g1 if i < 4 else g2, e)
+    f.match(g1, rnd, home=ents[0:2], away=ents[2:4], sets=[(6, 2)], status="played")  # me: won as a member
+    # me subs for ents[4] in group 2 and loses
+    sub = f.match(g2, rnd, home=ents[5:6], away=ents[6:8], sets=[(1, 6)], status="played")
+    db.session.add(MatchParticipant(match_id=sub.id, side="home", slot=2, role="substitute", player_id=me.id))
+    outsider = f.player()
+    db.session.add(RankingEntry(snapshot_id=current_snapshot().id, player_id=outsider.id, points=99999, position=None))
+    db.session.flush()
+    db.session.execute(text("update players set status = 'external' where id = :id"), {"id": outsider.id})
+    persist()
+    return me.id, sub.id, outsider.id
+
+
+def test_sub_appearances_counted_apart(client):
+    """S0: stats count the player's own seats; sub appearances are subsMatches (v2 also lists them)."""
+    me, sub_match, _ = _sub_setup()
+    body = check(client.get(f"/api/v2/players/{me}"), "/players/{playerId}")
+    st = body["stats"]
+    assert (st["matchesPlayed"], st["matchesWon"], st["matchesLost"], st["subsMatches"]) == (1, 1, 0, 1)
+    assert st["attendance"] == 100.0
+    assert [m["id"] for m in body["substituteMatches"]] == [sub_match]
+    seat = next(p for p in body["substituteMatches"][0]["participants"] if p["player"] and p["player"]["id"] == me)
+    assert seat["role"] == "substitute"
+    v1 = client.get(f"/api/v1/players/{me}").get_json()
+    assert (v1["matchesPlayed"], v1["matchesWon"], v1["matchesLost"], v1["subsMatches"]) == (1, 1, 0, 1)
+    assert [(h["played"], h["won"]) for h in v1["tournamentHistory"]] == [(1, 1)]
+
+
+def test_external_players_hidden_from_lists_and_ranking(client):
+    _, _, outsider = _sub_setup()
+    assert outsider not in {p["id"] for p in check(client.get("/api/v2/players"), "/players")}
+    ranking = check(client.get("/api/v2/rankings/current"), "/rankings/current")
+    assert outsider not in {e["player"]["id"] for e in ranking["entries"]}
+    for path in ("/api/v1/players/all", "/api/v1/players/short/all", "/api/v1/players/ranking"):
+        assert outsider not in {p["id"] for p in client.get(path).get_json()}, path
+    check(client.get(f"/api/v2/players/{outsider}"), "/players/{playerId}")
+    assert client.get(f"/api/v1/players/{outsider}").status_code == 200
