@@ -1,178 +1,178 @@
-sheet_name,resolution,suggested,db_player,confidence,reason,uses,sheet_rows
--,PLACEHOLDER,,,,Not a person (empty cell / 'Sub').,"partner×12, sub×12",182 183 185 187 188 189 190 191 214 215 216 217
-Afonso Brandão,NEW,,,,No player of that name (external substitute).,sub×4,172 223 264 269
-Afonso M,4,,Afonso Martinho (Afonso Martinho),high,token in competition entries (shuffle); token in division roster,"partner×4, replaced×3",35 36 57 86 101 135 149
-Afonso Martinho,4,,Afonso Martinho (Afonso Martinho),high,exact in division roster; exact in edition entries (not this division),"partner×1, replaced×1",201 203
-Afonso Pessanha,NEW,,,,No player of that name (external substitute).,sub×1,111
-Afonso X,63,,Afonso Xavier (Afonso Xavier),high,token in competition entries (shuffle); token in division roster,"partner×1, replaced×7",27 29 47 69 87 94 130 145
-Afonso Xavier,63,,Afonso Xavier (Afonso Xavier),high,exact in all players; exact in competition entries (shuffle),"replaced×1, sub×1",107 209
-Aguiar,NEW,,,,No player of that name (external substitute).,sub×1,168
-Aleluia,NEW,,,,No player of that name (external substitute).,sub×1,253
-Ana Oberlies,NEW,,,,No player of that name (external substitute).,sub×1,230
-Anthony,NEW,,,,No player of that name (external substitute).,sub×1,136
-António Antunes,87,,Antonio A (António Antunes),high,exact in all players; exact in division roster,"partner×4, sub×7",1 50 59 109 114 124 145 198 209 243 254
-António Lello,NEW,,,,No player of that name (external substitute).,"partner×1, sub×1",212 213
-Archer,47,,Joao Archer (Joao Archer),high,token in all players; token in division roster,"partner×1, replaced×4, sub×2",39 55 70 75 86 247 266
-Bello,77,,Bello (João Bello),high,exact in all players; exact in competition entries (shuffle); exact in division roster,"partner×2, replaced×3, sub×3",32 33 34 103 108 122 127 192
-Berna V,AMBIGUOUS,107,Bernardo Vasconcelos (Bernardo Vasconcelos),,Probably 107 Bernardo Vasconcelos (written 'Bernardo V' elsewhere).,"partner×1, sub×1",117 118
-Bernardo C,28,,Bernardo C (Bernardo Castro ),high,exact in division roster,"partner×6, replaced×5",44 46 83 101 111 153 157 164 184 202 218
-Bernardo Gomes,NEW,,,,No player of that name (external substitute).,"partner×1, sub×1",51 52
-Bernardo V,107,,Bernardo Vasconcelos (Bernardo Vasconcelos),high,token in division roster,replaced×1,246
-Bernardo Vasconcelos,107,,Bernardo Vasconcelos (Bernardo Vasconcelos),high,exact in all players; exact in division roster,"partner×2, replaced×2, sub×2",167 176 230 257 265 274
-Borges,NEW,,,,No player of that name (external substitute).,sub×1,222
-Braga,NEW,,,,No player of that name (external substitute).,"partner×1, sub×3",74 75 106 108
-Bucas,40,,Bucas (Carlos Bucas),high,exact in competition entries (shuffle); exact in division roster,"partner×3, replaced×11",2 3 7 49 104 106 119 124 142 172 227 243 252 272
-Cameira,79,,Cameira (Nuno Cameira),high,exact in division roster,"partner×9, replaced×1",5 6 9 64 80 104 120 146 252 273
-Carlo,22,,Carlo (Carlo Parodi),high,exact in division roster,replaced×1,71
-Carlos M,NEW,,,,No player of that name (external substitute).,sub×1,40
-Chico C,83,,Chico Castro (Chico Castro),high,token in all players; token in division roster,"partner×3, replaced×7, sub×2",6 48 52 60 63 68 78 88 117 118 140 141
-Cou,76,,Cou (João Couceiro),high,exact in competition entries (shuffle),replaced×1,137
-Couceiro,76,,Cou (João Couceiro),high,token in division roster,partner×6,2 78 115 161 166 240
-Damásio,34,,Damásio (Luís Damásio),high,exact in competition entries (shuffle); exact in division roster,"partner×3, replaced×4",32 34 70 134 159 222 269
-Didinho,NEW,,,,No player of that name (external substitute).,sub×1,149
-Dinis,32,,Dinis (Dinis Melo),high,exact in division roster,"partner×1, replaced×3",40 42 45 74
-Dinis M,AMBIGUOUS,32,Dinis (Dinis Melo),,"32 Dinis Melo (DB name 'Dinis') or 97 Dinis Matos (DB name 'Dainis'). Both are M; the sheet also writes 'Dinis Matos' in full, which suggests 'Dinis M' is Melo. All 7 substitute rows are guesses (neither is in the division).","replaced×3, sub×7",2 3 52 61 63 78 89 185 247 259
-Dinis Matos,97,,Dainis (Dinis Matos),high,exact in division roster,partner×3,51 253 264
-Diogo Fonseca,NEW,,,,No player of that name (external substitute).,sub×1,60
-Diogo Garrett,102,,Diogo Garrett (Diogo Garrett),high,exact in division roster,"partner×3, replaced×3",178 195 199 254 264 271
-Diogo L,3,,Diogo (Diogo Leão),high,token in competition entries (shuffle); token in division roster,"partner×3, replaced×5",28 30 54 102 110 128 141 189
-Diogo Leão,3,,Diogo (Diogo Leão),high,exact in all players,sub×4,150 156 204 261
-Diogo Malafaya,27,,Malafaya (Diogo Malafaya),high,exact in division roster,partner×1,239
-Diogo MF,AMBIGUOUS,NEW,,,No DB match for 'MF'; 27 Malafaya (Diogo Malafaya) is the closest Diogo M.,sub×1,21
-Diogo R,53,,Diogo Rodrigues (Diogo Rodrigues),high,token in all players; token in division roster,"replaced×3, sub×1",36 37 38 132
-Dudas,13,,Dudas (Dinis Brito e Faro),high,exact in all players; exact in division roster,"partner×4, sub×3",69 74 75 82 219 233 259
-Falcão,84,,Falcão (António Falcão),high,exact in competition entries (shuffle); exact in division roster,"partner×7, replaced×5",4 7 8 65 67 80 115 121 180 205 251 270
-Fezas,52,,Fezas (Luis Fezas),high,exact in competition entries (shuffle); exact in division roster,"partner×4, replaced×7",21 23 31 50 61 68 98 112 171 217 223
-Filipe Afonso,NEW,,,,No player of that name (external substitute).,sub×1,22
-Fipas,96,,Fipas (Fipas),high,exact in competition entries (shuffle); exact in division roster,"partner×3, replaced×5",93 97 123 126 150 156 161 165
-Fonseca,AMBIGUOUS,NEW,,,External. Same person as 'Diogo Fonseca' or 'Pedro Fonseca' (both new)?,sub×1,10
-Francisco Barros,NEW,,,,No player of that name (external substitute).,sub×1,66
-Francisco Duarte,NEW,,,,No player of that name (external substitute).,sub×2,129 142
-Franz,NEW,,,,No player of that name (external substitute).,sub×1,101
-Fred B,51,,Fred Baptista (Frederico Baptista),high,token in division roster,partner×4,15 17 137 156
-Fred Barbosa,111,,FPB (Frederico Barbosa),medium,"111 'FPB' (Frederico Barbosa); token match, not 36 'Barbosa' (Rafael Barbosa).","partner×2, sub×9",68 94 99 100 227 228 236 244 251 263 271
-Fred Batista,51,,Fred Baptista (Frederico Baptista),high,token in division roster,"partner×1, replaced×2",176 234 249
-Fred Beirão,33,,Fred (Frederico Beirão),medium,token in all players,sub×1,258
-Fred Lopes Cardoso,NEW,,,,No player of that name (external substitute).,sub×3,11 107 116
-Fred Menezes,NEW,,,,No player of that name (external substitute).,sub×1,41
-Freddy,54,,Freddy (Freddy Trepa),high,exact in division roster,"partner×1, replaced×1",38 39
-Freddy Trepa,54,,Freddy (Freddy Trepa),high,exact in all players,"partner×1, sub×1",179 200
-Frederico,AMBIGUOUS,,,,"Candidates: 33 Fred (Frederico Beirão), 51 Fred Baptista, 111 FPB (Frederico Barbosa).",sub×1,260
-Freitas,14,,Freitas (Francisco Freitas),high,exact in division roster,"partner×2, replaced×7",24 26 47 77 134 221 240 261 267
-Gonçalo Brandão,NEW,,,,No player of that name (external substitute).,sub×1,171
-Gonçalo P,AMBIGUOUS,NEW,,,"Either the external 'Gonçalo Pereira' (6 rows as substitute, not in DB) or 37 Gonçalo PA (Pacheco de Amorim).",sub×2,95 98
-Gonçalo PA,37,,Gonçalo PA (Gonçalo Pacheco de Amorim),high,exact in competition entries (shuffle); exact in division roster,"partner×1, replaced×3",42 85 135 175
-Gonçalo Pereira,NEW,,,,No player of that name (external substitute).,sub×6,162 194 206 225 250 270
-Gonçalo R,100,,Gonçalo Ramalho (Gonçalo Ramalho),high,token in all players; token in division roster,"partner×3, sub×3",12 13 86 97 114 139
-Gonçalo Ramalho,100,,Gonçalo Ramalho (Gonçalo Ramalho),high,exact in all players; exact in competition entries (shuffle); exact in division roster,"replaced×5, sub×1",109 168 171 181 193 249
-Gonçalo Sousa,NEW,,,,No player of that name (external substitute).,"partner×1, sub×1",212 213
-Guilherme Coelho,NEW,,,,No player of that name (external substitute).,sub×1,174
-Guilherme Novais,NEW,,,,No player of that name (external substitute).,sub×5,133 153 201 220 267
-Guinho,NEW,,,,No player of that name (external substitute).,"partner×2, sub×4",90 91 92 96 130 131
-Henrique LC,88,,Henrique (Henrique LC),high,exact in all players; exact in division roster,"partner×4, replaced×1, sub×1",23 133 151 170 188 248
-Hugo M,59,,Hugo (Hugo Mesquita),high,token in competition entries (shuffle); token in division roster,"partner×5, replaced×6",12 16 58 95 117 129 143 162 206 242 263
-Ipi,NEW,,,,No player of that name (external substitute).,sub×1,35
-Jomi,NEW,,,,No player of that name (external substitute).,sub×3,26 54 97
-José Marques,NEW,,,,No player of that name (external substitute).,sub×1,211
-João Bello,77,,Bello (João Bello),high,exact in division roster,replaced×1,170
-João Guerra,NEW,,,,No player of that name (external substitute).,sub×2,105 161
-João L,86,,João Leite (João Leite),high,token in competition entries (shuffle); token in division roster,replaced×3,90 121 138
-João Leite,86,,João Leite (João Leite),high,exact in all players; exact in division roster,"partner×4, replaced×3, sub×4",14 15 16 17 81 125 177 193 206 226 251
-João Lello,108,,João Lello (João Lello),high,exact in all players; exact in division roster,"partner×1, replaced×2, sub×2",173 195 213 231 257
-João Mariano,NEW,,,,No player of that name (external substitute).,sub×3,81 125 177
-João Mendonça,NEW,,,,No player of that name (external substitute).,sub×11,24 28 121 138 151 154 170 221 234 248 262
-João Menezes,NEW,,,,No player of that name (external substitute).,sub×1,25
-João Nicolau,NEW,,,,No player of that name (external substitute).,sub×1,42
-João Pupo,NEW,,,,No player of that name (external substitute).,sub×3,238 243 273
-João Ribeiro,104,,João Ribeiro (João Ribeiro),high,exact in all players; exact in division roster,"replaced×3, sub×1",146 155 169 173
-JP TT,NEW,,,,No player of that name (external substitute).,"partner×1, sub×2",120 207 208
-Juan,NEW,,,,No player of that name (external substitute).,sub×1,139
-Kiko BF,78,,Kiko SS Faro (Kiko Faro),high,"Kiko SS Faro (Kiko Faro) is the only Kiko in all three division rosters he is replaced in (18ª/19ª/22ª div 5, groups 56/65/76). NOT 25 'Kiko CRBF' (Francisco Brito e Faro), who is in none of them.","partner×6, replaced×6, sub×2",1 4 27 65 66 81 92 109 119 173 207 244 273
-Kiko Domingues,NEW,,,,No player of that name (external substitute).,sub×1,242
-Kiko Silva,NEW,,,,No player of that name (external substitute).,sub×4,229 237 255 265
-Kiko TT,NEW,,,,External. Appears as replaced/partner in 22ª div 5 jornada 1 (rows 208-209) although nobody of that name is in the roster.,"partner×1, replaced×1, sub×3",5 104 207 208
-Kikos,26,,Kikos (Francisco Sottomayor),high,exact in all players; exact in competition entries (shuffle); exact in division roster,"partner×1, replaced×9, sub×1",43 45 72 83 136 151 154 166 176 190 241
-La Serna,99,,La Serna (Gonçalo La Serna),high,exact in all players; exact in competition entries (shuffle); exact in division roster,"partner×6, replaced×7, sub×4",49 64 80 90 91 96 103 110 144 155 179 195 210 231 237 245 255
-Leandro,AMBIGUOUS,NEW,,,External. Same person as 'Leandro Loureiro' (new)?,sub×1,55
-Leandro Loureiro,NEW,,,,No player of that name (external substitute).,sub×1,163
-Lopo Carvalho,30,,Lopo (Lopo Carvalho),high,exact in all players,sub×2,157 203
-Lopo S,64,,Lopo Sottomayor (Lopo Sottomayor),high,token in division roster,partner×6,24 59 87 159 221 241
-Lousan,NEW,,,,No player of that name (external substitute).,sub×1,144
-Luis Cunha,NEW,,,,No player of that name (external substitute).,sub×2,102 202
-Luis F,AMBIGUOUS,62,Luís Folhadela (Luís Folhadela),,"62 Luís Folhadela in 7 rows; in 19ª div 4 (row 56) and 21ª div 4 both Folhadela and 52 Fezas ('Luis Fezas') are in the roster. The sheet writes Fezas as 'Fezas' elsewhere, so Folhadela is likely.","partner×6, replaced×4",14 20 56 89 94 98 116 128 167 181
-Luis Ferreira,1,,Luís Ferreira (Luís Ferreira),high,exact in all players,sub×3,18 56 79
-Luis Folhadela,62,,Luís Folhadela (Luís Folhadela),high,exact in competition entries (shuffle); exact in division roster,replaced×5,48 139 214 223 248
-Luís Folhadela,62,,Luís Folhadela (Luís Folhadela),high,exact in division roster,partner×2,234 262
-Malafaya,27,,Malafaya (Diogo Malafaya),high,exact in competition entries (shuffle); exact in division roster,"partner×4, replaced×7",32 33 37 72 132 147 164 187 218 260 266
-Manel P,NEW,,,,No player of that name (external substitute).,sub×1,67
-Manel Serôdio,103,,Manel Serôdio (Manel Serôdio),high,exact in all players; exact in division roster,"partner×4, replaced×2, sub×4",88 103 119 140 141 178 196 228 236 271
-Marcelo,NEW,,,,No player of that name (external substitute).,sub×1,231
-Martim MS,NEW,,,,No player of that name (external substitute).,"partner×1, sub×1",245 246
-Martinho,61,,Martinho (Martinho Brito),high,exact in division roster,"partner×7, replaced×1",1 5 8 50 63 145 194 225
-Matias,AMBIGUOUS,NEW,,,External. Same person as 'Matias Torre' (new)?,sub×1,128
-Matias Torre,NEW,,,,No player of that name (external substitute).,sub×1,235
-Miguel C,2,,Miguel C. (Miguel Caeiro),medium,Exact DB name 'Miguel C.' (Miguel Caeiro). Note that an external 'Miguel Costa' also subs in the sheet.,"partner×1, sub×2",99 100 115
-Miguel Caeiro,2,,Miguel C. (Miguel Caeiro),high,exact in division roster,"partner×1, replaced×4",209 236 244 253 272
-Miguel Costa,NEW,,,,No player of that name (external substitute).,"partner×1, sub×1",245 246
-Miguel L,91,,Lemos (Miguel Lemos),high,token in competition entries (shuffle); token in division roster,replaced×4,93 122 152 167
-Miguel Lemos,91,,Lemos (Miguel Lemos),high,exact in all players; exact in division roster,"partner×4, replaced×3, sub×5",29 48 65 76 77 87 106 216 222 235 249 262
-Miguel SG,12,,Miguel SG (Miguel Sousa Guedes),high,exact in all players; exact in division roster,"partner×2, replaced×2, sub×1",184 220 232 239 247
-Mário Vasco,NEW,,,,No player of that name (external substitute).,sub×1,257
-Nathan,50,,Nathan (Nathan),high,exact in all players; exact in competition entries (shuffle); exact in division roster,"partner×3, replaced×4, sub×8",36 37 43 44 45 46 72 83 125 136 150 160 191 204 268
-Neto,98,,Neto (António Neto),high,exact in all players; exact in competition entries (shuffle),"replaced×3, sub×4",96 126 140 160 192 218 233
-Nuno,AMBIGUOUS,,,,"Candidates: 46 Nuno Machado, 79 Cameira (Nuno Cameira), 105 Nuno Azevedo.",sub×3,112 180 205
-Nuno Azevedo,105,,Nuno Azevedo (Nuno Azevedo),high,exact in all players; exact in division roster,"partner×4, replaced×1, sub×2",134 147 148 211 237 256 265
-Nuno M,46,,Nuno Machado (Nuno Machado),medium,token in all players,sub×1,57
-Pancho,7,,Pancho (Pedro Pacheco),high,exact in competition entries (shuffle); exact in division roster,"partner×5, replaced×2",82 111 133 149 175 258 266
-Parodi,22,,Carlo (Carlo Parodi),high,token in all players; token in division roster,"replaced×4, sub×1",40 41 46 82 175
-Patel,NEW,,,,No player of that name (external substitute).,sub×1,272
-Pedro Desport,NEW,,,,No player of that name (external substitute).,"partner×1, sub×1",227 228
-Pedro Fonseca,NEW,,,,No player of that name (external substitute).,"partner×1, sub×4",38 147 148 159 166
-Pedro Lopes,NEW,,,,No player of that name (external substitute).,sub×1,256
-Pedro Malafaya,NEW,,,,No player of that name (external substitute).,sub×2,164 239
-Pedro Norton,NEW,,,,No player of that name (external substitute).,sub×1,268
-Peras,10,,Pêras (Francisco Pereira),high,exact in competition entries (shuffle); exact in division roster,"partner×3, replaced×3",25 26 54 57 73 99
-Perneta,18,,Joao perneta (Joao Ferreira ),high,token in competition entries (shuffle); token in division roster,"partner×5, replaced×3",43 71 102 105 132 163 174 186
-Pi Magalhães,45,,Pi Magalhaes (Pedro Magalhaes),high,exact in all players; exact in division roster,"partner×3, replaced×1, sub×7",19 30 47 53 58 70 73 186 219 232 260
-Pêras,10,,Pêras (Francisco Pereira),high,exact in competition entries (shuffle); exact in division roster,replaced×6,84 114 120 123 131 146
-Rafael P,60,,Rafael (Rafael Patronillo),high,token in division roster,replaced×7,10 12 13 14 15 18 19
-Raul Magalhães,NEW,,,,No player of that name (external substitute).,sub×1,135
-Ricas,42,,Ricas (Ricas),high,exact in division roster,"partner×6, replaced×1",19 88 152 168 177 226 263
-Rodas,48,,Rodas (Rodas),high,exact in all players; exact in competition entries (shuffle); exact in division roster,"partner×6, replaced×3, sub×1",10 11 20 56 60 79 108 127 138 275
-Semelhe,16,,Semelhe (Gonçalo Semelhe),high,exact in division roster,"partner×1, replaced×6",153 158 183 202 220 233 258
-Sequeira,NEW,,,,No player of that name (external substitute).,sub×1,127
-Simões,NEW,,,,No player of that name (external substitute).,"partner×1, sub×1",84 85
-Sub,PLACEHOLDER,,,,Not a person (empty cell / 'Sub').,partner×4,21 22 23 29
-Talinho,11,,Talinho (Gonçalo Garrett),high,exact in competition entries (shuffle); exact in division roster,"partner×4, replaced×2",33 34 35 201 204 267
-Teixeira,NEW,,,,No player of that name (external substitute).,sub×2,62 143
-Tiago Santos,NEW,,,,No player of that name (external substitute).,sub×3,93 123 126
-Tio Alvaro VZ,AMBIGUOUS,106,Álvaro Van Zeller (Álvaro Van Zeller),,Same as 'Tio Álvaro VZ' (106 or duplicate 112).,"partner×1, sub×6",6 31 76 77 155 169 196
-Tio Cuca,21,,Cuca (Alfredo Magalhães ),high,"Cuca is in the division roster. The DB has Cuca twice (21 and 110, same full name); 110 has no entries.","partner×4, replaced×5",41 44 105 148 174 184 203 241 261
-Tio cuca,21,,Cuca (Alfredo Magalhães ),high,Same as 'Tio Cuca'.,partner×1,158
-Tio João Toninho,NEW,,,,No player of that name (external substitute).,"partner×1, sub×2",84 85 113
-Tio Luis VZ,NEW,,,,No player of that name (external substitute).,sub×1,181
-Tio Pedro P,80,,Pedro AR Pacheco (Pedro AR Pacheco),high,token in division roster,"partner×6, replaced×5",16 17 18 51 61 79 89 113 162 172 224
-Tio Álvaro VZ,AMBIGUOUS,106,Álvaro Van Zeller (Álvaro Van Zeller),,"Álvaro van Zeller is in the DB twice: 106 'Álvaro Van Zeller' (2 entries) and 112 'Alvaro' (0 entries). Pick one, ideally merge.","partner×3, replaced×2, sub×1",178 197 211 229 255 275
-To Maria,AMBIGUOUS,90,António Maria (António Maria),,"90 'António Maria' is in the roster in 6 rows; 92 'To maria' (full name Antonio Magalhaes, 1 entry) is an exact name match. Two players, or one duplicated?","partner×5, replaced×1, sub×1",49 62 66 92 112 143 252
-Tomás,AMBIGUOUS,,,,"Candidates: 38 Tomás Duarte, 57 Tomás Pacheco.",sub×1,122
-Tomás D,38,,Tomás Duarte (Tomás Duarte),high,token in competition entries (shuffle); token in division roster,"partner×2, replaced×9",22 25 30 53 59 76 113 116 129 142 180
-Tomás Duarte,38,,Tomás Duarte (Tomás Duarte),high,exact in division roster,"partner×2, replaced×1",224 250 270
-Tomás Mesquita,NEW,,,,No player of that name (external substitute).,sub×2,165 193
-Tomás P,57,,Tomás Pacheco (Tomás Pacheco),high,token in competition entries (shuffle); token in division roster,"partner×10, replaced×2",11 13 53 58 69 95 100 107 154 160 165 192
-Tomás Pacheco,57,,Tomás Pacheco (Tomás Pacheco),high,exact in division roster,"partner×1, replaced×2",215 235 269
-Tomás Pinto,NEW,,,,No player of that name (external substitute).,sub×1,39
-Toti,NEW,,,,No player of that name (external substitute).,sub×2,186 232
-Trepa,44,,Trepa (Antonio Trepa),high,exact in division roster,"partner×4, replaced×4",27 28 31 194 205 225 242 250
-Tó Lencastre,58,,Tó Lencastre (António Lencastre),high,exact in all players,sub×2,210 224
-Tó Maria,AMBIGUOUS,92,To maria (Antonio Magalhaes),,Exact name match with 92 'To maria' (Antonio Magalhaes); see 'To Maria' (90 António Maria). Same person?,sub×4,7 8 20 226
-Vasco Marques,NEW,,,,No player of that name (external substitute).,sub×1,71
-Ze Santos,56,,Zé Santos (Zé Santos),high,exact in division roster,partner×1,73
-Zema,31,,Zema (José Maria Almeida Garrett),high,exact in competition entries (shuffle); exact in division roster,"partner×3, replaced×17",3 9 62 64 67 91 118 124 144 179 196 197 198 199 200 212 230 238 256 275
-Zeze,NEW,,,,No player of that name (external substitute).,sub×2,110 274
-Zé Gomes,NEW,,,,No player of that name (external substitute).,sub×1,9
-Zé Luis,NEW,,,,No player of that name (external substitute).,sub×1,158
-Zé Pedro,5,,Zé Pedro (José Pedro Bento),medium,"Exact DB name 'Zé Pedro' (José Pedro Bento); not 109 Zé Pedro Graça, who is written in full elsewhere.",sub×1,254
-Zé Pedro Graça,109,,Zé Pedro Graça (Zé Pedro Graça),high,exact in all players; exact in division roster,"partner×4, replaced×2, sub×6",130 131 152 169 197 198 199 200 210 229 238 274
-Zé Pereira,39,,Zé Pereira (Zé Pereira),high,exact in all players,sub×1,137
-Zé Santos,56,,Zé Santos (Zé Santos),high,exact in division roster,"partner×4, replaced×1",55 157 163 182 268
-Zé Veiga,9,,Zé Veiga (José Veiga),high,exact in all players,sub×3,219 240 259
+name,resolution,player_ids,confidence,evidence,uses,sheet_rows
+-,PLACEHOLDER,,,Not a person (empty cell / 'Sub').,"partner×12, sub×12",182 183 185 187 188 189 190 191 214 215 216 217
+Afonso Brandão,NEW,,,"No player, full name or username matches",sub×4,172 223 264 269
+Afonso M,PLAYER,4,high,token in competition entries (shuffle); token in division roster,"partner×4, replaced×3",35 36 57 86 101 135 149
+Afonso Martinho,PLAYER,4,high,exact in division roster; exact in edition entries (not this division),"partner×1, replaced×1",201 203
+Afonso Pessanha,NEW,,,"No player, full name or username matches",sub×1,111
+Afonso X,PLAYER,63,high,token in competition entries (shuffle); token in division roster,"partner×1, replaced×7",27 29 47 69 87 94 130 145
+Afonso Xavier,PLAYER,63,high,exact in all players; exact in competition entries (shuffle),"replaced×1, sub×1",107 209
+Aguiar,NEW,,,"No player, full name or username matches",sub×1,168
+Aleluia,NEW,,,"No player, full name or username matches",sub×1,253
+Ana Oberlies,NEW,,,"No player, full name or username matches",sub×1,230
+Anthony,NEW,,,"No player, full name or username matches",sub×1,136
+António Antunes,PLAYER,87,high,exact in all players; exact in division roster,"partner×4, sub×7",1 50 59 109 114 124 145 198 209 243 254
+António Lello,NEW,,,"No player, full name or username matches","partner×1, sub×1",212 213
+Archer,PLAYER,47,high,token in all players; token in division roster,"partner×1, replaced×4, sub×2",39 55 70 75 86 247 266
+Bello,PLAYER,77,high,exact in all players; exact in competition entries (shuffle); exact in division roster,"partner×2, replaced×3, sub×3",32 33 34 103 108 122 127 192
+Berna V,PLAYER,107,medium,Tokens 'Bernardo' + initial V; written 'Bernardo V' / 'Bernardo Vasconcelos' elsewhere.,"partner×1, sub×1",117 118
+Bernardo C,PLAYER,28,high,exact in division roster,"partner×6, replaced×5",44 46 83 101 111 153 157 164 184 202 218
+Bernardo Gomes,NEW,,,"No player, full name or username matches","partner×1, sub×1",51 52
+Bernardo V,PLAYER,107,high,token in division roster,replaced×1,246
+Bernardo Vasconcelos,PLAYER,107,high,exact in all players; exact in division roster,"partner×2, replaced×2, sub×2",167 176 230 257 265 274
+Borges,NEW,,,"No player, full name or username matches",sub×1,222
+Braga,NEW,,,"No player, full name or username matches","partner×1, sub×3",74 75 106 108
+Bucas,PLAYER,40,high,exact in competition entries (shuffle); exact in division roster,"partner×3, replaced×11",2 3 7 49 104 106 119 124 142 172 227 243 252 272
+Cameira,PLAYER,79,high,exact in division roster,"partner×9, replaced×1",5 6 9 64 80 104 120 146 252 273
+Carlo,PLAYER,22,high,exact in division roster,replaced×1,71
+Carlos M,NEW,,,"No player, full name or username matches",sub×1,40
+Chico C,PLAYER,83,high,token in all players; token in division roster,"partner×3, replaced×7, sub×2",6 48 52 60 63 68 78 88 117 118 140 141
+Cou,PLAYER,76,high,exact in competition entries (shuffle),replaced×1,137
+Couceiro,PLAYER,76,high,token in division roster,partner×6,2 78 115 161 166 240
+Damásio,PLAYER,34,high,exact in competition entries (shuffle); exact in division roster,"partner×3, replaced×4",32 34 70 134 159 222 269
+Didinho,NEW,,,"No player, full name or username matches",sub×1,149
+Dinis,PLAYER,32,high,exact in division roster,"partner×1, replaced×3",40 42 45 74
+Dinis M,BY_ROLE,replaced=32; sub=97,medium,"As replaced (21ª/22ª div 1, rows 185/247/259) only 32 Dinis Melo is in the roster. As substitute (18ª/19ª div 4-5) it is 97 Dinis Matos (username 'dinism'; external until the 21ª): rows 51/52 pair 'Dinis Matos' and 'Dinis M' with Bernardo Gomes on the same side, and that both-subs side scored 0 in the DB, as both rows say.","replaced×3, sub×7",2 3 52 61 63 78 89 185 247 259
+Dinis Matos,PLAYER,97,high,exact in division roster,partner×3,51 253 264
+Diogo Fonseca,NEW,,,"No player, full name or username matches",sub×1,60
+Diogo Garrett,PLAYER,102,high,exact in division roster,"partner×3, replaced×3",178 195 199 254 264 271
+Diogo L,PLAYER,3,high,token in competition entries (shuffle); token in division roster,"partner×3, replaced×5",28 30 54 102 110 128 141 189
+Diogo Leão,PLAYER,3,high,exact in all players,sub×4,150 156 204 261
+Diogo Malafaya,PLAYER,27,high,exact in division roster,partner×1,239
+Diogo MF,NEW,,,"No player, full name or username fits 'MF' (closest: 27 Diogo Malafaya).",sub×1,21
+Diogo R,PLAYER,53,high,token in all players; token in division roster,"replaced×3, sub×1",36 37 38 132
+Dudas,PLAYER,13,high,exact in all players; exact in division roster,"partner×4, sub×3",69 74 75 82 219 233 259
+Falcão,PLAYER,84,high,exact in competition entries (shuffle); exact in division roster,"partner×7, replaced×5",4 7 8 65 67 80 115 121 180 205 251 270
+Fezas,PLAYER,52,high,exact in competition entries (shuffle); exact in division roster,"partner×4, replaced×7",21 23 31 50 61 68 98 112 171 217 223
+Filipe Afonso,NEW,,,"No player, full name or username matches",sub×1,22
+Fipas,PLAYER,96,high,exact in competition entries (shuffle); exact in division roster,"partner×3, replaced×5",93 97 123 126 150 156 161 165
+Fonseca,AMBIGUOUS,NEW,,"External. The same new person as 'Diogo Fonseca' or 'Pedro Fonseca', or a third?",sub×1,10
+Francisco Barros,NEW,,,"No player, full name or username matches",sub×1,66
+Francisco Duarte,NEW,,,"No player, full name or username matches",sub×2,129 142
+Franz,NEW,,,"No player, full name or username matches",sub×1,101
+Fred B,PLAYER,51,high,token in division roster,partner×4,15 17 137 156
+Fred Barbosa,PLAYER,111,medium,"111 FPB (Frederico Barbosa, username FredericoBarbosa, 0 entries).","partner×2, sub×9",68 94 99 100 227 228 236 244 251 263 271
+Fred Batista,PLAYER,51,high,token in division roster,"partner×1, replaced×2",176 234 249
+Fred Beirão,PLAYER,33,medium,token in all players,sub×1,258
+Fred Lopes Cardoso,NEW,,,"No player, full name or username matches",sub×3,11 107 116
+Fred Menezes,NEW,,,"No player, full name or username matches",sub×1,41
+Freddy,PLAYER,54,high,exact in division roster,"partner×1, replaced×1",38 39
+Freddy Trepa,PLAYER,54,high,exact in all players,"partner×1, sub×1",179 200
+Frederico,AMBIGUOUS,33|51|54|111,,"Substitute only (1 row, 22ª div 1 J6). 33 Fred Beirão, 51 Fred Baptista, 54 Freddy Trepa, 111 Frederico Barbosa.",sub×1,260
+Freitas,PLAYER,14,high,exact in division roster,"partner×2, replaced×7",24 26 47 77 134 221 240 261 267
+Gonçalo Brandão,NEW,,,"No player, full name or username matches",sub×1,171
+Gonçalo P,AMBIGUOUS,37|NEW,,"Substitute only (2 rows, 20ª). 37 Gonçalo PA (Pacheco de Amorim) or the external 'Gonçalo Pereira' (6 rows).",sub×2,95 98
+Gonçalo PA,PLAYER,37,high,exact in competition entries (shuffle); exact in division roster,"partner×1, replaced×3",42 85 135 175
+Gonçalo Pereira,NEW,,,"No player, full name or username matches",sub×6,162 194 206 225 250 270
+Gonçalo R,PLAYER,100,high,token in all players; token in division roster,"partner×3, sub×3",12 13 86 97 114 139
+Gonçalo Ramalho,PLAYER,100,high,exact in all players; exact in competition entries (shuffle); exact in division roster,"replaced×5, sub×1",109 168 171 181 193 249
+Gonçalo Sousa,NEW,,,"No player, full name or username matches","partner×1, sub×1",212 213
+Guilherme Coelho,NEW,,,"No player, full name or username matches",sub×1,174
+Guilherme Novais,NEW,,,"No player, full name or username matches",sub×5,133 153 201 220 267
+Guinho,NEW,,,"No player, full name or username matches","partner×2, sub×4",90 91 92 96 130 131
+Henrique LC,PLAYER,88,high,exact in all players; exact in division roster,"partner×4, replaced×1, sub×1",23 133 151 170 188 248
+Hugo M,PLAYER,59,high,token in competition entries (shuffle); token in division roster,"partner×5, replaced×6",12 16 58 95 117 129 143 162 206 242 263
+Ipi,NEW,,,"No player, full name or username matches",sub×1,35
+Jomi,NEW,,,"No player, full name or username matches",sub×3,26 54 97
+José Marques,NEW,,,"No player, full name or username matches",sub×1,211
+João Bello,PLAYER,77,high,exact in division roster,replaced×1,170
+João Guerra,NEW,,,"No player, full name or username matches",sub×2,105 161
+João L,PLAYER,86,high,token in competition entries (shuffle); token in division roster,replaced×3,90 121 138
+João Leite,PLAYER,86,high,exact in all players; exact in division roster,"partner×4, replaced×3, sub×4",14 15 16 17 81 125 177 193 206 226 251
+João Lello,PLAYER,108,high,exact in all players; exact in division roster,"partner×1, replaced×2, sub×2",173 195 213 231 257
+João Mariano,NEW,,,"No player, full name or username matches",sub×3,81 125 177
+João Mendonça,NEW,,,"No player, full name or username matches",sub×11,24 28 121 138 151 154 170 221 234 248 262
+João Menezes,NEW,,,"No player, full name or username matches",sub×1,25
+João Nicolau,NEW,,,"No player, full name or username matches",sub×1,42
+João Pupo,NEW,,,"No player, full name or username matches",sub×3,238 243 273
+João Ribeiro,PLAYER,104,high,exact in all players; exact in division roster,"replaced×3, sub×1",146 155 169 173
+JP TT,NEW,,,"No player, full name or username matches","partner×1, sub×2",120 207 208
+Juan,NEW,,,"No player, full name or username matches",sub×1,139
+Kiko BF,PLAYER,78,high,"The only Kiko in all three rosters he is replaced in (18ª/19ª/22ª div 5). Username 'kikobf' belongs to 25 Kiko CRBF (Francisco Brito e Faro, last entry in the 9ª); see duplicates.csv 25/78.","partner×6, replaced×6, sub×2",1 4 27 65 66 81 92 109 119 173 207 244 273
+Kiko Domingues,NEW,,,"No player, full name or username matches; rejected: 78 Kiko SS Faro (Kiko Faro; user Kiko) (username 'Kiko' prefix); 95 kiko (Francisco Faro; user Kiko) (username 'Kiko' prefix)",sub×1,242
+Kiko Silva,NEW,,,"No player, full name or username matches; rejected: 78 Kiko SS Faro (Kiko Faro; user Kiko) (username 'Kiko' prefix); 95 kiko (Francisco Faro; user Kiko) (username 'Kiko' prefix)",sub×4,229 237 255 265
+Kiko TT,NEW,,,"External substitute. Row 208 lists him as 'replaced', but the DB side with both seats empty in 22ª div 5 J1 scored 3, as the sheet says: Kiko TT + JP TT subbed together for 78 and 102.","partner×1, replaced×1, sub×3",5 104 207 208
+Kikos,PLAYER,26,high,exact in all players; exact in competition entries (shuffle); exact in division roster,"partner×1, replaced×9, sub×1",43 45 72 83 136 151 154 166 176 190 241
+La Serna,PLAYER,99,high,exact in all players; exact in competition entries (shuffle); exact in division roster,"partner×6, replaced×7, sub×4",49 64 80 90 91 96 103 110 144 155 179 195 210 231 237 245 255
+Leandro,AMBIGUOUS,NEW,,External. The same new person as 'Leandro Loureiro'?,sub×1,55
+Leandro Loureiro,NEW,,,"No player, full name or username matches",sub×1,163
+Lopo Carvalho,PLAYER,30,high,exact in all players,sub×2,157 203
+Lopo S,PLAYER,64,high,token in division roster,partner×6,24 59 87 159 221 241
+Lousan,NEW,,,"No player, full name or username matches",sub×1,144
+Luis Cunha,NEW,,,"No player, full name or username matches",sub×2,102 202
+Luis F,PLAYER,62,high,"Username 'luisf' = 62 Luís Folhadela; in the roster in 7 rows. The one ambiguous jornada (19ª div 4 J3, row 56) has a separate row 50 for Fezas, and the partner's points (Rodas 6) match.","partner×6, replaced×4",14 20 56 89 94 98 116 128 167 181
+Luis Ferreira,PLAYER,1,high,exact in all players,sub×3,18 56 79
+Luis Folhadela,PLAYER,62,high,exact in competition entries (shuffle); exact in division roster,replaced×5,48 139 214 223 248
+Luís Folhadela,PLAYER,62,high,exact in division roster,partner×2,234 262
+Malafaya,PLAYER,27,high,exact in competition entries (shuffle); exact in division roster,"partner×4, replaced×7",32 33 37 72 132 147 164 187 218 260 266
+Manel P,NEW,,,"No player, full name or username matches",sub×1,67
+Manel Serôdio,PLAYER,103,high,exact in all players; exact in division roster,"partner×4, replaced×2, sub×4",88 103 119 140 141 178 196 228 236 271
+Marcelo,NEW,,,"No player, full name or username matches",sub×1,231
+Martim MS,NEW,,,"No player, full name or username matches","partner×1, sub×1",245 246
+Martinho,PLAYER,61,high,exact in division roster,"partner×7, replaced×1",1 5 8 50 63 145 194 225
+Matias,AMBIGUOUS,NEW,,External. The same new person as 'Matias Torre'?,sub×1,128
+Matias Torre,NEW,,,"No player, full name or username matches",sub×1,235
+Miguel C,PLAYER,2,medium,Exact DB name 'Miguel C.' (Miguel Caeiro); an external 'Miguel Costa' also subs.,"partner×1, sub×2",99 100 115
+Miguel Caeiro,PLAYER,2,high,exact in division roster,"partner×1, replaced×4",209 236 244 253 272
+Miguel Costa,NEW,,,"No player, full name or username matches","partner×1, sub×1",245 246
+Miguel L,PLAYER,91,high,token in competition entries (shuffle); token in division roster,replaced×4,93 122 152 167
+Miguel Lemos,PLAYER,91,high,exact in all players; exact in division roster,"partner×4, replaced×3, sub×5",29 48 65 76 77 87 106 216 222 235 249 262
+Miguel SG,PLAYER,12,high,exact in all players; exact in division roster,"partner×2, replaced×2, sub×1",184 220 232 239 247
+Mário Vasco,NEW,,,"No player, full name or username matches",sub×1,257
+Nathan,PLAYER,50,high,exact in all players; exact in competition entries (shuffle); exact in division roster,"partner×3, replaced×4, sub×8",36 37 43 44 45 46 72 83 125 136 150 160 191 204 268
+Neto,PLAYER,98,high,exact in all players; exact in competition entries (shuffle),"replaced×3, sub×4",96 126 140 160 192 218 233
+Nuno,AMBIGUOUS,46|79|105,,"Substitute only (3 rows: 20ª div 4 J6, 21ª div 4 J6, 22ª div 4 J1). 46 Nuno Machado, 79 Cameira (Nuno Cameira), 105 Nuno Azevedo.",sub×3,112 180 205
+Nuno Azevedo,PLAYER,105,high,exact in all players; exact in division roster,"partner×4, replaced×1, sub×2",134 147 148 211 237 256 265
+Nuno M,PLAYER,46,medium,token in all players,sub×1,57
+Pancho,PLAYER,7,high,exact in competition entries (shuffle); exact in division roster,"partner×5, replaced×2",82 111 133 149 175 258 266
+Parodi,PLAYER,22,high,token in all players; token in division roster,"replaced×4, sub×1",40 41 46 82 175
+Patel,NEW,,,"No player, full name or username matches",sub×1,272
+Pedro Desport,NEW,,,"No player, full name or username matches","partner×1, sub×1",227 228
+Pedro Fonseca,NEW,,,"No player, full name or username matches","partner×1, sub×4",38 147 148 159 166
+Pedro Lopes,NEW,,,"No player, full name or username matches",sub×1,256
+Pedro Malafaya,NEW,,,"No player, full name or username matches",sub×2,164 239
+Pedro Norton,NEW,,,"No player, full name or username matches",sub×1,268
+Peras,PLAYER,10,high,exact in competition entries (shuffle); exact in division roster,"partner×3, replaced×3",25 26 54 57 73 99
+Perneta,PLAYER,18,high,token in competition entries (shuffle); token in division roster,"partner×5, replaced×3",43 71 102 105 132 163 174 186
+Pi Magalhães,PLAYER,45,high,exact in all players; exact in division roster,"partner×3, replaced×1, sub×7",19 30 47 53 58 70 73 186 219 232 260
+Pêras,PLAYER,10,high,exact in competition entries (shuffle); exact in division roster,replaced×6,84 114 120 123 131 146
+Rafael P,PLAYER,60,high,token in division roster,replaced×7,10 12 13 14 15 18 19
+Raul Magalhães,NEW,,,"No player, full name or username matches",sub×1,135
+Ricas,PLAYER,42,high,exact in division roster,"partner×6, replaced×1",19 88 152 168 177 226 263
+Rodas,PLAYER,48,high,exact in all players; exact in competition entries (shuffle); exact in division roster,"partner×6, replaced×3, sub×1",10 11 20 56 60 79 108 127 138 275
+Semelhe,PLAYER,16,high,exact in division roster,"partner×1, replaced×6",153 158 183 202 220 233 258
+Sequeira,NEW,,,"No player, full name or username matches",sub×1,127
+Simões,NEW,,,"No player, full name or username matches","partner×1, sub×1",84 85
+Sub,PLACEHOLDER,,,Not a person (empty cell / 'Sub').,partner×4,21 22 23 29
+Talinho,PLAYER,11,high,exact in competition entries (shuffle); exact in division roster,"partner×4, replaced×2",33 34 35 201 204 267
+Teixeira,NEW,,,"No player, full name or username matches",sub×2,62 143
+Tiago Santos,NEW,,,"No player, full name or username matches",sub×3,93 123 126
+Tio Alvaro VZ,PLAYER,106,medium,Same as 'Tio Álvaro VZ'.,"partner×1, sub×6",6 31 76 77 155 169 196
+Tio Cuca,PLAYER,21,high,In the division roster; 110 is a duplicate with the same full name and 0 entries.,"partner×4, replaced×5",41 44 105 148 174 184 203 241 261
+Tio cuca,PLAYER,21,high,Same as 'Tio Cuca'.,partner×1,158
+Tio João Toninho,NEW,,,"No player, full name or username matches","partner×1, sub×2",84 85 113
+Tio Luis VZ,NEW,,,"No player, full name or username matches",sub×1,181
+Tio Pedro P,PLAYER,80,high,token in division roster,"partner×6, replaced×5",16 17 18 51 61 79 89 113 162 172 224
+Tio Álvaro VZ,PLAYER,106,medium,"Álvaro van Zeller: 106 (username alvarovanzeller, 2 entries) or 112 'Alvaro' (username alvarotigues, 0 entries); see duplicates.csv.","partner×3, replaced×2, sub×1",178 197 211 229 255 275
+To Maria,PLAYER,90,high,90 António Maria (username 'tomaria') is in the roster in all 6 replaced/partner rows. 92 'To maria' is an exact name match but may be the same person (duplicates.csv).,"partner×5, replaced×1, sub×1",49 62 66 92 112 143 252
+Tomás,AMBIGUOUS,38|57,,"Substitute only (1 row, 20ª div 4 J7). 38 Tomás Duarte or 57 Tomás Pacheco.",sub×1,122
+Tomás D,PLAYER,38,high,token in competition entries (shuffle); token in division roster,"partner×2, replaced×9",22 25 30 53 59 76 113 116 129 142 180
+Tomás Duarte,PLAYER,38,high,exact in division roster,"partner×2, replaced×1",224 250 270
+Tomás Mesquita,NEW,,,"No player, full name or username matches",sub×2,165 193
+Tomás P,PLAYER,57,high,token in competition entries (shuffle); token in division roster,"partner×10, replaced×2",11 13 53 58 69 95 100 107 154 160 165 192
+Tomás Pacheco,PLAYER,57,high,exact in division roster,"partner×1, replaced×2",215 235 269
+Tomás Pinto,NEW,,,"No player, full name or username matches; rejected: 57 Tomás Pacheco (Tomás Pacheco; user tomasp) (username 'tomasp' prefix)",sub×1,39
+Toti,NEW,,,"No player, full name or username matches",sub×2,186 232
+Trepa,PLAYER,44,high,exact in division roster,"partner×4, replaced×4",27 28 31 194 205 225 242 250
+Tó Lencastre,PLAYER,58,high,exact in all players,sub×2,210 224
+Tó Maria,AMBIGUOUS,90|92,,"Substitute only (4 rows; results cannot identify a substitute). Exact name match with 92 'To maria' (Antonio Magalhaes, only entry in the 21ª); 90's username is 'tomaria'. Settled if 90 and 92 are one person.",sub×4,7 8 20 226
+Vasco Marques,NEW,,,"No player, full name or username matches",sub×1,71
+Ze Santos,PLAYER,56,high,exact in division roster,partner×1,73
+Zema,PLAYER,31,high,exact in competition entries (shuffle); exact in division roster,"partner×3, replaced×17",3 9 62 64 67 91 118 124 144 179 196 197 198 199 200 212 230 238 256 275
+Zeze,NEW,,,"No player, full name or username matches",sub×2,110 274
+Zé Gomes,NEW,,,"No player, full name or username matches",sub×1,9
+Zé Luis,NEW,,,"No player, full name or username matches",sub×1,158
+Zé Pedro,PLAYER,5,medium,Exact DB name 'Zé Pedro' (José Pedro Bento); 109 Zé Pedro Graça is written in full elsewhere.,sub×1,254
+Zé Pedro Graça,PLAYER,109,high,exact in all players; exact in division roster,"partner×4, replaced×2, sub×6",130 131 152 169 197 198 199 200 210 229 238 274
+Zé Pereira,PLAYER,39,high,exact in all players,sub×1,137
+Zé Santos,PLAYER,56,high,exact in division roster,"partner×4, replaced×1",55 157 163 182 268
+Zé Veiga,PLAYER,9,high,exact in all players,sub×3,219 240 259

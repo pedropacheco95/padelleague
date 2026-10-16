@@ -1,0 +1,13 @@
+player_a,player_b,verdict,evidence
+21,110,likely duplicate,Same name 'Cuca' and full name Alfredo Magalhães; users cucamagalhaes / 'Cuca Magalhaes'; 110 has 0 entries.
+106,112,possible duplicate,"Same full name Álvaro van Zeller; 112 'Alvaro' has 0 entries but username 'alvarotigues', which may be a different Álvaro."
+78,95,likely duplicate,Kiko SS Faro (Kiko Faro) / kiko (Francisco Faro); both usernames 'Kiko'; 95 has 0 entries.
+25,78,possible duplicate,"Kiko CRBF (Francisco Brito e Faro, username kikobf, comps up to the 9ª) / Kiko SS Faro (from the 17ª on); never in the same competition; the sheet calls 78 'Kiko BF'."
+90,92,possible duplicate,António Maria (username tomaria; 19ª and the Shuffle) / 'To maria' (Antonio Magalhaes; 21ª only); never in the same competition; the sheet's 'To Maria' is 90 by roster.
+33,51,distinct,Fred Beirão / Fred Baptista: both played the 14ª–17ª.
+51,111,distinct,Frederico Baptista / Frederico Barbosa: different surnames; 111 has 0 entries.
+46,79,distinct,"Nuno Machado (12ª–16ª) / Nuno Cameira (17ª on): never in the same competition, but different surnames."
+79,105,distinct,Nuno Cameira / Nuno Azevedo: both played the 22ª.
+38,57,distinct,Tomás Duarte / Tomás Pacheco: both played the 16ª–22ª.
+32,97,distinct,Dinis Melo / Dinis Matos: both played the 21ª and 22ª.
+77,108,distinct,"João Bello (21ª, Shuffle) / João Lello (22ª, Teams): never in the same competition, but different surnames."
