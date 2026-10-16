@@ -101,7 +101,7 @@ def test_simulate(client, make_user):
     assert base["partner"] is None and base["locked"] is False
     assert base["baseline"]["partner"]["id"] == ids[1] and base["baseline"]["tier"] == 1
     assert base["result"]["tier"] == base["baseline"]["tier"] and base["result"]["partner"]["id"] == ids[1]
-    assert len(base["candidates"]) == 47 and all(c["allowed"] for c in base["candidates"])
+    assert len(base["candidates"]) == 47 and all(c["allowed"] and c["reason"] is None for c in base["candidates"])
 
     body = check(client.get(f"/api/v2/competitions/{TEAMS}/teams/simulate?player={me}&partner={partner}"), SIMULATE)
     r = body["result"]
@@ -134,6 +134,7 @@ def test_simulate_locked_when_paired(client):
     persist()
     body = check(client.get(f"/api/v2/competitions/{TEAMS}/teams/simulate?player={ids[0]}"), SIMULATE)
     assert body["locked"] and not any(c["allowed"] for c in body["candidates"])
+    assert all(c["reason"] for c in body["candidates"])
     assert body["baseline"]["partner"]["id"] == ids[1]
     row = next(c for c in body["candidates"] if c["player"]["id"] == ids[1])
     assert row["status"] == "confirmed" and row["pairedWith"]["id"] == ids[0]

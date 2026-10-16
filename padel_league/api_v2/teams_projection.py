@@ -231,6 +231,7 @@ def simulate(competition_id):
                 "status": "confirmed" if paired_with is not None else STATUS[opt.status],
                 "pairedWith": board.ref(paired_with) if paired_with is not None else None,
                 "allowed": allowed,
+                "reason": None if allowed else opt.reason,  # S1's Portuguese "why not"
                 "sum": opt.pair_points if opt.pair_points is not None else sim.player_points + opt.points,
                 "tier": opt.tier if allowed else None,
                 "seed": opt.seed if allowed else None,
