@@ -14,6 +14,7 @@ Callers speak in player ids; entries are an internal detail.
 """
 
 from collections import Counter
+from dataclasses import dataclass
 from datetime import datetime
 
 from padel_league.models import Player
@@ -237,19 +238,48 @@ def unpair(stage, pair_id):
     db.session.commit()
 
 
-def _mutual_pairs(stage, paired, history):
-    """Mutual choices not yet paired (two simultaneous requests can both miss
-    forming the pair), as [(a, b)] in creation order. No writes."""
-    by_entry = _player_of_entry(stage)
+@dataclass
+class PairingState:
+    """What the pair planning reads, loaded once (the simulator plans many scenarios)."""
+
+    roster: set
+    paired_with: dict  # player_id -> partner in a formed pair of this stage
+    pair_ids: dict  # player_id -> formed pair id
+    choice: dict  # player_id -> declared partner (both on the roster)
+    history: Counter  # times together in the other stages
+    players: dict  # player_id -> Player (roster)
+
+
+def pairing_state(stage):
+    entries = _entries(stage)
+    by_entry = {e.id: pid for pid, e in entries.items()}
+    paired_with, pair_ids = {}, {}
+    for pair in stage_pairs(stage):
+        a, b = pair_players(stage, pair)
+        paired_with[a], paired_with[b] = b, a
+        pair_ids[a] = pair_ids[b] = pair.id
     choice = {
         by_entry[r.from_entry_id]: by_entry[r.to_entry_id]
         for r in PartnerRequest.query.filter_by(stage_id=stage.id)
         if r.from_entry_id in by_entry and r.to_entry_id in by_entry
     }
+    return PairingState(
+        roster=set(entries),
+        paired_with=paired_with,
+        pair_ids=pair_ids,
+        choice=choice,
+        history=times_together(stage),
+        players={e.player_id: e.player for e in entries.values()},
+    )
+
+
+def _mutual_pairs(state, paired):
+    """Mutual choices not yet paired (two simultaneous requests can both miss
+    forming the pair), as [(a, b)] in creation order."""
     paired = set(paired)
     out = []
-    for a, b in sorted(choice.items()):
-        if a < b and choice.get(b) == a and not {a, b} & paired and allowed(a, b, history):
+    for a, b in sorted(state.choice.items()):
+        if a < b and state.choice.get(b) == a and not {a, b} & paired and allowed(a, b, state.history):
             out.append((a, b))
             paired |= {a, b}
     return out
@@ -263,41 +293,40 @@ def live_positions(stage):
         raise PairingError(exc.message) from exc
 
 
-def check_new_pair(stage, a, b, history=None):
+def check_new_pair(stage, a, b, state=None):
     """The checks of a new pair (declare / set_pair): both on the roster, unpaired, not a 4th time."""
-    roster = roster_ids(stage)
-    if a == b or a not in roster or b not in roster:
+    state = state or pairing_state(stage)
+    if a == b or a not in state.roster or b not in state.roster:
         raise PairingError("Escolhe dois jogadores diferentes inscritos na Teams.")
-    for pid in (a, b):
-        if pair_of(stage, pid):
-            raise PairingError("Um dos jogadores já tem parelha formada.")
-    if not allowed(a, b, times_together(stage) if history is None else history):
+    if a in state.paired_with or b in state.paired_with:
+        raise PairingError("Um dos jogadores já tem parelha formada.")
+    if not allowed(a, b, state.history):
         raise PairingError("Já jogaram juntos 3 mini-torneios; não podem fazer o 4.º juntos.")
 
 
-def plan_close(stage, positions, extra_pair=None):
+def plan_close(stage, positions, extra_pair=None, state=None):
     """The pairs close() would add, [(a, b, formed_by)] in creation order. No writes.
 
     `extra_pair` (a, b) is treated as if it had just been declared mutually
     (it is formed first, and replaces any other choice of a or b).
     """
-    history = times_together(stage)
-    paired = {pid for p in stage_pairs(stage) for pid in pair_players(stage, p)}
+    state = state or pairing_state(stage)
+    paired = set(state.paired_with)
     planned = []
     if extra_pair is not None:
         a, b = extra_pair
-        check_new_pair(stage, a, b, history)
+        check_new_pair(stage, a, b, state)
         planned.append((a, b, "mutual"))
         paired |= {a, b}
-    for a, b in _mutual_pairs(stage, paired, history):
+    for a, b in _mutual_pairs(state, paired):
         planned.append((a, b, "mutual"))
         paired |= {a, b}
-    left = Player.query.filter(Player.id.in_(roster_ids(stage) - paired)).all()
+    left = [state.players[pid] for pid in state.roster - paired]
     if not positions:
         order = [p.id for p in sorted(left, key=ranking_key)]
     else:
         order = [p.id for p in sorted(left, key=lambda p: (positions.get(p.id) or 10**9, p.id))]
-    planned += [(a, b, "ranking") for a, b in auto_pairs(order, history)]
+    planned += [(a, b, "ranking") for a, b in auto_pairs(order, state.history)]
     return planned
 
 
