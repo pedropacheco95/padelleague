@@ -13,3 +13,4 @@ row,action,value,reason
 265,skip,,"S0 decision: Bernardo Vasconcelos played; the jornada's absences are covered by rows 255-257"
 42,skip,,"S0 decision: 18ª div 1 J2 has three free sides and the sheet's points match none beside the partner; placement would be a guess"
 43,skip,,"As row 42"
+266,sheet_error,,"sheet error confirmed by Pedro 2026-10-16: Pancho + Archer lost all 3 matches of 22ª div 1 J7 (DB 0 points, sheet 3)"

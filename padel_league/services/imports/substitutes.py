@@ -157,6 +157,7 @@ class Planned:
     absence: Absence = None
     pair: _Pair = None
     two_subs: bool = False
+    points_note: str = None  # decision "sheet_error": the DB result stands, the sheet's points were wrong
     db_points: int = None
 
 
@@ -196,6 +197,8 @@ def plan(rows, name_map, decisions):
             continue
         item = Planned(row=i, sheet=r, action="note" if action == "note" else "seat", sub=sub,
                        group_id=group_id, round_id=round_id, entry=entry)
+        if action == "sheet_error":
+            item.points_note = d["reason"]
         if item.action == "note":
             planned.append(item)
             continue
@@ -297,11 +300,12 @@ def run(rows, name_map, decisions, actor_user_id=None, dry_run=True):
                 action="substitute_imported",
                 after={"sheet_row": it.row, "substitute_player_id": sub_id, "match_participant_ids": participant_ids,
                        "sheet_points": it.sheet["points"], "db_points": it.db_points,
-                       "points_mismatch": it.db_points != it.sheet["points"]},
+                       **({"points_note": it.points_note} if it.points_note
+                          else {"points_mismatch": it.db_points != it.sheet["points"]})},
             ))
             written += len(participant_ids)
             imported += 1
-            if it.db_points != it.sheet["points"]:
+            if it.db_points != it.sheet["points"] and not it.points_note:
                 mismatches.append(it.row)
         db.session.flush()
         db.session.expire_all()

@@ -52,7 +52,8 @@ flask v2 bootstrap-ranking   # again: without it the stored ranking and players.
 ```
 
 Every command is one transaction; `--dry-run` rolls back. Rows imported with a
-points mismatch carry `points_mismatch: true` in their audit row.
+points mismatch carry `points_mismatch: true` in their audit row; a `sheet_error` decision
+replaces that with `points_note` (row 266: sheet error confirmed by Pedro, DB result stands).
 
 ## Before running on production
 

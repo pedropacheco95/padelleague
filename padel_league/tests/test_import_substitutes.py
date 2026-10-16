@@ -156,3 +156,12 @@ def test_swap_roster_player_refuses_a_drawn_entry(pg):
     grp, players = _group()
     with pytest.raises(RosterError, match="group_members"):
         swap_roster_player(grp.stage.competition_id, players[0].id, f.player().id, dry_run=True)
+
+
+def test_sheet_error_decision_replaces_the_mismatch_flag(pg):
+    grp, _, _, row, names = _setup("Sub Sheet Error")
+    row["points"] = 3  # the DB side scored 0 (no results)
+    subs.run([row], names, {1: {"action": "sheet_error", "value": "", "reason": "sheet error confirmed"}},
+             dry_run=False)
+    event = AuditEvent.query.filter_by(action="substitute_imported").order_by(AuditEvent.id.desc()).first()
+    assert event.after["points_note"] == "sheet error confirmed" and "points_mismatch" not in event.after
