@@ -22,18 +22,24 @@ actually played. Inputs, all reviewed: the sheet as JSON, `subs_name_map.csv`,
 
 ## Order
 
+Prerequisites: the post-launch migrations `c6a1d9e4b2f7` (ranking_entries.source) and
+`d7b2e5f8a3c6` (subs_window = ranking) are applied, and the code includes S1's 44a9e21
+(`bootstrap-ranking` rewrites the snapshot when it differs from `compute()`; backend
+integration 9d651cb).
+
 ```bash
 # 1. Merges, each reviewed (dry run first). Ranking rows of the duplicate are dropped.
 flask merge-players --from 110 --into 21  --dry-run   # Cuca
 flask merge-players --from 92  --into 90  --dry-run   # António Maria ("To maria")
 flask merge-players --from 112 --into 106 --dry-run   # Álvaro van Zeller
 flask merge-players --from 95  --into 25  --dry-run   # Kiko CRBF
-#    then without --dry-run; then recompute the ranking (92's 21ª now counts for 90).
+#    then without --dry-run. The ranking is rewritten after step 2 (92's 21ª now counts for 90).
 
 # 2. The import.
 flask import-substitutes subs.json docs/v2/subs_name_map.csv \
   --decisions docs/v2/subs_row_decisions.csv --dry-run
-#    then without --dry-run.
+#    then without --dry-run, then:
+flask v2 bootstrap-ranking   # rewrites the stored ranking + players.* mirror if it differs
 ```
 
 ```bash
@@ -41,7 +47,8 @@ flask import-substitutes subs.json docs/v2/subs_name_map.csv \
 flask swap-roster-player --competition 27 --out 91 --in-name "João Mendonça" --dry-run
 #    then without --dry-run. Removes 91's entry and partner requests (v2 and teams_*), adds his entry,
 #    sets his status to member (the schema has no 'active') and keeps/creates his login.
-#    Refuses if 91 is already in a group, pair, match, vacancy or award.
+#    Refuses if 91 is already in a group, pair, match, vacancy or award. Then:
+flask v2 bootstrap-ranking   # again: without it the stored ranking and players.* miss Mendonça
 ```
 
 Every command is one transaction; `--dry-run` rolls back. Rows imported with a
