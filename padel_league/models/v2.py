@@ -418,6 +418,8 @@ class RankingEntry(db.Model):
     player_id = Column(BigInteger, ForeignKey("players.id"), primary_key=True)
     points = Column(Float, nullable=False)
     position = Column(Integer)
+    # awards | subs (Art. 12: a new player whose points come from substitute appearances)
+    source = Column(Text, nullable=False, default="awards", server_default="awards")
 
     snapshot = relationship("RankingSnapshot", back_populates="entries")
     player = relationship("Player")

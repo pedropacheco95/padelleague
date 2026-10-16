@@ -18,6 +18,8 @@ class Player(db.Model, model.Model):
     birthday = Column(Date)
     ranking_points = Column(Integer, default=0)
     ranking_position = Column(Integer, default=0)
+    # member | external (sub only) | former | expelled
+    status = Column(String, nullable=False, default="member", server_default="member")
     height = Column(Float, default=1.75)
     prefered_hand = Column(
         Enum("Direita", "Esquerda", name="prefered_hand_enum"), server_default="Direita"

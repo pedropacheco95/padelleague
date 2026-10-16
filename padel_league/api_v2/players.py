@@ -1,6 +1,7 @@
 """Players, player history and comparison, rankings and the ranking explanation."""
 
 from collections import defaultdict
+from datetime import datetime, timezone
 
 from flask import Blueprint, jsonify, request
 from sqlalchemy.orm import joinedload
@@ -30,6 +31,21 @@ from .matches import match_query, serialize_matches
 bp = Blueprint("api_v2_players", __name__, url_prefix="/api/v2")
 register_error_handlers(bp)
 
+# Outside substitutes (players.status = 'external', SUBS_ import) stay out of the
+# players list and the ranking; their profile is still reachable by id.
+NOT_EXTERNAL = Player.status != "external"
+
+
+def external_ids(player_ids):
+    if not player_ids:
+        return set()
+    return {
+        pid
+        for pid, in Player.query.filter(Player.id.in_(player_ids), Player.status == "external").with_entities(
+            Player.id
+        )
+    }
+
 
 # --- ranking lookups ----------------------------------------------------------------
 
@@ -46,6 +62,8 @@ def ranking_table(snapshot):
     if snapshot is None:
         return []
     rows = [e for e in RankingEntry.query.filter_by(snapshot_id=snapshot.id) if (e.points or 0) > 0]
+    hidden = external_ids([e.player_id for e in rows])
+    rows = [e for e in rows if e.player_id not in hidden]
     rows.sort(key=lambda e: (-(e.points or 0), e.position or 10**9, e.player_id))
     return [(e.position or i, e.player_id, e.points) for i, e in enumerate(rows, 1)]
 
@@ -86,7 +104,7 @@ def get_player(player_id):
 
 @bp.route("/players", methods=["GET"])
 def list_players():
-    players = Player.query.options(joinedload(Player.picture)).order_by(Player.name).all()
+    players = Player.query.options(joinedload(Player.picture)).filter(NOT_EXTERNAL).order_by(Player.name).all()
     ranking = ranking_by_player(current_snapshot())
     status = _status_by_player([p.id for p in players])
     out = [player_summary(p, ranking, status[p.id]) for p in players]
@@ -153,12 +171,12 @@ def history(player_id):
     return rows
 
 
-def player_matches(player_id, competition_id=None):
-    query = match_query().filter(
-        CompetitionMatch.id.in_(
-            MatchParticipant.query.filter_by(player_id=player_id).with_entities(MatchParticipant.match_id)
-        )
-    )
+def player_matches(player_id, competition_id=None, role=None):
+    """The player's matches; role 'member' (their own seat) or 'substitute' narrows them."""
+    seats = MatchParticipant.query.filter_by(player_id=player_id)
+    if role is not None:
+        seats = seats.filter_by(role=role)
+    query = match_query().filter(CompetitionMatch.id.in_(seats.with_entities(MatchParticipant.match_id)))
     if competition_id is not None:
         query = (
             query.join(CompetitionGroup, CompetitionGroup.id == CompetitionMatch.group_id)
@@ -182,8 +200,11 @@ def _result_for(match, side):
     return "win" if winner == side else "loss"
 
 
-def match_stats(matches, player_id):
-    """S3's PlayerDetail.stats keys, from v2 facts (real jornadas, not v1's 3-per-week estimate)."""
+def match_stats(matches, player_id, subs_matches=()):
+    """S3's PlayerDetail.stats keys, from v2 facts (real jornadas, not v1's 3-per-week estimate).
+
+    `matches` are the player's member matches; substitute appearances only add
+    subsMatches (played ones), so attendance stays within the player's own groups."""
     played = won = drawn = lost = games_won = games_lost = 0
     rounds_played = set()
     for m in matches:
@@ -237,6 +258,7 @@ def match_stats(matches, player_id):
         "attendance": weeks_played / weeks_total * 100 if weeks_total else 0.0,
         "gamesWon": games_won,
         "gamesLost": games_lost,
+        "subsMatches": sum(_result_for(m, _side(m, player_id)) is not None for m in subs_matches),
     }
 
 
@@ -245,6 +267,7 @@ def get_player_page(player_id):
     player = get_player(player_id)
     ranking = ranking_by_player(current_snapshot())
     status = _status_by_player([player.id])[player.id]
+    subs = player_matches(player.id, role="substitute")
     return jsonify(
         {
             **player_summary(player, ranking, status),
@@ -254,7 +277,8 @@ def get_player_page(player_id):
             "height": player.height,
             "birthDate": ser.iso_date(player.birthday),
             "history": history(player.id),
-            "stats": match_stats(player_matches(player.id), player.id),
+            "stats": match_stats(player_matches(player.id, role="member"), player.id, subs),
+            "substituteMatches": serialize_matches(subs),
         }
     )
 
@@ -273,8 +297,9 @@ def compare():
     a, b = get_player(a_id), get_player(b_id)
     ranking = ranking_by_player(current_snapshot())
     status = _status_by_player([a.id, b.id])
-    a_matches = {m.id: m for m in player_matches(a.id)}
-    shared = [m for m in player_matches(b.id) if m.id in a_matches]
+    # Member seats only: a substitute appearance is not the player's own record.
+    a_matches = {m.id: m for m in player_matches(a.id, role="member")}
+    shared = [m for m in player_matches(b.id, role="member") if m.id in a_matches]
     h2h = {"played": 0, "aWins": 0, "bWins": 0, "draws": 0}
     together = {"played": 0, "wins": 0, "draws": 0, "losses": 0}
     for m in shared:
@@ -314,6 +339,13 @@ def ranking_json(snapshot):
         .first()
     )
     before = ranking_by_player(previous) if previous else {}
+    # Art. 12: a member with no counted award ranks on their substitute points.
+    from_subs = {
+        pid
+        for pid, in RankingEntry.query.filter_by(snapshot_id=snapshot.id, source="subs").with_entities(
+            RankingEntry.player_id
+        )
+    }
     players = {
         p.id: p
         for p in Player.query.options(joinedload(Player.picture)).filter(Player.id.in_([pid for _, pid, _ in table]))
@@ -328,6 +360,7 @@ def ranking_json(snapshot):
                 "player": ser.player_ref(players[pid]),
                 "points": pts,
                 "previousPosition": before.get(pid, (None, None))[0],
+                "fromSubs": pid in from_subs,
             }
             for pos, pid, pts in table
         ],
@@ -340,6 +373,38 @@ def current_ranking():
     if snapshot is None:
         raise not_found("Ainda não há ranking.", "no_ranking")
     return jsonify(ranking_json(snapshot))
+
+
+@bp.route("/rankings/subs", methods=["GET"])
+def subs_ranking():
+    """Substitute points (S1 ranking.subs_ranking) over the main ranking's window;
+    external subs included, computed live."""
+    result = ranking.subs_ranking()
+    if not result.lines:
+        raise not_found("Ainda não há pontos de substituto.", "no_ranking")
+    players = {
+        p.id: p
+        for p in Player.query.options(joinedload(Player.picture)).filter(
+            Player.id.in_([line.player_id for line in result.lines])
+        )
+    }
+    competitions = Competition.query.filter(Competition.id.in_(result.competition_ids)).order_by(Competition.id)
+    return jsonify(
+        {
+            "computedAt": ser.iso_datetime(datetime.now(timezone.utc).replace(tzinfo=None)),
+            "competitions": [{"id": c.id, "name": c.name} for c in competitions],
+            "entries": [
+                {
+                    "position": line.position,
+                    "player": ser.player_ref(players[line.player_id]),
+                    "points": line.points,
+                    "appearances": line.matches,
+                    "isExternal": players[line.player_id].status == "external",
+                }
+                for line in result.lines
+            ],
+        }
+    )
 
 
 @bp.route("/rankings/<int:snapshot_id>", methods=["GET"])

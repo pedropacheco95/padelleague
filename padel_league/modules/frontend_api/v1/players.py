@@ -8,6 +8,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from padel_league.model import Image
 from padel_league.models import League, Player, User
+from padel_league.models.v2 import MatchParticipant
 from padel_league.tools import image_tools
 
 from .serializers import (
@@ -22,29 +23,92 @@ bp = Blueprint("api_v1_players", __name__, url_prefix="/api/v1/players")
 PREFERED_HANDS = ("Direita", "Esquerda")
 PREFERED_POSITIONS = ("Lado direito", "Lado esquerdo", "Tanto faz")
 
+# Outside substitutes (players.status = 'external', SUBS_ import) stay out of the
+# lists and the ranking; their profile is still reachable by id.
+NOT_EXTERNAL = Player.status != "external"
+
+
+def _seats(player_ids):
+    """{player id: ({member match ids}, {substitute match ids})} from match_participants."""
+    out = {pid: (set(), set()) for pid in player_ids}
+    rows = MatchParticipant.query.filter(MatchParticipant.player_id.in_(player_ids)).with_entities(
+        MatchParticipant.player_id, MatchParticipant.match_id, MatchParticipant.role
+    )
+    for pid, match_id, role in rows:
+        out[pid][0 if role == "member" else 1].add(match_id)
+    return out
+
+
+def player_detail(player, seats):
+    """serialize_player_detail with the stats counting the player's own (member) seats only.
+
+    compat.players_in_match lists every occupant, so after the SUBS_ import a sub
+    appearance would add to matches, wins and attendance (107%). It is counted
+    apart, in subsMatches."""
+    data = serialize_player_detail(player)
+    member_ids, sub_ids = seats
+    played = [r for r in player.matches_relations if r.match.played]
+    mine = [r for r in played if r.match_id in member_ids]
+
+    def counts(rels):
+        won = sum((r.team == "Home" and r.match.winner == 1) or (r.team == "Away" and r.match.winner == -1) for r in rels)
+        lost = sum((r.team == "Home" and r.match.winner == -1) or (r.team == "Away" and r.match.winner == 1) for r in rels)
+        drawn = sum(r.match.winner == 0 for r in rels)
+        return won, lost, drawn
+
+    n_played = len(mine)
+    n_won, n_lost, n_drawn = counts(mine)
+    n_tournaments = data["tournamentsPlayed"]
+    data.update(
+        {
+            "matchesPlayed": n_played,
+            "matchesWon": n_won,
+            "matchesLost": n_lost,
+            "matchesDrawn": n_drawn,
+            "efficiency": round(n_won / n_played * 100, 2) if n_played else 0,
+            "matchweeksPlayed": round(n_played / 3) if n_played else 0,
+            "matchweeksMissed": (
+                round(n_tournaments * 7 - n_played / 3) if n_played and n_tournaments else 0
+            ),
+            "matchweeksPerTournament": (
+                round(n_played / 3 / n_tournaments, 2) if n_played and n_tournaments else 0
+            ),
+            "attendance": (
+                round(n_played / (n_tournaments * 3 * 7) * 100, 2) if n_played and n_tournaments else 0
+            ),
+            "subsMatches": sum(r.match_id in sub_ids for r in played),
+        }
+    )
+    for row in data["tournamentHistory"]:
+        in_division = [r for r in mine if r.match.division_id == row["divisionId"]]
+        row["played"] = len(in_division)
+        row["won"] = counts(in_division)[0]
+    return data
+
 
 @bp.route("/ranking")
 def ranking():
     league = League.query.first()
     players = league.players_rankings_position()
-    return jsonify([serialize_player_ranking(p) for p in players])
+    return jsonify([serialize_player_ranking(p) for p in players if p.status != "external"])
 
 
 @bp.route("/<int:id>")
 def player(id):
     p = Player.query.filter_by(id=id).first_or_404()
-    return jsonify(serialize_player_detail(p))
+    return jsonify(player_detail(p, _seats([p.id])[p.id]))
 
 
 @bp.route("/all")
 def players():
-    ps = Player.query.all()
-    return jsonify([serialize_player_detail(p) for p in ps])
+    ps = Player.query.filter(NOT_EXTERNAL).all()
+    seats = _seats([p.id for p in ps])
+    return jsonify([player_detail(p, seats[p.id]) for p in ps])
 
 
 @bp.route("/short/all")
 def players_short():
-    ps = Player.query.all()
+    ps = Player.query.filter(NOT_EXTERNAL).all()
     return jsonify([serialize_player_short(p) for p in ps])
 
 
