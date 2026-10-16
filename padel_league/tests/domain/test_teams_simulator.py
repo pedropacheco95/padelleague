@@ -83,8 +83,9 @@ def test_extra_pair_lands_where_declaring_it_puts_it(pg):
     stage = _stage()
     order = _by_position(stage)
     a, b = order[0], order[-1]  # best with worst: not what the auto-pairing does
-    projection = teams_divisions.project(stage, extra_pair=(a, b))
+    projection = teams_divisions.project(stage, extra_pair=(a, b), now=NOW)
     assert projection.extra_pair == (a, b)
+    assert all(d.points == sum(p.points for p in d.pairs) for d in projection.divisions)
     extra = next(p for d in projection.divisions for p in d.pairs if p.formed_by == "extra")
     assert set(extra.players) == {a, b}
     assert (projection.extra_pair_tier, projection.extra_pair_seed) != (None, None)
@@ -105,7 +106,7 @@ def test_extra_pair_replaces_a_pending_choice(pg):
     order = _by_position(stage)
     a, b, c = order[2], order[3], order[30]
     teams_pairing.declare(stage, c, a, now=NOW)  # c wants a; a now simulates b
-    projection = teams_divisions.project(stage, extra_pair=(a, b))
+    projection = teams_divisions.project(stage, extra_pair=(a, b), now=NOW)
     players = {p.players: p.formed_by for d in projection.divisions for p in d.pairs}
     assert players[(a, b)] == "extra"
     assert all(c not in pair or how == "ranking" for pair, how in players.items())
@@ -118,7 +119,7 @@ def test_extra_pair_is_validated_like_a_choice(pg):
     teams_pairing.declare(stage, order[1], order[0], now=NOW)
     for bad in ((order[0], order[2]), (order[3], order[3]), (order[3], 10**9)):
         with pytest.raises(PairingError):
-            teams_divisions.project(stage, extra_pair=bad)
+            teams_divisions.project(stage, extra_pair=bad, now=NOW)
 
     # 3 mini-tournaments together already: a 4th is refused
     a, b = order[4], order[6]
@@ -129,8 +130,8 @@ def test_extra_pair_is_validated_like_a_choice(pg):
     db.session.add_all([Pair(stage_id=s.id, entry_a_id=ea, entry_b_id=eb, formed_by="manual") for s in others])
     db.session.flush()
     with pytest.raises(PairingError):
-        teams_divisions.project(stage, extra_pair=(a, b))
-    assert teams_divisions.project(stage, extra_pair=(a, order[7])).extra_pair_tier is not None
+        teams_divisions.project(stage, extra_pair=(a, b), now=NOW)
+    assert teams_divisions.project(stage, extra_pair=(a, order[7]), now=NOW).extra_pair_tier is not None
 
 
 def test_closed_stage_projects_its_pairs_and_refuses_an_extra(pg):
@@ -141,4 +142,13 @@ def test_closed_stage_projects_its_pairs_and_refuses_an_extra(pg):
     assert _board(projection.divisions) == _board(teams_divisions.build_divisions(stage))
     order = _by_position(stage)
     with pytest.raises(PairingError):
-        teams_divisions.project(stage, extra_pair=(order[0], order[1]))
+        teams_divisions.project(stage, extra_pair=(order[0], order[1]), now=NOW)
+
+
+def test_after_the_deadline_the_board_works_but_an_extra_pair_is_refused(pg):
+    stage = _stage()
+    late = datetime(2026, 10, 19, 9, 0)
+    order = _by_position(stage)
+    with pytest.raises(PairingError):
+        teams_divisions.project(stage, extra_pair=(order[0], order[1]), now=late)
+    assert len(teams_divisions.project(stage, now=late).divisions) == 6

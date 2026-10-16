@@ -15,6 +15,7 @@ would produce right now, optionally with one more pair, without writing.
 """
 
 from dataclasses import dataclass, field
+from datetime import datetime
 
 from padel_league.domain.awards import TEAMS_RATINGS
 from padel_league.domain.errors import Conflict
@@ -149,10 +150,7 @@ class ProjectedDivision:
     name: str
     rating: int | None
     pairs: list = field(default_factory=list)
-
-    @property
-    def points(self):
-        return sum(p.points for p in self.pairs)
+    points: float = 0.0  # the pairs' points summed
 
 
 @dataclass
@@ -165,24 +163,24 @@ class Projection:
     extra_pair_seed: int | None = None
 
 
-def project(stage, extra_pair=None):
+def project(stage, extra_pair=None, now=None):
     """What close() + build_divisions() would give now, with `extra_pair` (a, b)
     as if they had just chosen each other. Same code paths, no writes.
 
-    Raises teams_pairing.PairingError for a pair the rules refuse (not on the
-    roster, already paired, 4th time together, pairs already closed) and
-    Conflict when the roster does not make whole divisions.
+    Raises teams_pairing.PairingError for a pair the rules refuse (pairs
+    closed or the deadline passed, as declare(); not on the roster, already
+    paired, 4th time together) and Conflict when the roster does not make
+    whole divisions. Without extra_pair the board works after the deadline too.
     """
     points, positions = teams_pairing.live_positions(stage)
     existing = teams_pairing.stage_pairs(stage)
     listed = [(p.id, teams_pairing.pair_players(stage, p)) for p in existing]
     formed_by = {p.id: p.formed_by for p in existing}
     planned = []
-    if stage.pairing_closed:
-        if extra_pair is not None:
-            raise teams_pairing.PairingError("As parelhas deste mini-torneio já estão fechadas.")
-    else:
-        extra = tuple(int(x) for x in extra_pair) if extra_pair is not None else None
+    extra = tuple(int(x) for x in extra_pair) if extra_pair is not None else None
+    if extra is not None:
+        teams_pairing.check_open(stage, now or datetime.utcnow())
+    if not stage.pairing_closed:
         planned = teams_pairing.plan_close(stage, positions, extra)
     # Not-yet-formed pairs get ids after the existing ones, in creation order:
     # the order the real ids would have (seed_pairs breaks the last tie by id).
@@ -191,11 +189,11 @@ def project(stage, extra_pair=None):
     for i, (a, b, how) in enumerate(planned, start=1):
         listed.append((next_id + i, (a, b)))
         formed_by[next_id + i] = how
-        if extra_pair is not None and i == 1:
+        if extra is not None and i == 1:
             extra_id, formed_by[next_id + i] = next_id + i, "extra"
     real_ids = {p.id for p in existing}
 
-    projection = Projection(stage.id, bool(stage.pairing_closed), [], tuple(extra_pair) if extra_pair else None)
+    projection = Projection(stage.id, bool(stage.pairing_closed), [], extra)
     for tier, division in enumerate(slice_divisions(seed_pairs(listed, points, positions)), start=1):
         out = ProjectedDivision(tier, f"{tier}.ª Divisão", TEAMS_RATINGS.get(tier))
         for seed, sp in enumerate(division, start=1):
@@ -211,5 +209,6 @@ def project(stage, extra_pair=None):
             )
             if sp.pair_id == extra_id:
                 projection.extra_pair_tier, projection.extra_pair_seed = tier, seed
+        out.points = sum(p.points for p in out.pairs)
         projection.divisions.append(out)
     return projection

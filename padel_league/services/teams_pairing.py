@@ -160,7 +160,8 @@ def chose(stage, player_id):
 # --- actions --------------------------------------------------------------------
 
 
-def _check_open(stage, now):
+def check_open(stage, now):
+    """Pair choice is open: pairs not closed and the deadline not passed."""
     if stage.pairing_closed:
         raise PairingError("As parelhas deste mini-torneio já estão fechadas.")
     if stage.pairing_deadline is None or now > stage.pairing_deadline:
@@ -178,7 +179,7 @@ def _make_pair(stage, a, b, formed_by):
 def declare(stage, player_id, partner_id, now=None):
     """Record `player_id`'s choice. Returns the pair if the choice is now mutual."""
     now = now or datetime.utcnow()
-    _check_open(stage, now)
+    check_open(stage, now)
     entries = _entries(stage)
     if player_id not in entries:
         raise PairingError("Não estás inscrito na Teams.")
@@ -211,7 +212,7 @@ def declare(stage, player_id, partner_id, now=None):
 
 def withdraw(stage, player_id, now=None):
     now = now or datetime.utcnow()
-    _check_open(stage, now)
+    check_open(stage, now)
     if pair_of(stage, player_id):
         raise PairingError("A parelha já está formada; fala com a organização para a desfazer.")
     entry = _entries(stage).get(player_id)
