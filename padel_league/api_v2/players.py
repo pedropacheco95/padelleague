@@ -1,6 +1,7 @@
 """Players, player history and comparison, rankings and the ranking explanation."""
 
 from collections import defaultdict
+from datetime import datetime, timezone
 
 from flask import Blueprint, jsonify, request
 from sqlalchemy.orm import joinedload
@@ -338,6 +339,13 @@ def ranking_json(snapshot):
         .first()
     )
     before = ranking_by_player(previous) if previous else {}
+    # Art. 12: a member with no counted award ranks on their substitute points.
+    from_subs = {
+        pid
+        for pid, in RankingEntry.query.filter_by(snapshot_id=snapshot.id, source="subs").with_entities(
+            RankingEntry.player_id
+        )
+    }
     players = {
         p.id: p
         for p in Player.query.options(joinedload(Player.picture)).filter(Player.id.in_([pid for _, pid, _ in table]))
@@ -352,6 +360,7 @@ def ranking_json(snapshot):
                 "player": ser.player_ref(players[pid]),
                 "points": pts,
                 "previousPosition": before.get(pid, (None, None))[0],
+                "fromSubs": pid in from_subs,
             }
             for pos, pid, pts in table
         ],
@@ -364,6 +373,38 @@ def current_ranking():
     if snapshot is None:
         raise not_found("Ainda não há ranking.", "no_ranking")
     return jsonify(ranking_json(snapshot))
+
+
+@bp.route("/rankings/subs", methods=["GET"])
+def subs_ranking():
+    """Substitute points (S1 ranking.subs_ranking) over the main ranking's window;
+    external subs included, computed live."""
+    result = ranking.subs_ranking()
+    if not result.lines:
+        raise not_found("Ainda não há pontos de substituto.", "no_ranking")
+    players = {
+        p.id: p
+        for p in Player.query.options(joinedload(Player.picture)).filter(
+            Player.id.in_([line.player_id for line in result.lines])
+        )
+    }
+    competitions = Competition.query.filter(Competition.id.in_(result.competition_ids)).order_by(Competition.id)
+    return jsonify(
+        {
+            "computedAt": ser.iso_datetime(datetime.now(timezone.utc).replace(tzinfo=None)),
+            "competitions": [{"id": c.id, "name": c.name} for c in competitions],
+            "entries": [
+                {
+                    "position": line.position,
+                    "player": ser.player_ref(players[line.player_id]),
+                    "points": line.points,
+                    "appearances": line.matches,
+                    "isExternal": players[line.player_id].status == "external",
+                }
+                for line in result.lines
+            ],
+        }
+    )
 
 
 @bp.route("/rankings/<int:snapshot_id>", methods=["GET"])
