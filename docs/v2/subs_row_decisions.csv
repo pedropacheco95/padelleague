@@ -1,0 +1,13 @@
+row,action,value,reason
+150,skip,,"Fipas never had an entry in the 21ª: Diogo Leão (3) took his seat as the member and played J1, so there is no absence to fill"
+156,skip,,"As row 150 (J2)"
+161,replaced,3,"Fipas's seat is Diogo Leão's entry (3), absent J4"
+165,replaced,3,"Fipas's seat is Diogo Leão's entry (3), absent J3"
+109,division,5,"The partner Kiko BF (78) played in division 5 that jornada and the side's 0 points match"
+208,replaced,102,"Kiko TT was a substitute too; the third absentee of 22ª div 5 J1 is Diogo Garrett (102)"
+197,note,,"Pedro: record the sub only. Zé Pedro Graça played in Zema's seat; results stay with Zema"
+198,note,,"As row 197 (J4)"
+199,note,,"As row 197 (J5)"
+200,note,,"As row 197 (J6)"
+201,skip,,"S0 decision: no seat for a substitute in the data (20ª J5 division 2 has no empty slot)"
+265,skip,,"S0 decision: Bernardo Vasconcelos played; the jornada's absences are covered by rows 255-257"

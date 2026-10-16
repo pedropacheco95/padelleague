@@ -121,6 +121,42 @@ def register_cli(app):
                 raise click.ClickException(str(exc))
             click.echo(json.dumps(result, indent=2, ensure_ascii=False))
 
+    @app.cli.command("import-substitutes")
+    @click.argument("rows_path", type=click.Path(exists=True, dir_okay=False))
+    @click.argument("map_path", type=click.Path(exists=True, dir_okay=False))
+    @click.option("--decisions", "decisions_path", type=click.Path(exists=True, dir_okay=False), default=None,
+                  help="Per-row skip/override CSV (docs/v2/subs_row_decisions.csv).")
+    @click.option("--dry-run", is_flag=True, help="Do everything in a transaction, report, roll back.")
+    def import_substitutes(rows_path, map_path, decisions_path, dry_run):
+        """Fill historic substitute slots from the SUBS_ sheet (run merge-players first)."""
+        from padel_league.services.imports import substitutes as subs
+
+        with app.app_context():
+            try:
+                report = subs.run(subs.load_rows(rows_path), subs.load_name_map(map_path),
+                                  subs.load_decisions(decisions_path), dry_run=dry_run)
+            except subs.ImportError_ as exc:
+                raise click.ClickException(str(exc))
+        skipped = report.pop("rows_skipped")
+        click.echo(json.dumps(report, indent=2, ensure_ascii=False))
+        for row, reason in skipped:
+            click.echo(f"skipped row {row}: {reason}")
+
+    @app.cli.command("merge-players")
+    @click.option("--from", "from_id", type=int, required=True, help="The duplicate (deleted).")
+    @click.option("--into", "into_id", type=int, required=True, help="The player who keeps the history.")
+    @click.option("--dry-run", is_flag=True)
+    def merge_players_cmd(from_id, into_id, dry_run):
+        """Merge a duplicate player into another: entries, matches, awards, login. Ranking needs a recompute after."""
+        from padel_league.services.imports import substitutes as subs
+
+        with app.app_context():
+            try:
+                moved = subs.merge_players(from_id, into_id, dry_run=dry_run)
+            except subs.ImportError_ as exc:
+                raise click.ClickException(str(exc))
+        click.echo(json.dumps({"from": from_id, "into": into_id, "dry_run": dry_run, "moved": moved}, indent=2))
+
     @app.cli.command("seed")
     @click.option("--admin-user", default="admin")
     @click.option("--admin-email", default="admin@example.com")

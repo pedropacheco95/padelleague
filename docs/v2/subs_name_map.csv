@@ -164,7 +164,7 @@ Tomás Pinto,NEW,,,"No player, full name or username matches; rejected: 57 Tomá
 Toti,NEW,,,"No player, full name or username matches",sub×2,186 232
 Trepa,PLAYER,44,high,exact in division roster,"partner×4, replaced×4",27 28 31 194 205 225 242 250
 Tó Lencastre,PLAYER,58,high,exact in all players,sub×2,210 224
-Tó Maria,AMBIGUOUS,90|92,,"Substitute only (4 rows; results cannot identify a substitute). Exact name match with 92 'To maria' (Antonio Magalhaes, only entry in the 21ª); 90's username is 'tomaria'. Settled if 90 and 92 are one person.",sub×4,7 8 20 226
+Tó Maria,PLAYER,90,high,Pedro (2026-10-16): 90 António Maria and 92 'To maria' are one person; 92 is merged into 90 (merge-players --from 92 --into 90).,sub×4,7 8 20 226
 Vasco Marques,NEW,,,"No player, full name or username matches",sub×1,71
 Ze Santos,PLAYER,56,high,exact in division roster,partner×1,73
 Zema,PLAYER,31,high,exact in competition entries (shuffle); exact in division roster,"partner×3, replaced×17",3 9 62 64 67 91 118 124 144 179 196 197 198 199 200 212 230 238 256 275

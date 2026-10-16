@@ -1,9 +1,9 @@
 player_a,player_b,verdict,evidence
-21,110,"duplicate: merge 110 into 21 (Pedro, 2026-10-16)",Same name 'Cuca' and full name Alfredo Magalhães; users cucamagalhaes / 'Cuca Magalhaes'; 110 has 0 entries.
-106,112,open: possible duplicate,"Same full name Álvaro van Zeller; 112 'Alvaro' has 0 entries but username 'alvarotigues', which may be a different Álvaro."
-78,95,"distinct (Pedro, 2026-10-16)",Kiko SS Faro (Kiko Faro) / kiko (Francisco Faro); both usernames 'Kiko'; 95 has 0 entries.
-25,78,open: possible duplicate,"Kiko CRBF (Francisco Brito e Faro, username kikobf, comps up to the 9ª) / Kiko SS Faro (from the 17ª on); never in the same competition; the sheet calls 78 'Kiko BF'."
-90,92,open: possible duplicate,António Maria (username tomaria; 19ª and the Shuffle) / 'To maria' (Antonio Magalhaes; 21ª only); never in the same competition; the sheet's 'To Maria' is 90 by roster.
+21,110,merge 110 into 21 (Pedro),Same name 'Cuca' and full name Alfredo Magalhães; users cucamagalhaes / 'Cuca Magalhaes'; 110 has 0 entries.
+106,112,merge 112 into 106 (Pedro),"Same full name Álvaro van Zeller; 112 'Alvaro' has 0 entries but username 'alvarotigues', which may be a different Álvaro."
+78,95,distinct (Pedro),Kiko SS Faro (Kiko Faro) / kiko (Francisco Faro); both usernames 'Kiko'; 95 has 0 entries.
+25,78,distinct (Pedro),"Kiko CRBF (Francisco Brito e Faro, username kikobf, comps up to the 9ª) / Kiko SS Faro (from the 17ª on); never in the same competition; the sheet calls 78 'Kiko BF'."
+90,92,"merge 92 into 90 (Pedro; 90 keeps: 2 entries, 48 matches, user tomaria)",António Maria (username tomaria; 19ª and the Shuffle) / 'To maria' (Antonio Magalhaes; 21ª only); never in the same competition; the sheet's 'To Maria' is 90 by roster.
 33,51,distinct,Fred Beirão / Fred Baptista: both played the 14ª–17ª.
 51,111,distinct,Frederico Baptista / Frederico Barbosa: different surnames; 111 has 0 entries.
 46,79,distinct,"Nuno Machado (12ª–16ª) / Nuno Cameira (17ª on): never in the same competition, but different surnames."
@@ -11,3 +11,4 @@ player_a,player_b,verdict,evidence
 38,57,distinct,Tomás Duarte / Tomás Pacheco: both played the 16ª–22ª.
 32,97,distinct,Dinis Melo / Dinis Matos: both played the 21ª and 22ª.
 77,108,distinct,"João Bello (21ª, Shuffle) / João Lello (22ª, Teams): never in the same competition, but different surnames."
+25,95,"merge 95 into 25 (Pedro, correction)","95 kiko (Francisco Faro, user ""Kiko "", 0 entries) is Kiko CRBF (Francisco Brito e Faro, user kikobf, comps 6-10). 25 keeps the history and the login kikobf."
