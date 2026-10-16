@@ -165,3 +165,29 @@ def test_sheet_error_decision_replaces_the_mismatch_flag(pg):
              dry_run=False)
     event = AuditEvent.query.filter_by(action="substitute_imported").order_by(AuditEvent.id.desc()).first()
     assert event.after["points_note"] == "sheet error confirmed" and "points_mismatch" not in event.after
+
+
+def test_imported_logins_cannot_log_in_with_username_as_password(pg):
+    from werkzeug.security import check_password_hash
+
+    grp, _, _, row, names = _setup("Sub Sem Password")
+    subs.run([row], names, {}, dry_run=False)
+    user = User.query.join(Player, Player.id == User.player_id).filter(Player.full_name == "Sub Sem Password").one()
+    assert not check_password_hash(user.password, user.username)
+    for path in ("/api/v2/auth/login", "/api/v1/auth/login"):
+        r = pg.test_client().post(path, json={"username": user.username, "password": user.username})
+        assert r.status_code == 401, path
+
+
+def test_swap_roster_player_locks_a_login_it_creates(pg):
+    from werkzeug.security import check_password_hash
+
+    from padel_league.services.imports.roster import swap_roster_player
+
+    comp = f.competition(name=f"Teams lock {datetime.utcnow().timestamp()}", format="teams")
+    out_player, newcomer = f.player(), f.player(full_name=f"Sem Login {datetime.utcnow().timestamp()}")
+    f.entry(comp, out_player)
+    done = swap_roster_player(comp.id, out_player.id, newcomer.id, dry_run=False)
+    assert done["login_created"] is True
+    user = User.query.filter_by(player_id=newcomer.id).one()
+    assert not check_password_hash(user.password, user.username)

@@ -18,9 +18,11 @@ Duplicate players are merged first, separately, with `merge_players`.
 import collections
 import csv
 import json
+import secrets
 from dataclasses import dataclass, field
 
 from sqlalchemy import text
+from werkzeug.security import generate_password_hash
 
 from padel_league.models import Player, User
 from padel_league.models.v2 import (
@@ -254,12 +256,23 @@ def _set_external(player_id):
     db.session.execute(text("update players set status = 'external' where id = :id"), {"id": player_id})
 
 
+def lock_password(user):
+    """Replace the onboarding password (= username, guessable) with an unusable random one.
+
+    The token is never printed or stored; access comes later from an admin
+    setting a password or from forgot-password.
+    """
+    user.password = generate_password_hash(secrets.token_urlsafe(32))
+    db.session.flush()
+
+
 def _new_player(name, created):
     if name in created:
         return created[name]
     if Player.query.filter((Player.name == name) | (Player.full_name == name)).first():
         raise ImportError_(f"a player named {name!r} already exists; map the name to it instead of NEW")
-    player, _ = accounts.create_player(name, name=name, commit=False)
+    player, user = accounts.create_player(name, name=name, commit=False)
+    lock_password(user)
     _set_external(player.id)
     created[name] = player.id
     return player.id

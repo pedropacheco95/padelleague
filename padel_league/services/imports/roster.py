@@ -58,6 +58,10 @@ def swap_roster_player(competition_id, out_player_id, in_player_id, actor_user_i
         q("insert into teams_players (player_id) values (:p) on conflict do nothing", p=in_player_id)
         q("update players set status = 'member' where id = :p", p=in_player_id)
         user, created = accounts.ensure_user_for_player(incoming, commit=False)
+        if created:  # a new login must not keep the guessable username-as-password
+            from padel_league.services.imports.substitutes import lock_password
+
+            lock_password(user)
         db.session.flush()
         done.update({"entry_in": entry.id, "login": user.username, "login_created": created})
         db.session.add(AuditEvent(actor_user_id=actor_user_id, entity="competition", entity_id=competition_id,
