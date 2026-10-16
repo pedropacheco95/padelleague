@@ -161,3 +161,58 @@ def test_external_players_hidden_from_lists_and_ranking(client):
         assert outsider not in {p["id"] for p in client.get(path).get_json()}, path
     check(client.get(f"/api/v2/players/{outsider}"), "/players/{playerId}")
     assert client.get(f"/api/v1/players/{outsider}").status_code == 200
+
+
+def test_subs_ranking(client):
+    """S1 ranking.subs_ranking over its window: external subs listed, flagged."""
+    from sqlalchemy import func
+
+    from padel_league.models.v2 import CompetitionGroup, CompetitionMatch, MatchParticipant, Stage
+    from padel_league.services import ranking
+    from padel_league.sql_db import db
+    from padel_league.tests import factories as f
+    from padel_league.tests.api_v2.conftest import persist
+
+    window = ranking.subs_ranking().competition_ids
+    assert window
+    # A played match of the window with a free seat (history's "Substituto" slots).
+    match_id, seats = (
+        db.session.query(CompetitionMatch.id, func.array_agg(MatchParticipant.side + func.cast(MatchParticipant.slot, db.Text)))
+        .join(CompetitionGroup, CompetitionGroup.id == CompetitionMatch.group_id)
+        .join(Stage, Stage.id == CompetitionGroup.stage_id)
+        .join(MatchParticipant, MatchParticipant.match_id == CompetitionMatch.id)
+        .filter(Stage.competition_id.in_(window), CompetitionMatch.status == "played")
+        .group_by(CompetitionMatch.id)
+        .having(func.count(MatchParticipant.id) < 4)
+        .order_by(CompetitionMatch.id)
+        .first()
+    )
+    side, slot = next((s, n) for s in ("home", "away") for n in (1, 2) if f"{s}{n}" not in seats)
+    outsider = f.player(status="external")
+    db.session.add(MatchParticipant(match_id=match_id, side=side, slot=slot, role="substitute", player_id=outsider.id))
+    persist()
+
+    body = check(client.get("/api/v2/rankings/subs"), "/rankings/subs")
+    assert {c["id"] for c in body["competitions"]} == set(window)
+    row = next(e for e in body["entries"] if e["player"]["id"] == outsider.id)
+    assert row["isExternal"] is True and row["appearances"] == 1
+    assert [e["position"] for e in body["entries"]] == sorted(e["position"] for e in body["entries"])
+
+
+def test_subs_ranking_empty_is_404(client):
+    check(client.get("/api/v2/rankings/subs"), "/rankings/subs", status=404)
+
+
+def test_ranking_entries_flag_subs_points(client):
+    from padel_league.services.ranking import current_snapshot
+    from padel_league.sql_db import db
+    from padel_league.tests.api_v2.conftest import persist
+
+    pid = _ranked_player_id()
+    entry = RankingEntry.query.filter_by(snapshot_id=current_snapshot().id, player_id=pid).one()
+    entry.source = "subs"
+    db.session.flush()
+    persist()
+    body = check(client.get("/api/v2/rankings/current"), "/rankings/current")
+    flags = {e["player"]["id"]: e["fromSubs"] for e in body["entries"]}
+    assert flags[pid] is True and sum(flags.values()) == 1
