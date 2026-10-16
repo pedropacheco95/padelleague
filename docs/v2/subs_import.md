@@ -36,11 +36,22 @@ flask import-substitutes subs.json docs/v2/subs_name_map.csv \
 #    then without --dry-run.
 ```
 
-Both commands are one transaction each; `--dry-run` rolls back.
+```bash
+# 3. Teams 2026/27 roster: João Mendonça (created by step 2 as external) replaces Miguel Lemos (91).
+flask swap-roster-player --competition 27 --out 91 --in-name "João Mendonça" --dry-run
+#    then without --dry-run. Removes 91's entry and partner requests (v2 and teams_*), adds his entry,
+#    sets his status to member (the schema has no 'active') and keeps/creates his login.
+#    Refuses if 91 is already in a group, pair, match, vacancy or award.
+```
+
+Every command is one transaction; `--dry-run` rolls back. Rows imported with a
+points mismatch carry `points_mismatch: true` in their audit row.
 
 ## Before running on production
 
-- **Player profiles do change.** The dry run's check covers standings (live, published, v1 division
+- **Wait for S2's profile fix** (member stats filter `role = 'member'`, subs shown separately; external
+  players filtered out of the lists). Then re-diff profiles on a clone: only the substitute counts may move.
+- **Player profiles do change** (before S2's fix). The dry run's check covers standings (live, published, v1 division
   views, Shuffle overall) and they are unchanged, but `/api/v1/players/<id>` and `/api/v2/players/<id>`
   count every `match_participants` row, so an existing player who also subbed gains matches played,
   wins, games and attendance (78 of 182 profile responses changed on the clone; v1 attendance reaches

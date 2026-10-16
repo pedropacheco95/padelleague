@@ -157,6 +157,28 @@ def register_cli(app):
                 raise click.ClickException(str(exc))
         click.echo(json.dumps({"from": from_id, "into": into_id, "dry_run": dry_run, "moved": moved}, indent=2))
 
+    @app.cli.command("swap-roster-player")
+    @click.option("--competition", "competition_id", type=int, required=True)
+    @click.option("--out", "out_id", type=int, required=True, help="Player leaving the roster.")
+    @click.option("--in-name", "in_name", required=True, help="Full name of the player joining (must exist).")
+    @click.option("--dry-run", is_flag=True)
+    def swap_roster_player_cmd(competition_id, out_id, in_name, dry_run):
+        """Replace a player of a not-yet-drawn roster; the newcomer becomes a member with a login."""
+        from padel_league.models import Player
+        from padel_league.services.imports.roster import RosterError, swap_roster_player
+
+        with app.app_context():
+            player = Player.query.filter_by(full_name=in_name).first()
+            if player is None:
+                raise click.ClickException(f"no player with full name {in_name!r} (run import-substitutes first)")
+            in_id = player.id
+            try:
+                done = swap_roster_player(competition_id, out_id, in_id, dry_run=dry_run)
+            except RosterError as exc:
+                raise click.ClickException(str(exc))
+        click.echo(json.dumps({"competition": competition_id, "out": out_id, "in": in_id,
+                               "dry_run": dry_run, **done}, indent=2, ensure_ascii=False))
+
     @app.cli.command("seed")
     @click.option("--admin-user", default="admin")
     @click.option("--admin-email", default="admin@example.com")

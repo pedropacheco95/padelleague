@@ -132,3 +132,27 @@ def test_merge_players_refuses_two_people_of_the_same_competition(pg):
     _, players = _group()
     with pytest.raises(subs.ImportError_, match="share a competition"):
         subs.merge_players(players[0].id, players[1].id, dry_run=True)
+
+
+def test_swap_roster_player_replaces_an_undrawn_entry(pg):
+    from padel_league.services.accounts import create_player
+    from padel_league.services.imports.roster import swap_roster_player
+
+    comp = f.competition(name=f"Teams {datetime.utcnow().timestamp()}", format="teams")
+    out_player = f.player()
+    f.entry(comp, out_player)
+    newcomer, _ = create_player(f"Novo {datetime.utcnow().timestamp()}", commit=False)
+    db.session.execute(text("update players set status = 'external' where id = :i"), {"i": newcomer.id})
+    done = swap_roster_player(comp.id, out_player.id, newcomer.id, dry_run=False)
+    assert Entry.query.filter_by(competition_id=comp.id, player_id=out_player.id).first() is None
+    assert Entry.query.filter_by(competition_id=comp.id, player_id=newcomer.id).one().status == "active"
+    assert db.session.execute(text("select status from players where id = :i"), {"i": newcomer.id}).scalar() == "member"
+    assert done["login_created"] is False and done["login"]
+
+
+def test_swap_roster_player_refuses_a_drawn_entry(pg):
+    from padel_league.services.imports.roster import RosterError, swap_roster_player
+
+    grp, players = _group()
+    with pytest.raises(RosterError, match="group_members"):
+        swap_roster_player(grp.stage.competition_id, players[0].id, f.player().id, dry_run=True)

@@ -296,7 +296,8 @@ def run(rows, name_map, decisions, actor_user_id=None, dry_run=True):
                 actor_user_id=actor_user_id, entity="absence", entity_id=it.absence.id,
                 action="substitute_imported",
                 after={"sheet_row": it.row, "substitute_player_id": sub_id, "match_participant_ids": participant_ids,
-                       "sheet_points": it.sheet["points"], "db_points": it.db_points},
+                       "sheet_points": it.sheet["points"], "db_points": it.db_points,
+                       "points_mismatch": it.db_points != it.sheet["points"]},
             ))
             written += len(participant_ids)
             imported += 1

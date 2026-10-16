@@ -11,3 +11,5 @@ row,action,value,reason
 200,note,,"As row 197 (J6)"
 201,skip,,"S0 decision: no seat for a substitute in the data (20ª J5 division 2 has no empty slot)"
 265,skip,,"S0 decision: Bernardo Vasconcelos played; the jornada's absences are covered by rows 255-257"
+42,skip,,"S0 decision: 18ª div 1 J2 has three free sides and the sheet's points match none beside the partner; placement would be a guess"
+43,skip,,"As row 42"
