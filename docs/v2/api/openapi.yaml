@@ -359,6 +359,14 @@ paths:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Ranking" } } } }
         "404": { $ref: "#/components/responses/Error" }
 
+  /rankings/subs:
+    get:
+      tags: [rankings]
+      summary: Substitutes ranking (points as a sub in the last completed competition × division multiplier)
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/SubsRanking" } } } }
+        "404": { $ref: "#/components/responses/Error" }
+
   /rankings/{snapshotId}:
     parameters: [{ name: snapshotId, in: path, required: true, schema: { type: integer } }]
     get:
@@ -827,6 +835,10 @@ components:
             preferredPosition: { type: [string, "null"] }
             height: { type: [number, "null"] }
             birthDate: { type: [string, "null"], format: date }
+            substituteMatches:
+              type: array
+              description: Matches played as a substitute, newest first (not counted in member stats)
+              items: { $ref: "#/components/schemas/Match" }
             history:
               type: array
               description: One row per competition entry, newest first
@@ -873,6 +885,29 @@ components:
               player: { $ref: "#/components/schemas/PlayerRef" }
               points: { type: number, description: Unrounded }
               previousPosition: { type: [integer, "null"] }
+              fromSubs: { type: boolean, default: false, description: "Art. 12: a new player whose points come from substitute appearances" }
+
+    SubsRanking:
+      type: object
+      required: [entries]
+      properties:
+        computedAt: { type: [string, "null"], format: date-time }
+        competition:
+          description: The last completed competition the subs points come from
+          oneOf:
+            - { type: object, required: [id, name], properties: { id: { type: integer }, name: { type: string } } }
+            - { type: "null" }
+        entries:
+          type: array
+          items:
+            type: object
+            required: [position, player, points, appearances, isExternal]
+            properties:
+              position: { type: integer }
+              player: { $ref: "#/components/schemas/PlayerRef" }
+              points: { type: number, description: "Sum of substitute points × division multiplier (1ª×10 … 6ª×3)" }
+              appearances: { type: integer }
+              isExternal: { type: boolean }
 
     RankingExplanation:
       type: object
