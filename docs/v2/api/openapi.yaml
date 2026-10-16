@@ -1022,19 +1022,20 @@ components:
           required: [text]
           properties: { text: { type: string } }
 
+    RankedPlayerRef:
+      allOf:
+        - $ref: "#/components/schemas/PlayerRef"
+        - type: object
+          required: [rankingPoints, rankingPosition]
+          properties: { rankingPoints: { type: number }, rankingPosition: { type: [integer, "null"] } }
+
     TeamsPairProjection:
       type: object
       required: [seed, pairId, players, sum, formedBy, provisional, unpairedSlots, pending, mine]
       properties:
         seed: { type: integer, description: 1..4 within the division }
         pairId: { type: [integer, "null"] }
-        players:
-          type: array
-          items:
-            allOf:
-              - $ref: "#/components/schemas/PlayerRef"
-              - type: object
-                properties: { rankingPoints: { type: number }, rankingPosition: { type: [integer, "null"] } }
+        players: { type: array, items: { $ref: "#/components/schemas/RankedPlayerRef" } }
         sum: { type: number }
         formedBy: { type: string, enum: [mutual, manual, ranking, extra] }
         provisional: { type: boolean }
@@ -1086,22 +1087,22 @@ components:
             locked: { type: boolean }
             result:
               type: object
-              required: [tier, seed, rating, maxPlacePoints, maxBonusPoints, sum, sumBreakdown, gapUp, marginDown, playedTogether]
+              required: [tier, seed, rating, maxPlacePoints, maxBonusPoints, partner, sum, sumBreakdown, gapUp, marginDown, playedTogether]
               properties:
                 tier: { type: integer }
                 seed: { type: integer }
                 rating: { type: number }
                 maxPlacePoints: { type: number }
                 maxBonusPoints: { type: number }
-                partner: { type: object }
+                partner: { $ref: "#/components/schemas/RankedPlayerRef" }
                 sum: { type: number }
-                sumBreakdown: { type: array, items: { type: object, properties: { player: { $ref: "#/components/schemas/PlayerRef" }, points: { type: number } } } }
+                sumBreakdown: { type: array, items: { type: object, required: [player, points], properties: { player: { $ref: "#/components/schemas/PlayerRef" }, points: { type: number } } } }
                 gapUp: { type: [number, "null"] }
                 marginDown: { type: [number, "null"] }
                 playedTogether: { type: array, items: { type: integer } }
             baseline:
               type: object
-              required: [tier, seed, sum]
+              required: [tier, seed, partner, sum]
               properties: { tier: { type: integer }, seed: { type: integer }, partner: { oneOf: [{ $ref: "#/components/schemas/PlayerRef" }, { type: "null" }] }, sum: { type: number } }
             candidates:
               type: array
@@ -1109,7 +1110,7 @@ components:
                 type: object
                 required: [player, status, allowed, sum, tier, seed, delta, playedTogether]
                 properties:
-                  player: { type: object }
+                  player: { $ref: "#/components/schemas/RankedPlayerRef" }
                   status: { type: string, enum: [free, confirmed, declaredYou, youDeclared] }
                   pairedWith: { oneOf: [{ $ref: "#/components/schemas/PlayerRef" }, { type: "null" }] }
                   allowed: { type: boolean }
