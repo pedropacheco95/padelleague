@@ -9,9 +9,12 @@
 
 The ranking is a parameter: by default the live ranking under the season rule
 (2026/27: last 3 completed + current, so earlier mini-tournaments count).
+
+project() is the partner simulator: the divisions close() + build_divisions()
+would produce right now, optionally with one more pair, without writing.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from padel_league.domain.awards import TEAMS_RATINGS
 from padel_league.domain.errors import Conflict
@@ -125,3 +128,88 @@ def _add_match(group, rnd, home, away, entry_of):
 def _players_of(entry_ids):
     rows = dict(db.session.query(Entry.id, Entry.player_id).filter(Entry.id.in_(entry_ids)).all())
     return [rows[e] for e in entry_ids]
+
+
+# --- simulator ------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class ProjectedPair:
+    pair_id: int | None  # None: not formed yet (would be formed at close)
+    players: tuple
+    points: float  # the two players' ranking points summed
+    best_position: int | None
+    formed_by: str  # mutual | manual | ranking | extra (the simulated pair)
+    seed: int
+
+
+@dataclass
+class ProjectedDivision:
+    tier: int
+    name: str
+    rating: int | None
+    pairs: list = field(default_factory=list)
+
+    @property
+    def points(self):
+        return sum(p.points for p in self.pairs)
+
+
+@dataclass
+class Projection:
+    stage_id: int
+    pairing_closed: bool
+    divisions: list
+    extra_pair: tuple | None = None
+    extra_pair_tier: int | None = None
+    extra_pair_seed: int | None = None
+
+
+def project(stage, extra_pair=None):
+    """What close() + build_divisions() would give now, with `extra_pair` (a, b)
+    as if they had just chosen each other. Same code paths, no writes.
+
+    Raises teams_pairing.PairingError for a pair the rules refuse (not on the
+    roster, already paired, 4th time together, pairs already closed) and
+    Conflict when the roster does not make whole divisions.
+    """
+    points, positions = teams_pairing.live_positions(stage)
+    existing = teams_pairing.stage_pairs(stage)
+    listed = [(p.id, teams_pairing.pair_players(stage, p)) for p in existing]
+    formed_by = {p.id: p.formed_by for p in existing}
+    planned = []
+    if stage.pairing_closed:
+        if extra_pair is not None:
+            raise teams_pairing.PairingError("As parelhas deste mini-torneio já estão fechadas.")
+    else:
+        extra = tuple(int(x) for x in extra_pair) if extra_pair is not None else None
+        planned = teams_pairing.plan_close(stage, positions, extra)
+    # Not-yet-formed pairs get ids after the existing ones, in creation order:
+    # the order the real ids would have (seed_pairs breaks the last tie by id).
+    next_id = max((p.id for p in existing), default=0)
+    extra_id = None
+    for i, (a, b, how) in enumerate(planned, start=1):
+        listed.append((next_id + i, (a, b)))
+        formed_by[next_id + i] = how
+        if extra_pair is not None and i == 1:
+            extra_id, formed_by[next_id + i] = next_id + i, "extra"
+    real_ids = {p.id for p in existing}
+
+    projection = Projection(stage.id, bool(stage.pairing_closed), [], tuple(extra_pair) if extra_pair else None)
+    for tier, division in enumerate(slice_divisions(seed_pairs(listed, points, positions)), start=1):
+        out = ProjectedDivision(tier, f"{tier}.ª Divisão", TEAMS_RATINGS.get(tier))
+        for seed, sp in enumerate(division, start=1):
+            out.pairs.append(
+                ProjectedPair(
+                    sp.pair_id if sp.pair_id in real_ids else None,
+                    sp.players,
+                    sp.points,
+                    sp.best_position if sp.best_position != UNRANKED else None,
+                    formed_by[sp.pair_id],
+                    seed,
+                )
+            )
+            if sp.pair_id == extra_id:
+                projection.extra_pair_tier, projection.extra_pair_seed = tier, seed
+        projection.divisions.append(out)
+    return projection

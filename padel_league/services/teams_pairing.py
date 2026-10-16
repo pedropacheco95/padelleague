@@ -222,14 +222,7 @@ def withdraw(stage, player_id, now=None):
 
 def set_pair(stage, a, b):
     """Admin: form a pair by hand (e.g. for a player without a login)."""
-    roster = roster_ids(stage)
-    if a == b or a not in roster or b not in roster:
-        raise PairingError("Escolhe dois jogadores diferentes inscritos na Teams.")
-    for pid in (a, b):
-        if pair_of(stage, pid):
-            raise PairingError("Um dos jogadores já tem parelha formada.")
-    if not allowed(a, b, times_together(stage)):
-        raise PairingError("Já jogaram juntos 3 mini-torneios; não podem fazer o 4.º juntos.")
+    check_new_pair(stage, a, b)
     pair = _make_pair(stage, a, b, "manual")
     db.session.commit()
     return pair
@@ -243,21 +236,68 @@ def unpair(stage, pair_id):
     db.session.commit()
 
 
-def _settle_mutual(stage):
-    """Form pairs for mutual choices that two simultaneous requests both missed."""
+def _mutual_pairs(stage, paired, history):
+    """Mutual choices not yet paired (two simultaneous requests can both miss
+    forming the pair), as [(a, b)] in creation order. No writes."""
     by_entry = _player_of_entry(stage)
     choice = {
         by_entry[r.from_entry_id]: by_entry[r.to_entry_id]
         for r in PartnerRequest.query.filter_by(stage_id=stage.id)
         if r.from_entry_id in by_entry and r.to_entry_id in by_entry
     }
-    paired = {pid for p in stage_pairs(stage) for pid in pair_players(stage, p)}
-    history = times_together(stage)
+    paired = set(paired)
+    out = []
     for a, b in sorted(choice.items()):
         if a < b and choice.get(b) == a and not {a, b} & paired and allowed(a, b, history):
-            _make_pair(stage, a, b, "mutual")
+            out.append((a, b))
             paired |= {a, b}
-    db.session.flush()
+    return out
+
+
+def live_positions(stage):
+    """(points, positions) of the live ranking, ranking errors as PairingError."""
+    try:
+        return ranking_svc.seeding(stage.competition.season.league_id)
+    except DomainError as exc:  # e.g. ranking_missing_awards: readable, not a 500
+        raise PairingError(exc.message) from exc
+
+
+def check_new_pair(stage, a, b, history=None):
+    """The checks of a new pair (declare / set_pair): both on the roster, unpaired, not a 4th time."""
+    roster = roster_ids(stage)
+    if a == b or a not in roster or b not in roster:
+        raise PairingError("Escolhe dois jogadores diferentes inscritos na Teams.")
+    for pid in (a, b):
+        if pair_of(stage, pid):
+            raise PairingError("Um dos jogadores já tem parelha formada.")
+    if not allowed(a, b, times_together(stage) if history is None else history):
+        raise PairingError("Já jogaram juntos 3 mini-torneios; não podem fazer o 4.º juntos.")
+
+
+def plan_close(stage, positions, extra_pair=None):
+    """The pairs close() would add, [(a, b, formed_by)] in creation order. No writes.
+
+    `extra_pair` (a, b) is treated as if it had just been declared mutually
+    (it is formed first, and replaces any other choice of a or b).
+    """
+    history = times_together(stage)
+    paired = {pid for p in stage_pairs(stage) for pid in pair_players(stage, p)}
+    planned = []
+    if extra_pair is not None:
+        a, b = extra_pair
+        check_new_pair(stage, a, b, history)
+        planned.append((a, b, "mutual"))
+        paired |= {a, b}
+    for a, b in _mutual_pairs(stage, paired, history):
+        planned.append((a, b, "mutual"))
+        paired |= {a, b}
+    left = Player.query.filter(Player.id.in_(roster_ids(stage) - paired)).all()
+    if not positions:
+        order = [p.id for p in sorted(left, key=ranking_key)]
+    else:
+        order = [p.id for p in sorted(left, key=lambda p: (positions.get(p.id) or 10**9, p.id))]
+    planned += [(a, b, "ranking") for a, b in auto_pairs(order, history)]
+    return planned
 
 
 def close(stage, positions=None):
@@ -269,19 +309,10 @@ def close(stage, positions=None):
     """
     if stage.pairing_closed:
         raise PairingError("As parelhas deste mini-torneio já estão fechadas.")
-    _settle_mutual(stage)
-    paired = {pid for p in stage_pairs(stage) for pid in pair_players(stage, p)}
-    left = Player.query.filter(Player.id.in_(roster_ids(stage) - paired)).all()
     if positions is None:
-        try:
-            positions = ranking_svc.seeding(stage.competition.season.league_id)[1]
-        except DomainError as exc:  # e.g. ranking_missing_awards: readable, not a 500
-            raise PairingError(exc.message) from exc
-    if not positions:
-        order = [p.id for p in sorted(left, key=ranking_key)]
-    else:
-        order = [p.id for p in sorted(left, key=lambda p: (positions.get(p.id) or 10**9, p.id))]
-    created = [_make_pair(stage, a, b, "ranking") for a, b in auto_pairs(order, times_together(stage))]
+        positions = live_positions(stage)[1]
+    made = [(_make_pair(stage, a, b, formed_by), formed_by) for a, b, formed_by in plan_close(stage, positions)]
+    created = [pair for pair, formed_by in made if formed_by == "ranking"]
     stage.pairing_closed = True
     db.session.commit()
     return created
