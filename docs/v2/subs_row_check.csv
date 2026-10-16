@@ -8,7 +8,7 @@ row,edition,competition_id,division,group_id,jornada,round_id,replaced,replaced_
 7,18,22,5,56,2,128,Bucas,40,Tó Maria,90|92,Falcão,84,6,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,6,match,
 8,18,22,5,56,4,130,Falcão,84,Tó Maria,90|92,Martinho,61,6,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,6,match,
 9,18,22,5,56,5,131,Zema,31,Zé Gomes,NEW,Cameira,79,3,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,3,match,
-10,18,22,4,57,7,133,Rafael P,60,Fonseca,NEW,Rodas,48,9,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,9,match,
+10,18,22,4,57,7,133,Rafael P,60,Fonseca,= Diogo Fonseca,Rodas,48,9,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,9,match,
 11,18,22,4,57,3,129,Rodas,48,Fred Lopes Cardoso,NEW,Tomás P,57,3,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,3,match,
 12,18,22,4,57,1,127,Rafael P,60,Gonçalo R,100,Hugo M,59,9,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,9,match,
 13,18,22,4,57,6,132,Rafael P,60,Gonçalo R,100,Tomás P,57,9,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,9,match,
@@ -53,7 +53,7 @@ row,edition,competition_id,division,group_id,jornada,round_id,replaced,replaced_
 52,19,23,4,64,3,136,Chico C,83,Dinis M,replaced=32; sub=97,Bernardo Gomes,,0,ABSENT_FULL PARTNER_NOT_A_MEMBER MATCH_WITH_EMPTY_SLOT_IN_ROUND,48:6; both empty:0; 61:9,matches an empty side (both empty),
 53,19,23,3,63,3,136,Tomás D,38,Pi Magalhães,45,Tomás P,57,6,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,6,match,
 54,19,23,2,62,3,136,Diogo L,3,Jomi,NEW,Peras,10,1,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,1,match,
-55,19,23,2,62,3,136,Archer,47,Leandro,NEW,Zé Santos,56,2,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,2,match,
+55,19,23,2,62,3,136,Archer,47,Leandro,= Leandro Loureiro,Zé Santos,56,2,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,2,match,
 56,19,23,4,64,3,136,Luis F,,Luis Ferreira,1,Rodas,48,6,REPLACED_UNRESOLVED MATCH_WITH_EMPTY_SLOT_BY_PARTNER,6,match,Luis F = 62 (Fezas has row 50 for the same jornada); partner Rodas's side scored 6 = sheet.
 57,19,23,2,62,2,135,Peras,10,Nuno M,46,Afonso M,4,6,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,6,match,
 58,19,23,3,63,2,135,Hugo M,59,Pi Magalhães,45,Tomás P,57,6,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,6,match,
@@ -93,10 +93,10 @@ row,edition,competition_id,division,group_id,jornada,round_id,replaced,replaced_
 92,20,26,5,109,1,156,To Maria,90,Guinho,NEW,Kiko BF,78,0,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,0,match,
 93,20,26,6,104,1,156,Miguel L,91,Tiago Santos,NEW,Fipas,96,6,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,6,match,
 94,20,26,4,102,1,156,Luis F,62,Fred Barbosa,111,Afonso X,63,6,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,6,match,
-95,20,26,3,107,1,156,Tomás P,57,Gonçalo P,37|NEW,Hugo M,59,0,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,0,match,
+95,20,26,3,107,1,156,Tomás P,57,Gonçalo P,= Gonçalo Pereira,Hugo M,59,0,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,0,match,
 96,20,26,6,128,2,163,Neto,98,Guinho,NEW,La Serna,99,0,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,0,match,
 97,20,26,6,128,2,163,Fipas,96,Jomi,NEW,Gonçalo R,100,6,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,6,match,
-98,20,26,4,88,2,163,Luis F,62,Gonçalo P,37|NEW,Fezas,52,3,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,3,match,
+98,20,26,4,88,2,163,Luis F,62,Gonçalo P,= Gonçalo Pereira,Fezas,52,3,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,3,match,
 99,20,26,3,96,2,163,Peras,10,Fred Barbosa,111,Miguel C,,1,ABSENT_FULL PARTNER_NOT_A_MEMBER MATCH_WITH_EMPTY_SLOT_IN_ROUND,both empty:1,matches an empty side (both empty),
 100,20,26,3,96,2,163,Tomás P,57,Miguel C,2,Fred Barbosa,,1,ABSENT_FULL PARTNER_NOT_A_MEMBER MATCH_WITH_EMPTY_SLOT_IN_ROUND,both empty:1,matches an empty side (both empty),
 101,20,26,1,130,2,163,Afonso M,4,Franz,NEW,Bernardo C,28,9,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,9,match,
@@ -110,7 +110,7 @@ row,edition,competition_id,division,group_id,jornada,round_id,replaced,replaced_
 109,20,26,4,126,5,158,Gonçalo Ramalho,100,António Antunes,87,Kiko BF,78,0,ABSENT_FULL PARTNER_NOT_IN_ROUND,57:6; 48:9,mismatch,"Partner Kiko BF (78) played in div 5 that jornada, alone on his side, 0 points = sheet: the sheet's division 4 should be 5."
 110,20,26,6,79,5,158,La Serna,99,Zeze,NEW,Diogo L,3,5,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,5,match,
 111,20,26,1,124,6,161,Pancho,7,Afonso Pessanha,NEW,Bernardo C,28,3,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,4,mismatch,
-112,20,26,4,117,6,161,Fezas,52,Nuno,46|79|105,To Maria,90,0,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,0,match,
+112,20,26,4,117,6,161,Fezas,52,Nuno,UNKNOWN_SUB,To Maria,90,0,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,0,match,
 113,20,26,5,82,6,161,Tomás D,38,Tio João Toninho,NEW,Tio Pedro P,80,1,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,1,match,
 114,20,26,5,82,6,161,Pêras,10,António Antunes,87,Gonçalo R,100,9,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,9,match,
 115,20,26,3,94,8,155,Falcão,84,Miguel C,2,Couceiro,76,0,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,0,match,
@@ -120,13 +120,13 @@ row,edition,competition_id,division,group_id,jornada,round_id,replaced,replaced_
 119,20,26,6,113,8,155,Kiko BF,78,Manel Serôdio,103,Bucas,40,9,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,9,match,
 120,20,26,6,113,8,155,Pêras,10,JP TT,NEW,Cameira,79,3,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,3,match,
 121,20,26,3,115,7,164,João L,86,João Mendonça,NEW,Falcão,84,3,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,3,match,
-122,20,26,4,134,7,164,Miguel L,91,Tomás,38|57,Bello,77,9,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,9,match,
+122,20,26,4,134,7,164,Miguel L,91,Tomás,NEW,Bello,77,9,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,9,match,
 123,20,26,5,106,7,164,Pêras,10,Tiago Santos,NEW,Fipas,96,9,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,9,match,
 124,20,26,5,106,7,164,Zema,31,António Antunes,87,Bucas,40,0,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,0,match,
 125,20,26,3,90,9,157,Nathan,50,João Mariano,NEW,João Leite,86,3,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,3,match,
 126,20,26,4,121,9,157,Neto,98,Tiago Santos,NEW,Fipas,96,6,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,6,match,
 127,20,26,4,121,9,157,Rodas,48,Sequeira,NEW,Bello,77,9,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,9,match,
-128,20,26,5,123,9,157,Diogo L,3,Matias,NEW,Luis F,62,9,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,9,match,
+128,20,26,5,123,9,157,Diogo L,3,Matias,= Matias Torre,Luis F,62,9,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,9,match,
 129,20,26,5,123,9,157,Hugo M,59,Francisco Duarte,NEW,Tomás D,38,6,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,6,match,
 130,20,26,6,83,9,157,Afonso X,63,Guinho,NEW,Zé Pedro Graça,,9,ABSENT_FULL PARTNER_NOT_A_MEMBER MATCH_WITH_EMPTY_SLOT_IN_ROUND,both empty:9,matches an empty side (both empty),
 131,20,26,6,83,9,157,Pêras,10,Zé Pedro Graça,109,Guinho,,9,ABSENT_FULL PARTNER_NOT_A_MEMBER MATCH_WITH_EMPTY_SLOT_IN_ROUND,both empty:9,matches an empty side (both empty),
@@ -178,7 +178,7 @@ row,edition,competition_id,division,group_id,jornada,round_id,replaced,replaced_
 177,21,24,4,69,6,146,Ricas,42,João Mariano,NEW,João Leite,86,0,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,0,match,
 178,21,24,6,71,6,146,Diogo Garrett,102,Tio Álvaro VZ,106,Manel Serôdio,103,9,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,9,match,
 179,21,24,6,71,6,146,La Serna,99,Freddy Trepa,54,Zema,31,3,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,3,match,
-180,21,24,4,69,6,146,Tomás D,38,Nuno,46|79|105,Falcão,84,6,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,6,match,
+180,21,24,4,69,6,146,Tomás D,38,Nuno,UNKNOWN_SUB,Falcão,84,6,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,6,match,
 181,21,24,4,69,6,146,Gonçalo Ramalho,100,Tio Luis VZ,NEW,Luis F,,6,ABSENT_FULL PARTNER_NOT_A_MEMBER MATCH_WITH_EMPTY_SLOT_IN_ROUND,62:6; 84:6; 86:0,matches an empty side (62),
 182,21,24,1,66,7,147,Zé Santos,56,-,PLACEHOLDER,-,,-,ABSENT_FULL PARTNER_NOT_A_MEMBER MATCH_WITH_EMPTY_SLOT_IN_ROUND,28:9; 45:6; both empty:2,mismatch,
 183,21,24,1,66,7,147,Semelhe,16,-,PLACEHOLDER,-,,-,ABSENT_FULL PARTNER_NOT_A_MEMBER MATCH_WITH_EMPTY_SLOT_IN_ROUND,28:9; 45:6; both empty:2,mismatch,
@@ -195,15 +195,15 @@ row,edition,competition_id,division,group_id,jornada,round_id,replaced,replaced_
 194,21,24,5,70,7,147,Trepa,44,Gonçalo Pereira,NEW,Martinho,61,6,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,6,match,
 195,21,24,6,71,7,147,La Serna,99,João Lello,108,Diogo Garrett,102,3,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,3,match,
 196,21,24,6,71,7,147,Zema,31,Tio Alvaro VZ,106,Manel Serôdio,103,3,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,3,match,
-197,21,24,6,71,3,143,Zema,31,Zé Pedro Graça,109,Tio Álvaro VZ,,3,REPLACED_NOT_ABSENT PARTNER_NOT_A_MEMBER MATCH_WITH_EMPTY_SLOT_IN_ROUND,31:4,mismatch,"The DB has Zema (31) playing J3-J6 with no absence. Row 169 (same jornada) has Zé Pedro Graça as a partner, and Zema's side scored 4 = row 169: the sheet treats Zema's seat as Zé Pedro Graça, the DB has the results under Zema."
-198,21,24,6,71,4,144,Zema,31,Zé Pedro Graça,109,António Antunes,87,3,REPLACED_NOT_ABSENT PARTNER_PLAYED_NO_EMPTY_SLOT,,no empty slot,"See row 197. Zema's DB points 6, sheet 3."
-199,21,24,6,71,5,145,Zema,31,Zé Pedro Graça,109,Diogo Garrett,102,4,REPLACED_NOT_ABSENT PARTNER_PLAYED_NO_EMPTY_SLOT,78:3,mismatch,See row 197. Zema's DB points 4 = sheet 4.
-200,21,24,6,71,6,146,Zema,31,Zé Pedro Graça,109,Freddy Trepa,,6,REPLACED_NOT_ABSENT PARTNER_NOT_A_MEMBER MATCH_WITH_EMPTY_SLOT_IN_ROUND,103:9; 31:3,mismatch,"See row 197. Zema's DB points 3, sheet 6."
-201,20,26,2,78,5,158,Talinho,11,Guilherme Novais,NEW,Afonso Martinho,4,7,REPLACED_NOT_ABSENT PARTNER_NOT_IN_ROUND,,no empty slot,"Talinho played div 2 in the DB. Afonso Martinho's div 3 side (with 42 Ricas) scored 7 = sheet: so Guilherme Novais probably played for Ricas, or the DB's Ricas was Novais. Talinho is wrong either way."
+197,21,24,6,71,3,143,Zema,31,Zé Pedro Graça,109,Tio Álvaro VZ,,3,REPLACED_NOT_ABSENT PARTNER_NOT_A_MEMBER MATCH_WITH_EMPTY_SLOT_IN_ROUND,31:4,mismatch,"Pedro: yes, Zé Pedro Graça played in Zema's seat J3-J6. Results: the DB has the seat under Zema (31) with no absence; in every jornada the seat's DB partner is the sheet's partner (J3 the sub for 104, J4 87, J5 102, J6 the sub for 99). Points of the seat in the DB J3-J6 = 4, 6, 4, 3; this sheet row says 3, but row 169 (same pair, J3) says 4 = DB."
+198,21,24,6,71,4,144,Zema,31,Zé Pedro Graça,109,António Antunes,87,3,REPLACED_NOT_ABSENT PARTNER_PLAYED_NO_EMPTY_SLOT,,no empty slot,"Zé Pedro Graça in Zema's seat (Pedro). DB partner 87 = sheet partner. DB points 6 (L 5-7, W 8-7, W 7-4), sheet 3: mismatch."
+199,21,24,6,71,5,145,Zema,31,Zé Pedro Graça,109,Diogo Garrett,102,4,REPLACED_NOT_ABSENT PARTNER_PLAYED_NO_EMPTY_SLOT,78:3,mismatch,Zé Pedro Graça in Zema's seat (Pedro). DB partner 102 = sheet partner. DB points 4 = sheet 4.
+200,21,24,6,71,6,146,Zema,31,Zé Pedro Graça,109,Freddy Trepa,,6,REPLACED_NOT_ABSENT PARTNER_NOT_A_MEMBER MATCH_WITH_EMPTY_SLOT_IN_ROUND,103:9; 31:3,mismatch,"Zé Pedro Graça in Zema's seat (Pedro). DB: the seat alone next to an empty slot (99 absent); row 179 (La Serna's sub Freddy Trepa, partner Zema) says 3 = DB 3; this row says 6: mismatch."
+201,20,26,2,78,5,158,Talinho,11,Guilherme Novais,NEW,Afonso Martinho,4,7,REPLACED_NOT_ABSENT PARTNER_NOT_IN_ROUND,,no empty slot,"Pedro thinks Guilherme Novais was Talinho's partner. Does not fit: in the Shuffle J5 div 2 every match has 4 players; Talinho played with 34 Damásio (L 5-8, L 5-7, W 8-5 = 3 points, sheet 7); no empty seat. The only 7 in J5 is Afonso Martinho + 42 Ricas in div 3 (full side). Guilherme's other row (133, J10 div 2) fits the DB. Open."
 202,22,25,1,72,1,148,Bernardo C,28,Luis Cunha,NEW,Semelhe,16,9,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,9,match,
 203,22,25,2,73,1,148,Afonso Martinho,4,Lopo Carvalho,30,Tio Cuca,21,6,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,6,match,
 204,22,25,2,73,1,148,Talinho,11,Diogo Leão,3,Nathan,50,9,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,9,match,
-205,22,25,4,75,1,148,Trepa,44,Nuno,46|79|105,Falcão,84,9,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,9,match,
+205,22,25,4,75,1,148,Trepa,44,Nuno,UNKNOWN_SUB,Falcão,84,9,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,9,match,
 206,22,25,4,75,1,148,João Leite,86,Gonçalo Pereira,NEW,Hugo M,59,6,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,6,match,
 207,22,25,5,76,1,148,Kiko BF,78,Kiko TT,NEW,JP TT,,3,ABSENT_FULL PARTNER_NOT_A_MEMBER MATCH_WITH_EMPTY_SLOT_IN_ROUND,87:9; both empty:3,matches an empty side (both empty),
 208,22,25,5,76,1,148,Kiko TT,,JP TT,NEW,Kiko TT,,3,REPLACED_UNRESOLVED PARTNER_NOT_A_MEMBER MATCH_WITH_EMPTY_SLOT_IN_ROUND,87:9; both empty:3,matches an empty side (both empty),"Kiko TT is a substitute, not the replaced: the both-empty side (Kiko TT + JP TT) scored 3 = sheet. Absent that jornada: 2 (row 209), 78 (row 207) and 102 Diogo Garrett, so the replaced here is 102."
@@ -258,12 +258,12 @@ row,edition,competition_id,division,group_id,jornada,round_id,replaced,replaced_
 257,22,25,6,77,3,150,João Lello,108,Mário Vasco,NEW,Bernardo Vasconcelos,107,9,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,9,match,
 258,22,25,1,72,6,153,Semelhe,16,Fred Beirão,33,Pancho,7,3,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,3,match,
 259,22,25,1,72,6,153,Dinis M,32,Zé Veiga,9,Dudas,13,3,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,3,match,
-260,22,25,1,72,6,153,Malafaya,27,Frederico,33|51|54|111,Pi Magalhães,45,6,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,6,match,
+260,22,25,1,72,6,153,Malafaya,27,Frederico,33,Pi Magalhães,45,6,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,6,match,
 261,22,25,2,73,6,153,Freitas,14,Diogo Leão,3,Tio Cuca,21,7,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,7,match,
 262,22,25,3,74,6,153,Miguel Lemos,91,João Mendonça,NEW,Luís Folhadela,62,6,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,6,match,
 263,22,25,4,75,6,153,Hugo M,59,Fred Barbosa,111,Ricas,42,3,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,3,match,
 264,22,25,5,76,6,153,Diogo Garrett,102,Afonso Brandão,NEW,Dinis Matos,97,6,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,6,match,
-265,22,25,6,77,3,150,Bernardo Vasconcelos,107,Kiko Silva,NEW,Nuno Azevedo,105,9,REPLACED_NOT_ABSENT MATCH_WITH_EMPTY_SLOT_BY_PARTNER,3,mismatch,"Bernardo Vasconcelos played (alone on his side, 9 points). The jornada's 3 absentees (31, 106, 108) are covered by rows 255-257; this row repeats row 257 (João Lello's sub partnering BV, 9 points). Probably a sheet error."
+265,22,25,6,77,3,150,Bernardo Vasconcelos,107,Kiko Silva,NEW,Nuno Azevedo,105,9,REPLACED_NOT_ABSENT MATCH_WITH_EMPTY_SLOT_BY_PARTNER,3,mismatch,"Left out for now (Pedro has not answered). Bernardo Vasconcelos played (alone on his side, 9 points); the jornada's 3 absentees (31, 106, 108) are covered by rows 255-257; this row repeats row 257."
 266,22,25,1,72,7,154,Malafaya,27,Archer,47,Pancho,7,3,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,0,mismatch,
 267,22,25,2,73,7,154,Freitas,14,Guilherme Novais,NEW,Talinho,11,4,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,4,match,
 268,22,25,2,73,7,154,Nathan,50,Pedro Norton,NEW,Zé Santos,56,9,ABSENT_FULL MATCH_WITH_EMPTY_SLOT_BY_PARTNER,9,match,
