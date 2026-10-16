@@ -172,29 +172,47 @@ def project(stage, extra_pair=None, now=None):
     paired, 4th time together) and Conflict when the roster does not make
     whole divisions. Without extra_pair the board works after the deadline too.
     """
-    points, positions = teams_pairing.live_positions(stage)
-    existing = teams_pairing.stage_pairs(stage)
-    listed = [(p.id, teams_pairing.pair_players(stage, p)) for p in existing]
-    formed_by = {p.id: p.formed_by for p in existing}
-    planned = []
     extra = tuple(int(x) for x in extra_pair) if extra_pair is not None else None
     if extra is not None:
         teams_pairing.check_open(stage, now or datetime.utcnow())
+    return _project(stage, extra, _Context.load(stage))
+
+
+@dataclass
+class _Context:
+    """Everything a projection reads, loaded once per request."""
+
+    points: dict
+    positions: dict
+    state: teams_pairing.PairingState
+    existing: list  # [(pair_id, players, formed_by)]
+
+    @classmethod
+    def load(cls, stage):
+        points, positions = teams_pairing.live_positions(stage)
+        existing = [(p.id, teams_pairing.pair_players(stage, p), p.formed_by) for p in teams_pairing.stage_pairs(stage)]
+        return cls(points, positions, teams_pairing.pairing_state(stage), existing)
+
+
+def _project(stage, extra, ctx):
+    listed = [(pid, players) for pid, players, _ in ctx.existing]
+    formed_by = {pid: how for pid, _, how in ctx.existing}
+    planned = []
     if not stage.pairing_closed:
-        planned = teams_pairing.plan_close(stage, positions, extra)
+        planned = teams_pairing.plan_close(stage, ctx.positions, extra, ctx.state)
     # Not-yet-formed pairs get ids after the existing ones, in creation order:
     # the order the real ids would have (seed_pairs breaks the last tie by id).
-    next_id = max((p.id for p in existing), default=0)
+    next_id = max(formed_by, default=0)
     extra_id = None
     for i, (a, b, how) in enumerate(planned, start=1):
         listed.append((next_id + i, (a, b)))
         formed_by[next_id + i] = how
         if extra is not None and i == 1:
             extra_id, formed_by[next_id + i] = next_id + i, "extra"
-    real_ids = {p.id for p in existing}
+    real_ids = {pid for pid, _, _ in ctx.existing}
 
     projection = Projection(stage.id, bool(stage.pairing_closed), [], extra)
-    for tier, division in enumerate(slice_divisions(seed_pairs(listed, points, positions)), start=1):
+    for tier, division in enumerate(slice_divisions(seed_pairs(listed, ctx.points, ctx.positions)), start=1):
         out = ProjectedDivision(tier, f"{tier}.ª Divisão", TEAMS_RATINGS.get(tier))
         for seed, sp in enumerate(division, start=1):
             out.pairs.append(
@@ -212,3 +230,163 @@ def project(stage, extra_pair=None, now=None):
         out.points = sum(p.points for p in out.pairs)
         projection.divisions.append(out)
     return projection
+
+
+# --- partner simulator: every possible partner of one player --------------------
+
+
+@dataclass(frozen=True)
+class Placement:
+    """Where a player's pair lands: tier, seed, partner and the pair's points."""
+
+    partner_id: int | None
+    tier: int | None
+    seed: int | None
+    points: float | None  # the pair's summed ranking points
+
+
+@dataclass(frozen=True)
+class Thresholds:
+    """For a scenario in tier k: the weakest pair of tier k-1 (to move up) and
+    the best pair of tier k+1 (to stay above). None at the edges."""
+
+    tier: int | None
+    weakest_above: float | None
+    best_below: float | None
+
+
+@dataclass(frozen=True)
+class PartnerOption:
+    player_id: int
+    points: float  # b's own ranking points
+    status: str  # unpaired | paired_with:<id> | declared_you | you_declared
+    played_together: tuple  # stage numbers a and b already played together
+    allowed: bool
+    reason: str | None  # why not, when not allowed
+    pair_points: float | None  # a + b
+    tier: int | None
+    seed: int | None
+    delta_vs_baseline: float | None  # pair_points - baseline pair points
+
+
+@dataclass
+class PartnerSimulation:
+    stage_id: int
+    player_id: int
+    player_points: float
+    choice_open: bool
+    baseline: Placement  # without a new choice (a's formed pair, or the auto partner)
+    options: list  # [PartnerOption], by b's ranking position
+    selected: int | None
+    selected_placement: Placement | None
+    thresholds: Thresholds | None  # for the selected scenario (else the baseline)
+
+
+def _placement(projection, player_id):
+    for division in projection.divisions:
+        for pair in division.pairs:
+            if player_id in pair.players:
+                partner = next(p for p in pair.players if p != player_id)
+                return Placement(partner, division.tier, pair.seed, pair.points)
+    return Placement(None, None, None, None)
+
+
+def _thresholds(projection, tier):
+    if tier is None:
+        return Thresholds(None, None, None)
+    by_tier = {d.tier: d for d in projection.divisions}
+    above, below = by_tier.get(tier - 1), by_tier.get(tier + 1)
+    return Thresholds(
+        tier,
+        min(p.points for p in above.pairs) if above else None,
+        max(p.points for p in below.pairs) if below else None,
+    )
+
+
+def _together_stages(stage, player_id):
+    """{partner: (stage numbers)} of the player's pairs in the other stages."""
+    from padel_league.models.v2 import Pair, Stage
+
+    out = {}
+    rows = (
+        db.session.query(Pair, Stage.number)
+        .join(Stage, Stage.id == Pair.stage_id)
+        .filter(Stage.competition_id == stage.competition_id, Pair.stage_id != stage.id)
+        .order_by(Stage.number)
+    )
+    for pair, number in rows:
+        players = teams_pairing.pair_players(stage, pair)
+        if player_id in players:
+            other = players[0] if players[1] == player_id else players[1]
+            out.setdefault(other, []).append(number)
+    return {k: tuple(v) for k, v in out.items()}
+
+
+def project_partners(stage, player_id, selected=None, now=None):
+    """Every possible partner b of `player_id`: where a+b would land, from one
+    ranking computation (each scenario is project(stage, (a, b)))."""
+    a = int(player_id)
+    ctx = _Context.load(stage)
+    state = ctx.state
+    if a not in state.roster:
+        raise teams_pairing.PairingError("Esse jogador não está inscrito na Teams.")
+    try:
+        teams_pairing.check_open(stage, now or datetime.utcnow())
+        closed_reason = None
+    except teams_pairing.PairingError as exc:
+        closed_reason = str(exc)
+
+    baseline_projection = _project(stage, None, ctx)
+    baseline = _placement(baseline_projection, a)
+    together = _together_stages(stage, a)
+    options, chosen = [], None
+    others = sorted(state.roster - {a}, key=lambda p: (ctx.positions.get(p) or 10**9, p))
+    for b in others:
+        if b in state.paired_with:
+            status = f"paired_with:{state.paired_with[b]}"
+        elif state.choice.get(b) == a:
+            status = "declared_you"
+        elif state.choice.get(a) == b:
+            status = "you_declared"
+        else:
+            status = "unpaired"
+        reason, landed = closed_reason, None
+        if reason is None:
+            try:
+                landed = _project(stage, (a, b), ctx)
+            except (teams_pairing.PairingError, Conflict) as exc:
+                reason = exc.message if isinstance(exc, Conflict) else str(exc)
+        place = _placement(landed, a) if landed else None
+        if landed and b == selected:
+            chosen = landed
+        options.append(
+            PartnerOption(
+                player_id=b,
+                points=ctx.points.get(b, 0.0),
+                status=status,
+                played_together=together.get(b, ()),
+                allowed=landed is not None,
+                reason=reason,
+                pair_points=place.points if place else None,
+                tier=place.tier if place else None,
+                seed=place.seed if place else None,
+                delta_vs_baseline=(place.points - baseline.points) if place and baseline.points is not None else None,
+            )
+        )
+    if chosen is not None:
+        selected_placement = _placement(chosen, a)
+        thresholds = _thresholds(chosen, selected_placement.tier)
+    else:
+        selected_placement = None
+        thresholds = _thresholds(baseline_projection, baseline.tier)
+    return PartnerSimulation(
+        stage_id=stage.id,
+        player_id=a,
+        player_points=ctx.points.get(a, 0.0),
+        choice_open=closed_reason is None,
+        baseline=baseline,
+        options=options,
+        selected=int(selected) if selected is not None else None,
+        selected_placement=selected_placement,
+        thresholds=thresholds,
+    )
