@@ -4,17 +4,27 @@ recompute() writes a RankingSnapshot (+ entries) and, until the old app is
 deleted (phase 4), mirrors it into players.ranking_points / ranking_position,
 which v1 and the Teams pairing still read. Points stay unrounded in v2; the
 bigint mirror rounds half up, as the old column effectively did.
+
+subs_ranking(): substitute points in the last completed competition
+(domain.subs); compute() gives them, flagged source "subs", to players
+without a counted award (art. 12).
 """
 
+from dataclasses import dataclass
 from datetime import date, datetime
 
 from padel_league.domain import ranking as engine
+from padel_league.domain import standings as rules
+from padel_league.domain import subs as subs_rules
 from padel_league.domain.errors import Conflict, NotFound
 from padel_league.models import Player
 from padel_league.models.v2 import (
     Award,
     AwardEvent,
     Competition,
+    CompetitionGroup,
+    CompetitionMatch,
+    MatchParticipant,
     RankingEntry,
     RankingSnapshot,
     Season,
@@ -115,7 +125,8 @@ def compute(league_id, rule=None):
     comps, awards = league_facts(league_id)
     previous = latest_snapshot(league_id)
     prev_positions = {e.player_id: e.position for e in previous.entries} if previous else {}
-    result = engine.compute(_engine_rule(rule), comps, awards, prev_positions)
+    fallback = _subs_fallback(rule, comps, awards)
+    result = engine.compute(_engine_rule(rule), comps, awards, prev_positions, subs=fallback)
     awarded = {a.competition_id for a in awards}
     ended = {c.id for c in comps if c.status == "ended"}
     missing = [cid for cid in result.counted_competition_ids if cid in ended and cid not in awarded]
@@ -124,6 +135,102 @@ def compute(league_id, rule=None):
             f"Faltam pontos de ranking das competições terminadas {missing}.", "ranking_missing_awards"
         )
     return result
+
+
+@dataclass
+class SubsRanking:
+    competition_ids: list  # the competitions whose substitutes count
+    lines: list  # [domain.subs.SubsLine]
+
+
+SUBS_COUNTED_STATUSES = ("played", "walkover")
+# ranking_rules.options["subs_window"]: "last_completed" (default) or "ranking"
+# (every competition the main ranking counts).
+SUBS_WINDOWS = ("last_completed", "ranking")
+
+
+def _subs_competitions(rule, comps, awards):
+    window = (rule.options or {}).get("subs_window", "last_completed")
+    if window not in SUBS_WINDOWS:
+        raise Conflict(f"Janela de pontos de substituto desconhecida: {window}.", "unknown_subs_window")
+    if window == "ranking":
+        counted = engine.counted_competitions(_engine_rule(rule), comps, awards)
+        return [c for c in comps if c.id in counted]
+    last = engine.last_completed(comps)
+    return [last] if last else []
+
+
+def _subs_lines(competitions):
+    """[SubsLine] over the substitutes' matches in `competitions` (CompetitionFact),
+    and {group_id: competition_id}."""
+    by_id = {c.id: c for c in competitions}
+    groups = (
+        db.session.query(CompetitionGroup, Stage.competition_id)
+        .join(Stage, Stage.id == CompetitionGroup.stage_id)
+        .filter(Stage.competition_id.in_(list(by_id)))
+        .all()
+    )
+    fmt = {g.id: by_id[cid].format for g, cid in groups}
+    multipliers = {g.id: subs_rules.group_multiplier(fmt[g.id], g.tier, g.multiplier) for g, _ in groups}
+    rows = (
+        db.session.query(MatchParticipant.player_id, MatchParticipant.side, CompetitionMatch)
+        .join(CompetitionMatch, CompetitionMatch.id == MatchParticipant.match_id)
+        .filter(
+            CompetitionMatch.group_id.in_(list(multipliers)),
+            CompetitionMatch.status.in_(SUBS_COUNTED_STATUSES),
+            MatchParticipant.role == "substitute",
+            MatchParticipant.player_id.isnot(None),
+        )
+        .all()
+    )
+    facts, played = {}, []
+    for player_id, side, match in rows:
+        if match.id not in facts:
+            sets = tuple(rules.SetResult(s.home_games, s.away_games, s.outcome) for s in sorted(match.sets, key=lambda s: s.set_no))
+            walkover = match.walkover_winner if match.status == "walkover" else None
+            facts[match.id] = rules.MatchFacts(0, (), (), sets, walkover)
+        played.append(subs_rules.SubMatch(player_id, match.group_id, side, facts[match.id], fmt[match.group_id]))
+    return subs_rules.subs_points(played, multipliers), {g.id: cid for g, cid in groups}
+
+
+def _subs_explain(line, group_competition):
+    return [
+        engine.ExplainLine(
+            competition_id=group_competition[group_id],
+            stage_number=None,
+            group_id=group_id,
+            place=None,
+            place_points=raw * (mult or 0),
+            bonus_points=0.0,
+            counted=True,
+            reason=f"pontos de substituto (art. 12): {raw} × {mult or 0} em {n} jogo(s)",
+        )
+        for group_id, (raw, mult, n) in sorted(line.by_group.items())
+    ]
+
+
+def _member_ids(player_ids):
+    """Players with status 'member' (external subs never enter the main ranking)."""
+    if not player_ids:
+        return set()
+    rows = db.session.query(Player.id).filter(Player.id.in_(list(player_ids)), Player.status == "member")
+    return {pid for (pid,) in rows}
+
+
+def _subs_fallback(rule, comps, awards):
+    """Art. 12: {player_id: (points, explain)} for members; compute() keeps those without a counted award."""
+    lines, group_competition = _subs_lines(_subs_competitions(rule, comps, awards))
+    members = _member_ids([l.player_id for l in lines])
+    return {l.player_id: (l.points, _subs_explain(l, group_competition)) for l in lines if l.player_id in members}
+
+
+def subs_ranking(league_id=1, rule=None):
+    """Substitute points per player (members and external subs) in the rule's subs window."""
+    rule = rule or rule_for(league_id)
+    comps, awards = league_facts(league_id)
+    competitions = _subs_competitions(rule, comps, awards)
+    lines, _ = _subs_lines(competitions)
+    return SubsRanking(sorted(c.id for c in competitions), lines)
 
 
 def seeding(league_id):
@@ -144,7 +251,7 @@ def recompute(league_id, after_award_event_id=None, note=None, dry_run=False, mi
         is_dry_run=dry_run,
         note=note,
     )
-    snapshot.entries = [RankingEntry(player_id=l.player_id, points=l.points, position=l.position) for l in result.lines]
+    snapshot.entries = [RankingEntry(player_id=l.player_id, points=l.points, position=l.position, source=l.source) for l in result.lines]
     db.session.add(snapshot)
     if mirror and not dry_run:
         mirror_into_players(result)
