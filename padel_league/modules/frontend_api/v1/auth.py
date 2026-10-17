@@ -13,7 +13,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from padel_league.model import Image
 from padel_league.models import Player, User
-from padel_league.tools import email_tools, image_tools
+from padel_league.tools import image_tools
 
 bp = Blueprint("api_v1_auth", __name__, url_prefix="/api/v1/auth")
 
@@ -74,21 +74,25 @@ def me():
     return jsonify({"user": user.serialize()})
 
 
+def _request_code(user):
+    """Keep the pending code, or make one. The emails on file are mostly fake, so the code is
+    not emailed: an admin sends it by WhatsApp from /admin/passwords (api/v2/admin/password-codes).
+    Asking again never replaces a code an admin may already have sent."""
+    if user.generated_code is None:
+        user.new_code()
+        user.save()
+
+
 @bp.route("/forgot_password", methods=["POST"])
 def forgot_password():
-    data = request.get_json()
-    username = data.get("username")
+    data = request.get_json(silent=True) or {}
+    username = (data.get("username") or "").strip()
 
-    user = User.query.filter_by(username=username).first()
+    user = User.query.filter_by(username=username).first() if username else None
     if user is None:
         return jsonify({"error": "Enganaste-te no username oh burro."}), 404
 
-    generated_code = user.new_code()
-    user.save()
-
-    mail_body = f"O teu código de autenticação é: {generated_code}"
-    email_tools.send_email("Código autenticação", [user.email], html=mail_body)
-
+    _request_code(user)
     return jsonify({"user_id": user.id})
 
 
@@ -116,17 +120,12 @@ def verify_generated_code(user_id):
 
 @bp.route("/generate_new_code/<int:user_id>", methods=["POST"])
 def generate_new_code(user_id):
+    """Same as forgot_password (no email; a pending code is kept)."""
     user = User.query.filter_by(id=user_id).first()
     if not user:
         return jsonify({"error": "Utilizador não encontrado."}), 404
-
-    generated_code = user.new_code()
-    user.save()
-
-    mail_body = f"O teu novo código de autenticação é: {generated_code}"
-    email_tools.send_email("Código autenticação", [user.email], html=mail_body)
-
-    return jsonify({"message": "Novo código enviado."})
+    _request_code(user)
+    return jsonify({"message": "Pedido enviado."})
 
 
 @bp.route("/register", methods=["POST"])

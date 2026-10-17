@@ -584,6 +584,44 @@ paths:
         "401": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
 
+  /admin/password-codes:
+    get:
+      tags: [auth]
+      summary: Pending password codes (admin). A code is pending from a player's forgot-password request or an admin's POST until it is used, dies after 5 wrong tries, or is dismissed.
+      security: [{ bearer: [] }]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/PasswordCode" } } } } }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [auth]
+      summary: The pending code for a player's account, made if there is none (admin). Sent to the player by WhatsApp.
+      security: [{ bearer: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [playerId], properties: { playerId: { type: integer } } }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/PasswordCode" } } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /admin/password-codes/{userId}:
+    delete:
+      tags: [auth]
+      summary: Dismiss a pending code (admin)
+      security: [{ bearer: [] }]
+      parameters:
+        - { name: userId, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Dismissed }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+
 components:
   securitySchemes:
     bearer: { type: http, scheme: bearer, bearerFormat: JWT }
@@ -757,6 +795,15 @@ components:
               place: { type: [integer, "null"] }
               points: { type: [number, "null"], description: Ranking points awarded for that stage (null while its group is live) }
               setPoints: { type: [number, "null"], description: Teams set points in that mini-tournament }
+
+    PasswordCode:
+      type: object
+      required: [userId, username, player, code]
+      properties:
+        userId: { type: integer }
+        username: { type: string }
+        player: { oneOf: [{ $ref: "#/components/schemas/PlayerRef" }, { type: "null" }] }
+        code: { type: string, description: "5 digits; the player types it at /verify-code/<userId>" }
 
     PlayerRef:
       type: object
