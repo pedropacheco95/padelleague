@@ -25,7 +25,7 @@ from padel_league.models.v2 import (
 
 from . import serializers as ser
 from ._http import int_arg, not_found, register_error_handlers
-from .cards import CardData, base_query, card
+from .cards import CardData, base_query, card, edition_sort_key, group_label
 from .matches import match_query, serialize_matches
 
 bp = Blueprint("api_v2_players", __name__, url_prefix="/api/v2")
@@ -151,23 +151,39 @@ def history(player_id):
     for e in entries:
         comp = by_comp[e.competition_id]
         member_id, group_id, group_name, _ = latest.get(e.id, (None, None, None, None))
-        snap = by_member.get(member_id) if member_id is not None else by_entry.get(e.id)
+        # The Shuffle's one standing row is per entry (no member) though the entry has a
+        # member per jornada, so fall back to the entry's row.
+        snap = by_member.get(member_id) or by_entry.get(e.id)
+        competition = card(comp, data)
+        if comp.format == "classica":
+            label = group_label(comp, group_name)
+        else:
+            # A Shuffle's last jornada group or a Teams mini-tournament division is not the
+            # player's place in the competition: the row is the whole competition.
+            label, group_id, group_name = competition["label"], None, None
+        played = None
+        if snap:
+            # Matches played, as v1's tournamentHistory (S6 gate 2); group standings show jornadas.
+            # Shuffle rows have no appearances: count the results.
+            played = snap.appearances
+            if played is None and snap.wins is not None:
+                played = (snap.wins or 0) + (snap.draws or 0) + (snap.losses or 0)
         rows.append(
             {
-                "competition": card(comp, data),
+                "competition": competition,
+                "label": label,
                 "groupId": group_id,
                 "groupName": group_name,
                 "place": snap.place if snap else e.final_place,
                 "points": snap.points if snap else None,
-                # Matches played, as v1's tournamentHistory (S6 gate 2); group standings show jornadas.
-                "played": snap.appearances if snap else None,
+                "played": played,
                 "wins": snap.wins if snap else None,
                 "draws": snap.draws if snap else None,
                 "losses": snap.losses if snap else None,
                 "awardPoints": award_points.get(e.id),
             }
         )
-    rows.sort(key=lambda r: (r["competition"]["startsOn"] or "", r["competition"]["id"]), reverse=True)
+    rows.sort(key=lambda r: edition_sort_key(r["competition"]), reverse=True)
     return rows
 
 
@@ -388,11 +404,13 @@ def subs_ranking():
             Player.id.in_([line.player_id for line in result.lines])
         )
     }
-    competitions = Competition.query.filter(Competition.id.in_(result.competition_ids)).order_by(Competition.id)
+    comps = base_query().filter(Competition.id.in_(result.competition_ids)).all()
+    data = CardData(comps)
+    competitions = sorted((card(c, data) for c in comps), key=edition_sort_key, reverse=True)
     return jsonify(
         {
             "computedAt": ser.iso_datetime(datetime.now(timezone.utc).replace(tzinfo=None)),
-            "competitions": [{"id": c.id, "name": c.name} for c in competitions],
+            "competitions": [{"id": c["id"], "name": c["name"], "label": c["label"]} for c in competitions],
             "entries": [
                 {
                     "position": line.position,
@@ -452,5 +470,6 @@ def explain_player(player_id):
         }
         for line in lines
     ]
-    out.sort(key=lambda l: (l["competition"]["startsOn"] or "", l["competition"]["id"]), reverse=True)
+    # Newest edition first; a Teams edition's mini-tournaments in order.
+    out.sort(key=lambda l: (edition_sort_key(l["competition"]), -(l["stageNumber"] or 0)), reverse=True)
     return jsonify({"player": ser.player_ref(player), "total": total, "lines": out})

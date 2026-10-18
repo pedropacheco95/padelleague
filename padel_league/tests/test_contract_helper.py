@@ -14,7 +14,8 @@ class _Resp:
 
 
 CARD = {
-    "id": 27, "name": "PPL Teams 2026/27", "format": "teams", "status": "upcoming", "groupCount": 6,
+    "id": 27, "name": "23ª Edição", "label": "23ª Edição - Teams 2026/27", "editionNumber": 23,
+    "format": "teams", "status": "upcoming", "groupCount": 6,
     "season": {"id": 6, "name": "2026/27", "isCurrent": True},
 }
 

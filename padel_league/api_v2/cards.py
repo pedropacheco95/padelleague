@@ -4,6 +4,7 @@ A fixed number of queries whatever the number of competitions: competitions+seas
 stages, groups, round date range, entry counts, images.
 """
 
+import re
 from collections import defaultdict
 from datetime import date
 
@@ -12,6 +13,7 @@ from sqlalchemy.orm import joinedload
 
 from padel_league.model import Image
 from padel_league.models.v2 import Competition, CompetitionGroup, Entry, Round, Stage
+from padel_league.services.editions import edition_number
 from padel_league.sql_db import db
 
 from . import serializers as ser
@@ -78,6 +80,46 @@ class CardData:
         return comp.starts_on or lo, comp.ends_on or hi
 
 
+# One label everywhere a competition or division is listed (Pedro, 2026-10-18):
+# "<Nª Edição> - <tournament>", e.g. "21ª Edição - Primavera 2026 - 5ª Divisão",
+# "20ª Edição - Shuffle 2026". Sponsors in the competition name stay out of it.
+_EDITION_PREFIX = re.compile(r"^\s*\d+\s*ª\s*Edição\s*-?\s*")
+_DIVISION_SUFFIX = re.compile(r"\s*-\s*\d+\s*\.?ª\s*Divisão\s*$")
+
+
+def edition_name(comp):
+    number = edition_number(comp.name)
+    return f"{number}ª Edição" if number is not None else None
+
+
+def _join(edition, tournament):
+    tournament = _EDITION_PREFIX.sub("", tournament or "").strip()
+    return f"{edition} - {tournament}" if tournament else edition
+
+
+def competition_label(comp, top_group_name=None):
+    """The competition's title (Shuffle, Teams), else its top division's name without
+    the division ("Primavera 2026"); a competition with no number keeps its name."""
+    edition = edition_name(comp)
+    if edition is None:
+        return comp.name or comp.title or f"Competição {comp.id}"
+    tournament = comp.title or _DIVISION_SUFFIX.sub("", top_group_name or "")
+    return _join(edition, tournament)
+
+
+def group_label(comp, group_name):
+    """A Classic division row: "<Nª Edição> - <division name>"."""
+    edition = edition_name(comp)
+    if edition is None or not group_name:
+        return competition_label(comp)
+    return _join(edition, group_name)
+
+
+def edition_sort_key(card_json):
+    """Newest edition first: the edition number, then the start date (descending when reversed)."""
+    return (card_json["editionNumber"] or 0, card_json["startsOn"] or "", card_json["id"])
+
+
 def card(comp, data, today=None):
     groups = data.card_groups(comp)
     top = groups[0] if groups else None
@@ -86,6 +128,8 @@ def card(comp, data, today=None):
         "id": comp.id,
         "name": comp.name or comp.title or f"Competição {comp.id}",
         "title": comp.title or None,
+        "editionNumber": edition_number(comp.name),
+        "label": competition_label(comp, top.name if top else None),
         "format": comp.format,
         "formatLabel": ser.FORMAT_LABELS.get(comp.format, comp.format),
         "eventSlot": comp.event_slot.key if comp.event_slot else None,
@@ -113,10 +157,16 @@ def is_listed(comp, data):
 
 
 def sort_key(card_json):
-    """Current season first, then newest season, then start date descending (undated last)."""
+    """Current season first, then newest season, then newest edition, then start date descending (undated last)."""
     s = card_json["season"]
     starts = card_json["startsOn"] or "0000-00-00"
-    return (not s["isCurrent"], _neg(s["startsOn"] or "0000-00-00"), _neg(starts), -card_json["id"])
+    return (
+        not s["isCurrent"],
+        _neg(s["startsOn"] or "0000-00-00"),
+        -(card_json["editionNumber"] or 0),
+        _neg(starts),
+        -card_json["id"],
+    )
 
 
 def _neg(iso):

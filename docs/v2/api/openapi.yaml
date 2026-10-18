@@ -671,11 +671,13 @@ components:
     CompetitionCard:
       type: object
       description: Everything a Tournaments-page card needs.
-      required: [id, name, format, season, status, groupCount]
+      required: [id, name, label, editionNumber, format, season, status, groupCount]
       properties:
         id: { type: integer }
-        name: { type: string, examples: ["22ª Edição", "PPL Teams 2026/27"] }
-        title: { type: [string, "null"], description: Short display title }
+        name: { type: string, examples: ["22ª Edição", "16ª Edição Powered by QSC"] }
+        title: { type: [string, "null"], description: "Tournament name when it is not a Classic's season, e.g. Shuffle 2026" }
+        editionNumber: { type: [integer, "null"], description: The running edition number across every format (null for the 2022 Play Off); lists sort on it, newest first }
+        label: { type: string, examples: ["22ª Edição - Outono 2026", "20ª Edição - Shuffle 2026", "23ª Edição - Teams 2026/27"], description: "The display name: <Nª Edição> - <tournament>, no sponsor" }
         format: { $ref: "#/components/schemas/Format" }
         formatLabel: { type: string, examples: ["Classic", "Teams", "Shuffle", "Super Cup"] }
         eventSlot: { type: [string, "null"], examples: ["classica-1"], description: Recurring event key }
@@ -910,12 +912,14 @@ components:
               items: { $ref: "#/components/schemas/Match" }
             history:
               type: array
-              description: One row per competition entry, newest first
+              description: One row per competition entry, newest edition first
               items:
                 type: object
+                required: [competition, label]
                 properties:
                   competition: { $ref: "#/components/schemas/CompetitionCard" }
-                  groupId: { type: [integer, "null"] }
+                  label: { type: string, examples: ["21ª Edição - Primavera 2026 - 5ª Divisão", "20ª Edição - Shuffle 2026"], description: "Classic: the edition and division; other formats: the competition label" }
+                  groupId: { type: [integer, "null"], description: The Classic division (null for Shuffle/Teams rows, which cover the whole competition) }
                   groupName: { type: [string, "null"] }
                   place: { type: [integer, "null"] }
                   points: { type: [number, "null"] }
@@ -963,8 +967,8 @@ components:
         computedAt: { type: [string, "null"], format: date-time }
         competitions:
           type: array
-          description: The competitions in the ranking window the subs points come from (same window as the main ranking)
-          items: { type: object, required: [id, name], properties: { id: { type: integer }, name: { type: string } } }
+          description: The competitions in the ranking window the subs points come from (same window as the main ranking), newest edition first
+          items: { type: object, required: [id, name, label], properties: { id: { type: integer }, name: { type: string }, label: { type: string, examples: ["22ª Edição - Outono 2026"] } } }
         entries:
           type: array
           items:

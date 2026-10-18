@@ -216,3 +216,21 @@ def test_ranking_entries_flag_subs_points(client):
     body = check(client.get("/api/v2/rankings/current"), "/rankings/current")
     flags = {e["player"]["id"]: e["fromSubs"] for e in body["entries"]}
     assert flags[pid] is True and sum(flags.values()) == 1
+
+
+def test_player_history_labels_order_and_shuffle_row(client):
+    from padel_league.models.v2 import Competition, Entry
+
+    shuffle = Competition.query.filter_by(format="shuffle").first()
+    entry = shuffle and Entry.query.filter_by(competition_id=shuffle.id).first()
+    assert entry is not None
+    body = check(client.get(f"/api/v2/players/{entry.player_id}"), "/players/{playerId}")
+    numbers = [r["competition"]["editionNumber"] or 0 for r in body["history"]]
+    assert numbers == sorted(numbers, reverse=True)
+    row = next(r for r in body["history"] if r["competition"]["id"] == shuffle.id)
+    assert row["label"] == row["competition"]["label"] and row["groupId"] is None
+    # The Shuffle's standing row has no group member and no appearances (fixed 2026-10-18).
+    assert row["wins"] is not None and row["played"] == row["wins"] + row["draws"] + row["losses"]
+    for r in body["history"]:
+        if r["competition"]["format"] == "classica" and r["competition"]["editionNumber"]:
+            assert r["label"].startswith(f"{r['competition']['editionNumber']}ª Edição - ")
