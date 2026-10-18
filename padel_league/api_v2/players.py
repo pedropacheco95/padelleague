@@ -7,7 +7,7 @@ from flask import Blueprint, jsonify, request
 from sqlalchemy.orm import joinedload
 
 from padel_league.models import Player
-from padel_league.services import ranking
+from padel_league.services import player_story, ranking
 from padel_league.models.v2 import (
     Award,
     Competition,
@@ -304,6 +304,13 @@ def get_player_matches(player_id):
     get_player(player_id)
     competition_id = int_arg(request.args.get("competition"), "competition")
     return jsonify(serialize_matches(player_matches(player_id, competition_id)))
+
+
+@bp.route("/players/<int:player_id>/story", methods=["GET"])
+def get_player_story(player_id):
+    """The new player page's blocks: facts plus fixed-template sentences (services/player_story)."""
+    get_player(player_id)
+    return jsonify(player_story.story(player_id))
 
 
 @bp.route("/players/compare", methods=["GET"])

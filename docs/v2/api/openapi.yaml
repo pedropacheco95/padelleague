@@ -352,6 +352,15 @@ paths:
         "400": { $ref: "#/components/responses/Error" }
         "404": { $ref: "#/components/responses/Error" }
 
+  /players/{playerId}/story:
+    parameters: [{ $ref: "#/components/parameters/playerId" }]
+    get:
+      tags: [players]
+      summary: The new player page's blocks (J1-J7) computed live; every sentence is a fixed template (services/player_story.py)
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/PlayerStory" } } } }
+        "404": { $ref: "#/components/responses/Error" }
+
   /rankings/current:
     get:
       tags: [rankings]
@@ -931,6 +940,231 @@ components:
             stats:
               type: object
               additionalProperties: { type: number }
+
+    StoryLine:
+      type: object
+      required: [key, text]
+      description: One sentence from the copy catalogue (key) filled with live numbers (text)
+      properties:
+        key: { type: string }
+        text: { type: string }
+
+    StoryRecord:
+      type: object
+      required: [played, wins, draws, losses]
+      properties:
+        played: { type: integer }
+        wins: { type: integer }
+        draws: { type: integer }
+        losses: { type: integer }
+
+    StoryRing:
+      type: object
+      required: [competitionId, edition, format, title, matches]
+      description: One fingerprint ring = one edition; matches are [margin, matchId] in game order (corrupt scores and walkovers left out)
+      properties:
+        competitionId: { type: integer }
+        edition: { type: string, examples: ["5ª"] }
+        format: { type: string }
+        tier: { type: [integer, "null"] }
+        place: { type: [integer, "null"] }
+        title: { type: boolean }
+        matches: { type: array, items: { type: array, items: { type: integer } } }
+
+    StoryOpponent:
+      allOf:
+        - $ref: "#/components/schemas/StoryRecord"
+        - type: object
+          required: [player, diff]
+          properties:
+            player: { $ref: "#/components/schemas/PlayerRef" }
+            diff: { type: integer, description: games won minus lost against them }
+            lossStreak: { type: integer }
+
+    PlayerStory:
+      type: object
+      required: [playerId, today, hero]
+      properties:
+        playerId: { type: integer }
+        today: { type: string, format: date }
+        hero:
+          type: object
+          required: [editions, titles]
+          properties:
+            since: { type: [string, "null"], format: date }
+            editions: { type: integer }
+            titles: { type: integer }
+            line: { oneOf: [{ $ref: "#/components/schemas/StoryLine" }, { type: "null" }] }
+            tableNote: { oneOf: [{ $ref: "#/components/schemas/StoryLine" }, { type: "null" }] }
+        archetype:
+          type: [object, "null"]
+          required: [line, matches, skyline, traits]
+          description: key/name null until the player has the minimum number of matches (line says how many are missing)
+          properties:
+            key: { type: [string, "null"] }
+            name: { type: [string, "null"] }
+            line: { $ref: "#/components/schemas/StoryLine" }
+            matches: { type: integer }
+            skyline: { type: array, items: { type: integer }, description: "21 counts of margins -10..+10 (clipped)" }
+            traits:
+              type: object
+              properties:
+                tight: { type: object, properties: { won: { type: integer }, total: { type: integer }, pct: { type: [integer, "null"] } } }
+                diesel: { type: [array, "null"], items: { type: integer } }
+                perfectNights: { type: integer }
+                comebacks: { type: integer }
+                nightsOfThree: { type: integer }
+                bigWins: { type: integer }
+        fingerprint:
+          type: [object, "null"]
+          required: [rings, excluded]
+          properties:
+            rings: { type: array, items: { $ref: "#/components/schemas/StoryRing" } }
+            excluded: { type: integer }
+            next: { type: [object, "null"], properties: { edition: { type: string }, label: { type: string } } }
+            note: { $ref: "#/components/schemas/StoryLine" }
+            caption: { $ref: "#/components/schemas/StoryLine" }
+        mountain:
+          type: [object, "null"]
+          required: [title, lede, points]
+          properties:
+            title: { $ref: "#/components/schemas/StoryLine" }
+            lede: { $ref: "#/components/schemas/StoryLine" }
+            ups: { type: integer }
+            downs: { type: integer }
+            next: { type: [object, "null"], properties: { edition: { type: string }, label: { type: string } } }
+            points:
+              type: array
+              items:
+                type: object
+                required: [competitionId, edition, label, format]
+                properties:
+                  competitionId: { type: integer }
+                  edition: { type: string }
+                  label: { type: string }
+                  format: { type: string }
+                  tier: { type: [integer, "null"] }
+                  place: { type: [integer, "null"] }
+                  position: { type: [integer, "null"], description: members of the higher divisions of that edition + place }
+                  topSize: { type: [integer, "null"], description: members of the 1ª Divisão that edition }
+                  title: { type: boolean }
+                  change: { type: [string, "null"], enum: [up, down, null] }
+        people:
+          type: [object, "null"]
+          required: [title, clientes]
+          properties:
+            title: { $ref: "#/components/schemas/StoryLine" }
+            carrasco: { oneOf: [{ $ref: "#/components/schemas/StoryOpponent" }, { type: "null" }] }
+            clientes: { type: array, items: { $ref: "#/components/schemas/StoryOpponent" } }
+            carrascoLine: { oneOf: [{ $ref: "#/components/schemas/StoryLine" }, { type: "null" }] }
+            clientesLine: { oneOf: [{ $ref: "#/components/schemas/StoryLine" }, { type: "null" }] }
+            paradox: { oneOf: [{ $ref: "#/components/schemas/StoryLine" }, { type: "null" }] }
+        constellation:
+          type: [object, "null"]
+          required: [title, lede, partners, opponents, met, total, degree2, degree3]
+          properties:
+            title: { $ref: "#/components/schemas/StoryLine" }
+            lede: { $ref: "#/components/schemas/StoryLine" }
+            partners:
+              type: array
+              items:
+                type: object
+                required: [player, together, chemistry]
+                properties:
+                  player: { $ref: "#/components/schemas/PlayerRef" }
+                  together: { type: integer }
+                  chemistry: { type: integer, description: win% together minus the player's overall win% (0 below the minimum) }
+            opponents:
+              type: array
+              items: { type: object, required: [player, met], properties: { player: { $ref: "#/components/schemas/PlayerRef" }, met: { type: integer } } }
+            strangers:
+              type: [object, "null"]
+              properties:
+                count: { type: integer }
+                competitionLabel: { type: string }
+                lede: { $ref: "#/components/schemas/StoryLine" }
+                list:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      player: { $ref: "#/components/schemas/PlayerRef" }
+                      matches: { type: integer }
+                      bridge: { oneOf: [{ $ref: "#/components/schemas/PlayerRef" }, { type: "null" }] }
+            met: { type: integer }
+            total: { type: integer }
+            degree2: { type: integer }
+            degree3: { type: integer }
+            rivalId: { type: [integer, "null"] }
+            carrascoId: { type: [integer, "null"] }
+        rival:
+          oneOf:
+            - type: "null"
+            - allOf:
+                - $ref: "#/components/schemas/StoryRecord"
+                - type: object
+                  required: [player, title, together, rings, titles]
+                  properties:
+                    player: { $ref: "#/components/schemas/PlayerRef" }
+                    title: { $ref: "#/components/schemas/StoryLine" }
+                    together: { $ref: "#/components/schemas/StoryRecord" }
+                    togetherLine: { oneOf: [{ $ref: "#/components/schemas/StoryLine" }, { type: "null" }] }
+                    rings: { type: array, items: { $ref: "#/components/schemas/StoryRing" } }
+                    titles: { type: integer }
+                    caption: { $ref: "#/components/schemas/StoryLine" }
+        nights:
+          type: [object, "null"]
+          required: [title, lede, played, missed, cells]
+          properties:
+            title: { $ref: "#/components/schemas/StoryLine" }
+            lede: { $ref: "#/components/schemas/StoryLine" }
+            played: { type: integer }
+            missed: { type: integer }
+            cells:
+              type: array
+              items:
+                type: object
+                required: [date, played, estimated, competitionId, round]
+                properties:
+                  date: { type: string, format: date }
+                  net: { type: [integer, "null"] }
+                  played: { type: boolean }
+                  estimated: { type: boolean }
+                  competitionId: { type: integer }
+                  round: { type: integer }
+            best:
+              type: [object, "null"]
+              properties:
+                date: { type: string, format: date }
+                net: { type: integer }
+                label: { type: string }
+                scores: { type: array, items: { type: string } }
+                line: { $ref: "#/components/schemas/StoryLine" }
+            next:
+              type: [object, "null"]
+              properties:
+                date: { type: string, format: date }
+                competitionId: { type: integer }
+                line: { $ref: "#/components/schemas/StoryLine" }
+            estimatedNote: { oneOf: [{ $ref: "#/components/schemas/StoryLine" }, { type: "null" }] }
+        streaks:
+          type: [object, "null"]
+          required: [title, items]
+          properties:
+            title: { $ref: "#/components/schemas/StoryLine" }
+            items:
+              type: array
+              items:
+                type: object
+                required: [key, label, current, best, record, alive, line]
+                properties:
+                  key: { type: string, enum: [podiums, wins, nights] }
+                  label: { type: string }
+                  current: { type: integer }
+                  best: { type: integer }
+                  record: { type: integer }
+                  alive: { type: boolean }
+                  line: { $ref: "#/components/schemas/StoryLine" }
 
     PlayerComparison:
       type: object
