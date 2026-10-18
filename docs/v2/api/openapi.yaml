@@ -980,6 +980,7 @@ components:
             player: { $ref: "#/components/schemas/PlayerRef" }
             diff: { type: integer, description: games won minus lost against them }
             lossStreak: { type: integer }
+            gamesLine: { $ref: "#/components/schemas/StoryLine" }
 
     PlayerStory:
       type: object
@@ -996,6 +997,7 @@ components:
             titles: { type: integer }
             line: { oneOf: [{ $ref: "#/components/schemas/StoryLine" }, { type: "null" }] }
             tableNote: { oneOf: [{ $ref: "#/components/schemas/StoryLine" }, { type: "null" }] }
+            pointsLine: { oneOf: [{ $ref: "#/components/schemas/StoryLine" }, { type: "null" }] }
         archetype:
           type: [object, "null"]
           required: [line, matches, skyline, traits]
@@ -1009,7 +1011,7 @@ components:
             traits:
               type: object
               properties:
-                tight: { type: object, properties: { won: { type: integer }, total: { type: integer }, pct: { type: [integer, "null"] } } }
+                tight: { type: object, properties: { won: { type: integer }, total: { type: integer }, pct: { type: [integer, "null"] }, line: { $ref: "#/components/schemas/StoryLine" } } }
                 diesel: { type: [array, "null"], items: { type: integer } }
                 perfectNights: { type: integer }
                 comebacks: { type: integer }
@@ -1082,6 +1084,7 @@ components:
               properties:
                 count: { type: integer }
                 competitionLabel: { type: string }
+                title: { $ref: "#/components/schemas/StoryLine" }
                 lede: { $ref: "#/components/schemas/StoryLine" }
                 list:
                   type: array
@@ -1091,8 +1094,10 @@ components:
                       player: { $ref: "#/components/schemas/PlayerRef" }
                       matches: { type: integer }
                       bridge: { oneOf: [{ $ref: "#/components/schemas/PlayerRef" }, { type: "null" }] }
+                      line: { $ref: "#/components/schemas/StoryLine" }
             met: { type: integer }
             total: { type: integer }
+            totalLine: { $ref: "#/components/schemas/StoryLine" }
             degree2: { type: integer }
             degree3: { type: integer }
             rivalId: { type: [integer, "null"] }
@@ -1109,6 +1114,7 @@ components:
                     title: { $ref: "#/components/schemas/StoryLine" }
                     together: { $ref: "#/components/schemas/StoryRecord" }
                     togetherLine: { oneOf: [{ $ref: "#/components/schemas/StoryLine" }, { type: "null" }] }
+                    split: { type: array, items: { $ref: "#/components/schemas/StoryLine" }, description: "wins, draws · played, losses" }
                     rings: { type: array, items: { $ref: "#/components/schemas/StoryRing" } }
                     titles: { type: integer }
                     caption: { $ref: "#/components/schemas/StoryLine" }

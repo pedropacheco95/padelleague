@@ -310,7 +310,8 @@ def get_player_matches(player_id):
 def get_player_story(player_id):
     """The new player page's blocks: facts plus fixed-template sentences (services/player_story)."""
     get_player(player_id)
-    return jsonify(player_story.story(player_id))
+    points = ranking_by_player(current_snapshot()).get(player_id, (None, 0.0))[1]
+    return jsonify(player_story.story(player_id, ranking_points=points))
 
 
 @bp.route("/players/compare", methods=["GET"])

@@ -81,6 +81,7 @@ COPY = {
     "hero.sub_only": ("{n} jogo como substituto", "{n} jogos como substituto"),
     "hero.table": "Ordenado por edição, da mais recente. {parts}.",
     "hero.podiums": ("{n} pódio", "{n} pódios"),
+    "hero.points": "De onde vêm os {points}",
     # J1 impressão digital
     "fingerprint.note": "Um anel por edição, da {first} (centro) à {last}.",
     "fingerprint.note.one": "Um anel por edição: a {first} é a primeira.",
@@ -108,18 +109,28 @@ COPY = {
     "people.clientes.count": "{name}: {w} vitórias em {n} encontros.",
     "people.clientes.none": "Ainda ninguém lhe paga (mín. {n} encontros).",
     "people.paradox": "Mas ao lado de {name}: {w}V {d}E {l}D. Melhor do outro lado da rede.",
+    "people.carrasco.games": ("jogos em {n} encontro.", "jogos em {n} encontros."),
     # J4 constelação
     "constellation.title": "Com quem partilhou campo",
     "constellation.lede": "Perto do centro, os parceiros mais frequentes. Amarelo dá química, coral não dá.",
     "constellation.lede.strangers": "No anel de fora, os inscritos na {competition} que nunca defrontou.",
+    "constellation.total": ("de {n} jogador", "de {n} jogadores"),
+    "constellation.strangers": "Inscritos que nunca defrontou · {n}",
+    "constellation.stranger": ("{n} jogo", "{n} jogos"),
+    "constellation.bridge": "{matches} · ponte: {name}",
     # J5 rival
     "rival.title.league": "O jogo mais repetido da liga",
     "rival.title.count": "{n} encontros com {name}",
     "rival.together": "E ainda {n} jogos lado a lado: {w}V {d}E {l}D.",
     "rival.together.one": "E ainda 1 jogo lado a lado: {w}V {d}E {l}D.",
+    "rival.wins": ("{n} vitória", "{n} vitórias"),
+    "rival.draws": ("{n} empate · {played}", "{n} empates · {played}"),
+    "rival.losses": ("{n} derrota", "{n} derrotas"),
+    "rival.played": ("{n} jogo", "{n} jogos"),
     # J6 todas as noites
     "nights.title": ("{n} noite de liga", "{n} noites de liga"),
-    "nights.lede": "{played} jogadas, {missed}.",
+    "nights.lede": "{played}, {missed}.",
+    "nights.played": ("{n} jogada", "{n} jogadas"),
     "nights.missed": ("{n} falta", "{n} faltas"),
     "nights.missed.none": "nenhuma falta",
     "nights.best": "A melhor noite: {date}",
@@ -139,6 +150,7 @@ COPY = {
     "streaks.none": "Ainda por estrear · liga {record}",
     "streaks.last_absence": "Faltou à J{round} da {edition} · recorde {best}",
     # J7 assinatura (rules in archetype())
+    "archetype.tight": "ganhos nos jogos decididos por 1–2 ({won} de {total})",
     "archetype.rookie": ("A assinatura aparece aos {min} jogos: falta {k}.", "A assinatura aparece aos {min} jogos: faltam {k}."),
 }
 
@@ -670,7 +682,13 @@ def people(league, pid, opp, par):
             carrasco_line = say("people.carrasco.streak", k=streak, name=name)
         elif seen and (league.today - seen).days > RULES["retired_after_days"]:
             carrasco_line = say("people.carrasco.retired", name=name, since=month_year(seen))
-        carrasco = {"player": league.ref(o), **record(r), "diff": r["diff"], "lossStreak": streak}
+        carrasco = {
+            "player": league.ref(o),
+            **record(r),
+            "diff": r["diff"],
+            "lossStreak": streak,
+            "gamesLine": say("people.carrasco.games", n=r["played"]),
+        }
     else:
         carrasco_line = say("people.carrasco.none", n=n_min)
     clientes = [{"player": league.ref(o), **record(r), "diff": r["diff"]} for o, r in best]
@@ -766,10 +784,15 @@ def constellation(league, pid, opp, par, next_comp, rival_id, carrasco_id):
                 with_me = (opp.get(b, {}).get("played", 0)) + (par.get(b, {}).get("played", 0))
                 bridges.append((-min(with_me, _met_count(league, b, s)), b))
             bridge = league.ref(sorted(bridges)[0][1]) if bridges else None
-            listed.append({"player": league.ref(s), "matches": len(league.by_player.get(s, [])), "bridge": bridge})
+            n = len(league.by_player.get(s, []))
+            line = words("constellation.stranger", n)
+            if bridge:
+                line = say("constellation.bridge", matches=line, name=bridge["name"])["text"]
+            listed.append({"player": league.ref(s), "matches": n, "bridge": bridge, "line": {"key": "constellation.stranger", "text": line}})
         strangers = {
             "count": len(never),
             "competitionLabel": full_label(league, cid),
+            "title": say("constellation.strangers", n=len(never)),
             "list": listed,
             "lede": say("constellation.lede.strangers", competition=short_label(league, cid)),
         }
@@ -781,6 +804,7 @@ def constellation(league, pid, opp, par, next_comp, rival_id, carrasco_id):
         "strangers": strangers,
         "met": len(met),
         "total": len(league_ids - {pid}),
+        "totalLine": say("constellation.total", n=len(league_ids - {pid})),
         "degree2": sum(1 for d in dist.values() if d == 2),
         "degree3": sum(1 for d in dist.values() if d == 3),
         "rivalId": rival_id,
@@ -829,6 +853,11 @@ def rival(league, pid, opp):
         **record(vs),
         "together": tog,
         "togetherLine": together,
+        "split": [
+            say("rival.wins", n=vs["wins"]),
+            say("rival.draws", n=vs["draws"], played=words("rival.played", vs["played"])),
+            say("rival.losses", n=vs["losses"]),
+        ],
         "rings": theirs,
         "titles": sum(1 for x in theirs if x["title"]),
         "caption": ring_caption(theirs),
@@ -876,7 +905,7 @@ def nights(league, pid, next_comp):
         }
     return {
         "title": say("nights.title", n=len(cells)),
-        "lede": say("nights.lede", played=played, missed=missed_words),
+        "lede": say("nights.lede", played=words("nights.played", played), missed=missed_words),
         "played": played,
         "missed": missed,
         "cells": cells,
@@ -965,7 +994,12 @@ def archetype(league, pid):
     if three:
         diesel = [round(100 * sum(1 for s in three if s[i] == "W") / len(three)) for i in range(3)]
     traits = {
-        "tight": {"won": tight_won, "total": len(tight), "pct": round(100 * tight_won / len(tight)) if tight else None},
+        "tight": {
+            "won": tight_won,
+            "total": len(tight),
+            "pct": round(100 * tight_won / len(tight)) if tight else None,
+            "line": say("archetype.tight", won=tight_won, total=len(tight)),
+        },
         "diesel": diesel,
         "perfectNights": perfect,
         "comebacks": comebacks,
@@ -1025,8 +1059,8 @@ select md5(concat_ws('|',
   (select string_agg(id || ':' || competition_id || ':' || number, ',' order by id) from stages),
   (select string_agg(id || ':' || coalesce(name, '') || ':' || coalesce(title, '') || ':' || format || ':' || status
      || ':' || coalesce(starts_on::text, '') || ':' || coalesce(ends_on::text, ''), ',' order by id) from competitions),
-  (select string_agg(id || ':' || coalesce(name, '') || ':' || coalesce(full_name, '') || ':' || coalesce(status, ''),
-     ',' order by id) from players)
+  (select string_agg(id || ':' || coalesce(name, '') || ':' || coalesce(full_name, '') || ':' || coalesce(status, '')
+     || ':' || coalesce(picture_id, 0) || ':' || coalesce(picture_path, ''), ',' order by id) from players)
 ))
 """
 _cache = {}
@@ -1049,7 +1083,7 @@ def ring_caption(rs):
     return {"key": "fingerprint.caption", "text": " · ".join(parts)}
 
 
-def story(player_id, today=None):
+def story(player_id, today=None, ranking_points=None):
     league = league_for(today or date.today())
     pid = player_id
     mine = league.by_player.get(pid, [])
@@ -1082,7 +1116,10 @@ def story(player_id, today=None):
     return {
         "playerId": pid,
         "today": league.today.isoformat(),
-        "hero": hero(league, pid),
+        "hero": {
+            **hero(league, pid),
+            "pointsLine": say("hero.points", points=round(ranking_points)) if ranking_points else None,
+        },
         "archetype": archetype(league, pid),
         "fingerprint": fp,
         "mountain": mountain(league, pid, next_comp),
