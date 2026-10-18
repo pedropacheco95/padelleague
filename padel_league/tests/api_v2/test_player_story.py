@@ -42,7 +42,7 @@ def test_sentences_come_from_the_catalogue(pg):
     for pid in (27, 28, 3, 105, 96, 1):
         for line in _texts(story(pid, TODAY), []):
             key = line["key"]
-            assert key == "hero" or key in COPY or key.startswith("archetype."), key
+            assert key == "hero" or key in COPY or key.startswith(("archetype.", "badges.")), key
 
 
 def test_deterministic(pg):
@@ -113,3 +113,42 @@ def test_substitute_only_player(client):
     body = check(client.get(f"/api/v2/players/{pid}/story"), "/players/{playerId}/story")
     assert all(body[k] is None for k in ("fingerprint", "mountain", "people", "constellation", "rival", "nights", "streaks"))
     assert body["hero"]["line"]["text"].endswith("como substituto")
+
+
+# --- conquistas -----------------------------------------------------------------------------
+
+
+def test_badge_catalogue(client):
+    body = check(client.get("/api/v2/badges"), "/badges")
+    from padel_league.services.badges import REGISTRY
+
+    assert {b["key"] for b in body["badges"]} == {b.key for b in REGISTRY}
+    for b in body["badges"]:
+        assert b["holdersCount"] == len(b["holders"])
+        assert abs(b["rarityPct"] - 100 * b["holdersCount"] / body["playersCount"]) < 0.06
+        pct = b["rarityPct"]
+        assert b["tier"] == ("lendaria" if pct < 5 else "epica" if pct < 15 else "rara" if pct < 40 else "comum")
+    assert [b["rarityPct"] for b in body["badges"]] == sorted(b["rarityPct"] for b in body["badges"])
+
+
+def test_badge_detail(client):
+    body = check(client.get("/api/v2/badges/clube_200"), "/badges/{key}")
+    holders = {p["id"] for p in body["holders"]}
+    assert all(c["player"]["id"] not in holders and not c["earned"] for c in body["closest"])
+    values = [c["value"] for c in body["closest"]]
+    assert values == sorted(values, reverse=True)
+    check(client.get("/api/v2/badges/nope"), "/badges/{key}", status=404)
+
+
+def test_player_badges(client):
+    body = check(client.get("/api/v2/players/27/badges"), "/players/{playerId}/badges")
+    earned = {i["key"] for i in body["items"] if i["earned"]}
+    assert {"tetracampeao", "clube_300", "centuriao", "veterano", "rei_da_1"} <= earned
+    assert "clube_200" not in earned and body["earned"] == len(earned)
+    locked = next(i for i in body["items"] if i["key"] == "clube_200")
+    assert locked["progress"]["text"].endswith("de 200")
+    # earned first, then locked
+    flags = [i["earned"] for i in body["items"]]
+    assert flags == sorted(flags, reverse=True)
+    rookie = check(client.get("/api/v2/players/19/badges"), "/players/{playerId}/badges")
+    assert rookie is None

@@ -1,13 +1,13 @@
 """Players, player history and comparison, rankings and the ranking explanation."""
 
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from flask import Blueprint, jsonify, request
 from sqlalchemy.orm import joinedload
 
 from padel_league.models import Player
-from padel_league.services import player_story, ranking
+from padel_league.services import badges, player_story, ranking
 from padel_league.models.v2 import (
     Award,
     Competition,
@@ -312,6 +312,26 @@ def get_player_story(player_id):
     get_player(player_id)
     points = ranking_by_player(current_snapshot()).get(player_id, (None, 0.0))[1]
     return jsonify(player_story.story(player_id, ranking_points=points))
+
+
+@bp.route("/players/<int:player_id>/badges", methods=["GET"])
+def get_player_badges(player_id):
+    """The player's conquistas: earned (rarest first), then locked with progress; null without games."""
+    get_player(player_id)
+    return jsonify(badges.for_player(player_story.league_for(date.today()), player_id))
+
+
+@bp.route("/badges", methods=["GET"])
+def badge_catalogue():
+    return jsonify(badges.catalogue(player_story.league_for(date.today())))
+
+
+@bp.route("/badges/<key>", methods=["GET"])
+def badge_detail(key):
+    out = badges.detail(player_story.league_for(date.today()), key)
+    if out is None:
+        raise not_found("Conquista não encontrada.", "badge_not_found")
+    return jsonify(out)
 
 
 @bp.route("/players/compare", methods=["GET"])

@@ -40,6 +40,7 @@ from sqlalchemy.orm import joinedload
 from padel_league.api_v2 import serializers as ser
 from padel_league.models import Player
 from padel_league.api_v2.cards import _EDITION_PREFIX, competition_label, group_label
+from padel_league.services import badges
 from padel_league.services.editions import edition_number
 from padel_league.sql_db import db
 
@@ -1054,6 +1055,7 @@ select md5(concat_ws('|',
   (select count(*) || ':' || coalesce(string_agg(id || ':' || player_id || ':' || competition_id || ':' || status
      || ':' || coalesce(final_place, 0), ',' order by id), '') from entries),
   (select count(*) || ':' || coalesce(sum(id * 3 + group_id * 7 + entry_id), 0) from group_members),
+  (select count(*) || ':' || coalesce(string_agg(id || ':' || player_id || ':' || coalesce(place, 0), ',' order by id), '') from awards),
   (select string_agg(id || ':' || stage_id || ':' || coalesce(tier, 0) || ':' || coalesce(name, ''), ',' order by id) from competition_groups),
   (select string_agg(id || ':' || number || ':' || coalesce(date::text, ''), ',' order by id) from rounds),
   (select string_agg(id || ':' || competition_id || ':' || number, ',' order by id) from stages),
@@ -1136,4 +1138,5 @@ def story(player_id, today=None, ranking_points=None):
         "rival": riv,
         "nights": nights(league, pid, next_comp),
         "streaks": streaks(league, pid, next_comp),
+        "badges": badges.for_player(league, pid),
     }

@@ -361,6 +361,31 @@ paths:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/PlayerStory" } } } }
         "404": { $ref: "#/components/responses/Error" }
 
+  /players/{playerId}/badges:
+    parameters: [{ $ref: "#/components/parameters/playerId" }]
+    get:
+      tags: [players]
+      summary: The player's conquistas (earned rarest first, then locked with progress); null for a player without games
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { oneOf: [{ $ref: "#/components/schemas/PlayerBadges" }, { type: "null" }] } } } }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /badges:
+    get:
+      tags: [players]
+      summary: Every conquista with its rule, rarity and holders, rarest first (registry in services/badges.py)
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/BadgeCatalogue" } } } }
+
+  /badges/{key}:
+    parameters: [{ name: key, in: path, required: true, schema: { type: string } }]
+    get:
+      tags: [players]
+      summary: One conquista with its holders and the players closest to earning it
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/BadgeDetail" } } } }
+        "404": { $ref: "#/components/responses/Error" }
+
   /rankings/current:
     get:
       tags: [rankings]
@@ -982,6 +1007,76 @@ components:
             lossStreak: { type: integer }
             gamesLine: { $ref: "#/components/schemas/StoryLine" }
 
+    Badge:
+      type: object
+      required: [key, name, rule, kind, holdersCount, rarityPct, tier, tierLabel, rarityLine]
+      properties:
+        key: { type: string }
+        name: { type: string }
+        rule: { type: string }
+        kind: { type: string, enum: [at_least, at_most, leader] }
+        target: { type: [number, "null"] }
+        holdersCount: { type: integer }
+        rarityPct: { type: number, description: share of players with at least one game who own it }
+        tier: { type: string, enum: [comum, rara, epica, lendaria] }
+        tierLabel: { type: string }
+        rarityLine: { $ref: "#/components/schemas/StoryLine" }
+
+    PlayerBadge:
+      allOf:
+        - $ref: "#/components/schemas/Badge"
+        - type: object
+          required: [earned]
+          properties:
+            earned: { type: boolean }
+            value: { type: [number, "null"] }
+            fraction: { type: [number, "null"], description: progress 0..1 for count badges }
+            progress: { oneOf: [{ $ref: "#/components/schemas/StoryLine" }, { type: "null" }] }
+
+    PlayerBadges:
+      type: object
+      required: [earned, total, countLine, info, items]
+      properties:
+        earned: { type: integer }
+        total: { type: integer }
+        countLine: { $ref: "#/components/schemas/StoryLine" }
+        info: { $ref: "#/components/schemas/StoryLine" }
+        items: { type: array, items: { $ref: "#/components/schemas/PlayerBadge" } }
+
+    BadgeCatalogue:
+      type: object
+      required: [playersCount, info, badges]
+      properties:
+        playersCount: { type: integer }
+        info: { $ref: "#/components/schemas/StoryLine" }
+        badges:
+          type: array
+          items:
+            allOf:
+              - $ref: "#/components/schemas/Badge"
+              - type: object
+                required: [holders]
+                properties:
+                  holders: { type: array, items: { $ref: "#/components/schemas/PlayerRef" } }
+
+    BadgeDetail:
+      allOf:
+        - $ref: "#/components/schemas/Badge"
+        - type: object
+          required: [playersCount, holders, closest]
+          properties:
+            playersCount: { type: integer }
+            holders: { type: array, items: { $ref: "#/components/schemas/PlayerRef" } }
+            closest:
+              type: array
+              items:
+                allOf:
+                  - $ref: "#/components/schemas/PlayerBadge"
+                  - type: object
+                    required: [player]
+                    properties:
+                      player: { $ref: "#/components/schemas/PlayerRef" }
+
     PlayerStory:
       type: object
       required: [playerId, today, hero]
@@ -1153,6 +1248,7 @@ components:
                 competitionId: { type: integer }
                 line: { $ref: "#/components/schemas/StoryLine" }
             estimatedNote: { oneOf: [{ $ref: "#/components/schemas/StoryLine" }, { type: "null" }] }
+        badges: { oneOf: [{ $ref: "#/components/schemas/PlayerBadges" }, { type: "null" }] }
         streaks:
           type: [object, "null"]
           required: [title, items]
