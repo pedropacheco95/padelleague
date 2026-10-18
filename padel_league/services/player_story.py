@@ -110,7 +110,7 @@ COPY = {
     "people.clientes.count": "{name}: {w} vitórias em {n} encontros.",
     "people.clientes.none": "Ainda ninguém lhe paga (mín. {n} encontros).",
     "people.paradox": "Mas ao lado de {name}: {w}V {d}E {l}D. Melhor do outro lado da rede.",
-    "people.carrasco.games": ("jogos em {n} encontro.", "jogos em {n} encontros."),
+    "people.games": ("jogos ganhos–perdidos em {n} encontro", "jogos ganhos–perdidos em {n} encontros"),
     # J4 constelação
     "constellation.title": "Com quem partilhou campo",
     "constellation.lede": "Perto do centro, os parceiros mais frequentes. Amarelo dá química, coral não dá.",
@@ -629,7 +629,9 @@ def mountain(league, pid, next_comp):
 
 def opponents_table(league, pid):
     """{opponent: h2h dict} and {partner: record} over the player's member matches."""
-    opp = defaultdict(lambda: {"played": 0, "wins": 0, "draws": 0, "losses": 0, "diff": 0, "first": None, "last": None, "trail": []})
+    opp = defaultdict(
+        lambda: {"played": 0, "wins": 0, "draws": 0, "losses": 0, "diff": 0, "gf": 0, "ga": 0, "first": None, "last": None, "trail": []}
+    )
     par = defaultdict(lambda: {"played": 0, "wins": 0, "draws": 0, "losses": 0})
     for m, res in league.results(pid):
         if res is None:
@@ -643,6 +645,10 @@ def opponents_table(league, pid):
             r["played"] += 1
             r[key] += 1
             r["diff"] += m.margin(pid) or 0
+            if m.margin(pid) is not None:
+                mine = m.side_of(pid) == "home"
+                r["gf"] += sum(h if mine else a for h, a in m.sets)
+                r["ga"] += sum(a if mine else h for h, a in m.sets)
             r["first"] = r["first"] or m.day
             r["last"] = m.day
             r["trail"].append(res)
@@ -688,11 +694,23 @@ def people(league, pid, opp, par):
             **record(r),
             "diff": r["diff"],
             "lossStreak": streak,
-            "gamesLine": say("people.carrasco.games", n=r["played"]),
+            "gamesFor": r["gf"],
+            "gamesAgainst": r["ga"],
+            "gamesLine": say("people.games", n=r["played"]),
         }
     else:
         carrasco_line = say("people.carrasco.none", n=n_min)
-    clientes = [{"player": league.ref(o), **record(r), "diff": r["diff"]} for o, r in best]
+    clientes = [
+        {
+            "player": league.ref(o),
+            **record(r),
+            "diff": r["diff"],
+            "gamesFor": r["gf"],
+            "gamesAgainst": r["ga"],
+            "gamesLine": say("people.games", n=r["played"]),
+        }
+        for o, r in best
+    ]
     clientes_line = paradox = None
     if best:
         o, r = best[0]

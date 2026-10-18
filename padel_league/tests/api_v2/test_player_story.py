@@ -79,7 +79,10 @@ def test_malafaya(pg):
     s = story(27, TODAY)
     assert s["hero"]["titles"] == 4 and s["hero"]["editions"] == 18
     assert s["archetype"]["name"] == "Diesel de sangue-frio"
-    assert s["people"]["carrasco"]["player"]["name"] == "Fred"
+    k = s["people"]["carrasco"]
+    assert k["player"]["name"] == "Fred" and k["gamesFor"] - k["gamesAgainst"] == k["diff"] == -20
+    assert k["gamesLine"]["text"] == "jogos ganhos–perdidos em 24 encontros"
+    assert all(c["gamesFor"] - c["gamesAgainst"] == c["diff"] for c in s["people"]["clientes"])
     assert s["nights"]["best"]["net"] == 18
     assert [i["current"] for i in s["streaks"]["items"]] == [5, 3, 0]
 

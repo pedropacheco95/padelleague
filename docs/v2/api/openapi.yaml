@@ -1005,6 +1005,8 @@ components:
             player: { $ref: "#/components/schemas/PlayerRef" }
             diff: { type: integer, description: games won minus lost against them }
             lossStreak: { type: integer }
+            gamesFor: { type: integer, description: games won against them (walkovers and corrupt scores left out, as diff) }
+            gamesAgainst: { type: integer }
             gamesLine: { $ref: "#/components/schemas/StoryLine" }
 
     Badge:
