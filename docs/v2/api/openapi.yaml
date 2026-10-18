@@ -1021,6 +1021,7 @@ components:
         tier: { type: string, enum: [comum, rara, epica, lendaria] }
         tierLabel: { type: string }
         rarityLine: { $ref: "#/components/schemas/StoryLine" }
+        holdersLine: { $ref: "#/components/schemas/StoryLine" }
 
     PlayerBadge:
       allOf:

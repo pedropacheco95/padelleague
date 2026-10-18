@@ -202,6 +202,10 @@ def _item(b, data, pid=None):
         "tier": data["tier"],
         "tierLabel": data["tierLabel"],
         "rarityLine": {"key": "badges.rarity", "text": COPY["rarity"].format(pct=_pct_text(data["pct"]))},
+        "holdersLine": {
+            "key": "badges.holders",
+            "text": COPY["holders"][0 if len(data["holders"]) == 1 else 1].format(n=len(data["holders"])),
+        },
     }
     if pid is not None:
         value = data["values"].get(pid)
