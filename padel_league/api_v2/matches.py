@@ -96,11 +96,19 @@ def recorded_by(absences):
     return {u.id: u.player for u in users if u.player is not None}
 
 
-def _absences_for(m, absences):
+def _absences_for(m, absences, replaced=None):
     """A full absence shows on every match of the round; a partial one only on the
-    matches the player actually misses (S4)."""
+    matches the player actually misses (S4): the ones whose seat they were taken out
+    of (audit trail), or, for history without one, any match they are not in."""
     present = {p.player_id for p in m.participants}
-    return [a for a in absences if a["kind"] == "full" or a["player"]["id"] not in present]
+    out_of = {pl.id for pl in (replaced or {}).values() if pl is not None}
+    return [
+        a
+        for a in absences
+        if a["kind"] == "full"
+        or a["player"]["id"] in out_of
+        or (a["source"] == "derived" and a["player"]["id"] not in present)
+    ]
 
 
 def replaced_members(matches):
@@ -148,7 +156,7 @@ def serialize_matches(matches):
     return [
         ser.match(
             m,
-            absences=_absences_for(m, absences.get((m.group_id, m.round_id), [])),
+            absences=_absences_for(m, absences.get((m.group_id, m.round_id), []), replaces.get(m.id)),
             replaces=replaces.get(m.id),
         )
         for m in matches

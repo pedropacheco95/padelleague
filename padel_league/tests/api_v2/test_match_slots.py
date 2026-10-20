@@ -165,3 +165,21 @@ def test_closed_group_take_out_refreshes_awards_and_ranking(client, make_user):
     assert after[e[1].id] < before[e[1].id]
     snap = RankingSnapshot.query.order_by(RankingSnapshot.id.desc()).first()
     assert {r.player_id: r.points for r in snap.entries}[e[1].player_id] == pytest.approx(after[e[1].id])
+
+
+def test_partial_absence_not_listed_on_the_other_pairs_match(client, make_user):
+    """Teams: the division's other match of the jornada doesn't list a player taken out of this one."""
+    comp = f.competition(format="teams", name="Slots other match")
+    stg = f.stage(comp)
+    grp = f.group(stg, rating=None)
+    rnd = f.round_(stg)
+    entries = [f.entry(comp, f.player()) for _ in range(8)]
+    for e in entries:
+        f.member(grp, e)
+    m1 = f.match(grp, rnd, home=entries[:2], away=entries[2:4], status="played", sets=[(6, 4), (3, 6), (2, 6)])
+    m2 = f.match(grp, rnd, home=entries[4:6], away=entries[6:])
+    persist()
+    body = _put(client, bearer(make_user()), m1, "home", 1, None)
+    assert [a["player"]["id"] for a in body["absences"]] == [entries[0].player_id]
+    other = check(client.get(f"/api/v2/matches/{m2.id}"), "/matches/{matchId}")
+    assert other["absences"] == []
