@@ -200,7 +200,7 @@ def mark_absent(group_id, round_number, player_id, actor_user_id=None, substitut
                 MatchParticipant(side=side, slot=slot, role="substitute", player_id=substitute_player_id)
             )
         removed += 1
-        played_affected = played_affected or match.played
+        played_affected = played_affected or has_result(match)
         _audit(actor_user_id, "match", match.id, "absence", before, _match_state(match))
 
     entry = _member_entry(group_id, player_id)
@@ -226,8 +226,8 @@ def mark_absent(group_id, round_number, player_id, actor_user_id=None, substitut
     return removed, played_affected
 
 
-def _slot_before_absence(match, player_id):
-    """(side, slot) the player held before they were marked absent, from the audit trail."""
+def _removal(match, player_id):
+    """The audit event that took the member out of `match` (latest first), or None."""
     events = (
         AuditEvent.query.filter_by(entity="match", entity_id=match.id, action="absence")
         .order_by(AuditEvent.id.desc())
@@ -236,16 +236,27 @@ def _slot_before_absence(match, player_id):
     for event in events:
         for p in (event.before or {}).get("participants", []):
             if p.get("player_id") == player_id and p.get("role") == "member":
-                return p["side"], p["slot"]
+                return event, (p["side"], p["slot"])
     return None
 
 
-def undo_absence(absence_id, actor_user_id=None):
-    """Put the player back in the unplayed matches of the round and delete the absence.
+def _slot_before_absence(match, player_id):
+    """(side, slot) the player held before they were marked absent, from the audit trail."""
+    found = _removal(match, player_id)
+    return found[1] if found else None
 
-    Played matches are left as they are (their result stands). The slot comes
-    from the audit trail of the absence; a substitute in that slot is removed.
-    Returns the number of matches the player was restored to.
+
+def undo_absence(absence_id, actor_user_id=None):
+    """Put the player back in the matches of the round they were taken out of and
+    delete the absence.
+
+    Unplayed matches always. A match with a result only when the player was taken
+    out of it AFTER the result was saved (a correction, e.g. the wrong player
+    marked): undoing gives them their slot, set points and presence back. A match
+    that was played with the substitute (marked before, e.g. the player arrived
+    late) keeps the substitute, and the absence stays as a partial one so the
+    record matches the seat. The slot comes from the audit trail of the absence;
+    a substitute in that slot is removed. Returns the number of matches restored.
     """
     absence = db.session.get(Absence, absence_id)
     if absence is None:
@@ -257,30 +268,176 @@ def undo_absence(absence_id, actor_user_id=None):
     matches = CompetitionMatch.query.filter(
         CompetitionMatch.round_id == absence.round_id, CompetitionMatch.group_id.in_(group_ids)
     ).all()
-    restored = 0
+    restored, touched_groups, kept_out = 0, set(), False
     for match in matches:
-        if match.played or any(p.player_id == entry.player_id for p in match.participants):
+        if any(p.player_id == entry.player_id for p in _participants(match.id)):
             continue
-        place = _slot_before_absence(match, entry.player_id)
-        if place is None:
+        found = _removal(match, entry.player_id)
+        if found is None:
             continue
-        side, slot = place
-        before = _match_state(match)
-        occupant = next((p for p in match.participants if p.side == side and p.slot == slot), None)
-        if occupant is not None:
-            if occupant.role == "member":
-                continue  # slot taken by another member: leave it to an admin
-            match.participants.remove(occupant)
-            db.session.delete(occupant)
-            db.session.flush()
-        match.participants.append(
-            MatchParticipant(side=side, slot=slot, role="member", entry_id=entry.id, player_id=entry.player_id)
-        )
-        restored += 1
-        _audit(actor_user_id, "match", match.id, "absence_undone", before, _match_state(match))
-    db.session.delete(absence)
-    _audit(actor_user_id, "absence", absence_id, "deleted", {"entry_id": entry.id, "round_id": absence.round_id})
+        removed_after_result = (found[0].before or {}).get("status") in ("played", "walkover")
+        if has_result(match) and not removed_after_result:
+            kept_out = True  # played with the substitute: that stands
+            continue
+        if _restore_member(match, entry, actor_user_id, action="absence_undone"):
+            restored += 1
+            if has_result(match):
+                touched_groups.add(match.group_id)
+        else:
+            kept_out = True
+    action = "narrowed" if kept_out else "deleted"
+    _audit(actor_user_id, "absence", absence_id, action, {"entry_id": entry.id, "round_id": absence.round_id})
+    if kept_out:
+        absence.kind = "partial"
+    else:
+        db.session.delete(absence)
+    for group_id in touched_groups:
+        unfreeze_group_standings(group_id)
     return restored
+
+
+def has_result(match):
+    """A saved result (played or walkover): its participants count in the standings."""
+    return match.status in ("played", "walkover")
+
+
+def _participants(match_id):
+    # Query the rows: match.participants can be stale in the session (Do-Not-Repeat 2026-10-16).
+    return MatchParticipant.query.filter_by(match_id=match_id).all()
+
+
+def _restore_member(match, entry, actor_user_id, action):
+    """Give `entry`'s player back the slot they held in `match` before an absence.
+
+    False when they already play it, no absence took them out of it, or a member
+    holds that slot now (left to an admin)."""
+    rows = _participants(match.id)
+    if any(p.player_id == entry.player_id for p in rows):
+        return False
+    place = _slot_before_absence(match, entry.player_id)
+    if place is None:
+        return False
+    side, slot = place
+    occupant = next((p for p in rows if p.side == side and p.slot == slot), None)
+    if occupant is not None and occupant.role == "member":
+        return False
+    before = _match_state(match)
+    if occupant is not None:
+        if occupant in match.participants:
+            match.participants.remove(occupant)
+        db.session.delete(occupant)
+        db.session.flush()
+    match.participants.append(
+        MatchParticipant(side=side, slot=slot, role="member", entry_id=entry.id, player_id=entry.player_id)
+    )
+    db.session.flush()
+    _audit(actor_user_id, "match", match.id, action, before, _match_state(match))
+    return True
+
+
+def _absent_member_of_slot(match, side, slot, rows):
+    """The group member who held (side, slot) before an absence and is not back in the match."""
+    playing = {p.player_id for p in rows}
+    events = (
+        AuditEvent.query.filter_by(entity="match", entity_id=match.id, action="absence")
+        .order_by(AuditEvent.id.desc())
+        .all()
+    )
+    for event in events:
+        for p in (event.before or {}).get("participants", []):
+            if p.get("side") == side and p.get("slot") == slot and p.get("role") == "member":
+                if p.get("player_id") in playing:
+                    return None
+                return _member_entry(match.group_id, p.get("player_id"))
+    return None
+
+
+def set_slot(match_id, side, slot, player_id, actor_user_id=None):
+    """Say who played in one seat of one match (the per-player control of the result modal).
+
+    - The seat holds a member and `player_id` is someone else (or None = unknown
+      substitute): the member missed this match, recorded as a partial absence
+      with that substitute (`mark_absent` for this match only).
+    - The seat holds a substitute (or nobody) and `player_id` is the member who
+      was taken out of it: the member is put back (undo for this match); the
+      absence goes once the member plays every match of the round again.
+    - Otherwise the substitute in the seat is replaced (None = unknown).
+
+    Works before and after the result is saved; returns True when a match with a
+    result changed (callers refresh the standings of a closed group).
+    """
+    match = db.session.get(CompetitionMatch, match_id)
+    if match is None:
+        raise NotFound("Jogo não encontrado.", "match_not_found")
+    if side not in ("home", "away") or slot not in (1, 2):
+        raise InvalidInput("Lugar inválido.", "invalid_slot")
+    if match.status == "cancelled":
+        raise InvalidInput("Este jogo foi cancelado.", "match_cancelled")
+    rows = _participants(match.id)
+    occupant = next((p for p in rows if p.side == side and p.slot == slot), None)
+    if occupant is not None and occupant.player_id == player_id:
+        return False
+    if player_id is not None and any(p.player_id == player_id for p in rows):
+        raise InvalidInput("Esse jogador já está neste jogo.", "already_in_match")
+
+    if occupant is not None and occupant.role == "member":
+        if player_id is not None and _member_entry(match.group_id, player_id) is not None:
+            raise InvalidInput("Esse jogador é do grupo; não pode ser substituto.", "substitute_is_member")
+        mark_absent(
+            match.group_id,
+            match.round.number,
+            occupant.player_id,
+            actor_user_id=actor_user_id,
+            substitute_player_id=player_id,
+            match_ids=[match.id],
+        )
+        return has_result(match)
+
+    original = _absent_member_of_slot(match, side, slot, rows)
+    if player_id is not None and original is not None and original.player_id == player_id:
+        _restore_member(match, original, actor_user_id, action="absence_undone")
+        _settle_absence(match, original)
+        if has_result(match):
+            unfreeze_group_standings(match.group_id)
+            return True
+        return False
+
+    if player_id is not None and _member_entry(match.group_id, player_id) is not None:
+        raise InvalidInput("Esse jogador é do grupo; não pode ser substituto.", "substitute_is_member")
+    before = _match_state(match)
+    if occupant is not None:
+        if occupant in match.participants:
+            match.participants.remove(occupant)
+        db.session.delete(occupant)
+        db.session.flush()
+    if player_id is not None:
+        match.participants.append(MatchParticipant(side=side, slot=slot, role="substitute", player_id=player_id))
+        db.session.flush()
+    # Same audit action as mark_absent, so a later restore still finds the member's seat.
+    _audit(actor_user_id, "match", match.id, "absence", before, _match_state(match))
+    return False  # substitutes score nothing: standings unchanged
+
+
+def _settle_absence(match, entry):
+    """After a member is put back in `match`: drop the round's absence if they now play
+    every match of the round they were taken out of, else it is a partial one."""
+    absence = Absence.query.filter_by(entry_id=entry.id, round_id=match.round_id).first()
+    if absence is None:
+        return
+    group_ids = [gm.group_id for gm in GroupMember.query.filter_by(entry_id=entry.id)]
+    others = CompetitionMatch.query.filter(
+        CompetitionMatch.round_id == match.round_id, CompetitionMatch.group_id.in_(group_ids)
+    ).all()
+    still_out = [
+        m
+        for m in others
+        if not any(p.player_id == entry.player_id for p in _participants(m.id))
+        and _slot_before_absence(m, entry.player_id) is not None
+    ]
+    if still_out:
+        absence.kind = "partial"
+    else:
+        db.session.delete(absence)
 
 
 def match_for_shuffle_id(shuffle_match_id):

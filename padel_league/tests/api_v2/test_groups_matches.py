@@ -17,8 +17,9 @@ def test_frozen_group_page(client):
 def test_group_page_query_count(client, count_queries):
     counter = count_queries()
     client.get(f"/api/v2/groups/{TIER1_22}")
-    # constant per page (no per-row queries): 18 selects + the fixture's 2 savepoint statements
-    assert stop_counting(counter) <= 20
+    # constant per page (no per-row queries): 19 selects (one batched audit read for the
+    # members substitutes replaced) + the fixture's 2 savepoint statements
+    assert stop_counting(counter) <= 21
 
 
 def test_group_matches(client, count_queries):
@@ -55,7 +56,7 @@ def test_live_group_unknown_substitute_and_teams_score(client):
     body = check(client.get(f"/api/v2/groups/{grp.id}"), "/groups/{groupId}")
     assert body["standingsFrozen"] is False and len(body["standings"]) == 4
     match = check(client.get(f"/api/v2/matches/{m.id}"), "/matches/{matchId}")
-    assert match["participants"][3] == {"side": "away", "slot": 2, "role": "unknown", "player": None}
+    assert match["participants"][3] == {"side": "away", "slot": 2, "role": "unknown", "player": None, "replaces": None}
     assert (match["homeScore"], match["awayScore"], match["winner"]) == (4, 4, "draw")
     wo = f.match(grp, rnd, home=entries[:2], away=entries[2:], status="walkover", walkover_winner="away")
     persist()

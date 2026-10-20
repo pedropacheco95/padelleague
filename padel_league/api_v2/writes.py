@@ -135,6 +135,8 @@ def post_absence(round_id):
         absence = Absence(entry_id=entry.id, round_id=rnd.id, kind=kind, source="recorded", created_by_user_id=user.id)
         db.session.add(absence)
     db.session.commit()
+    _refresh_standings([group])
+    absence = db.session.get(Absence, absence.id)
     substitute = db.session.get(Player, substitute_id) if substitute_id else None
     return jsonify(ser.absence(absence, group_id, substitute, user.player)), 201
 
@@ -159,7 +161,48 @@ def delete_absence(absence_id):
         _guard_closed(group, user)
     results.undo_absence(absence.id, actor_user_id=user.id)
     db.session.commit()
+    _refresh_standings(rnd_groups)
     return "", 204
+
+
+@bp.route("/matches/<int:match_id>/slots", methods=["PUT"])
+@role_required("player")
+def put_slot(match_id):
+    """Who played in one seat of a match: take a member out (with or without a named
+    substitute), name or change the substitute, or put the member back. Before or
+    after the result is saved (S4, 21 Oct: the legacy "ele não veio" control)."""
+    user = require_user()
+    match = db.session.get(CompetitionMatch, match_id)
+    if match is None:
+        raise not_found("Jogo não encontrado.", "match_not_found")
+    data = json_body()
+    side = data.get("side")
+    slot = int_arg(data.get("slot"), "slot", required=True)
+    player_id = int_arg(data.get("playerId"), "playerId")
+    if player_id is not None and db.session.get(Player, player_id) is None:
+        raise bad_request("Jogador não encontrado.", "player_not_found")
+    group = match.group
+    _guard_closed(group, user)
+    results.set_slot(match.id, side, slot, player_id, actor_user_id=user.id)
+    db.session.commit()
+    _refresh_standings([group])
+    fresh = match_query().filter(CompetitionMatch.id == match_id).one()
+    return jsonify(serialize_matches([fresh])[0])
+
+
+def _refresh_standings(groups):
+    """A closed group whose standings an absence unfroze gets its snapshot, awards and
+    ranking rebuilt (as after an edited result). Open groups need nothing: their
+    standings are computed live, and only a result closes a group."""
+    for group in groups:
+        group = db.session.get(CompetitionGroup, group.id)
+        if not group.has_ended:
+            continue
+        try:
+            results.after_result_commit(group)
+        except Exception:  # noqa: BLE001 - the change is saved; logged like put_result
+            db.session.rollback()
+            logging.getLogger(__name__).exception("standings refresh for group %s failed", group.id)
 
 
 @bp.route("/groups/<int:group_id>/close", methods=["POST"])

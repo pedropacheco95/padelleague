@@ -151,21 +151,23 @@ def match_score(m, fmt):
     return home, away, winner
 
 
-def participants(m):
-    """Always four slots; a slot with no row is an unknown substitute."""
+def participants(m, replaces=None):
+    """Always four slots; a slot with no row is an unknown substitute. A substitute's
+    (or unknown) slot carries `replaces`: the member taken out of it, when recorded."""
     by_slot = {(p.side, p.slot): p for p in m.participants}
     out = []
     for side in ("home", "away"):
         for slot in (1, 2):
             p = by_slot.get((side, slot))
-            out.append(
-                {
-                    "side": side,
-                    "slot": slot,
-                    "role": p.role if p else "unknown",
-                    "player": player_ref(p.player) if p else None,
-                }
-            )
+            seat = {
+                "side": side,
+                "slot": slot,
+                "role": p.role if p else "unknown",
+                "player": player_ref(p.player) if p else None,
+            }
+            if seat["role"] != "member":
+                seat["replaces"] = player_ref((replaces or {}).get((side, slot)))
+            out.append(seat)
     return out
 
 
@@ -185,7 +187,7 @@ def absence(a, group_id=None, substitute=None, recorded_by=None):
     }
 
 
-def match(m, group=None, competition=None, absences=()):
+def match(m, group=None, competition=None, absences=(), replaces=None):
     group = group or m.group
     competition = competition or group.stage.competition
     home, away, winner = match_score(m, competition.format)
@@ -199,7 +201,7 @@ def match(m, group=None, competition=None, absences=()):
         "scheduledAt": iso_datetime(m.scheduled_at),
         "court": m.court,
         "status": m.status,
-        "participants": participants(m),
+        "participants": participants(m, replaces),
         "sets": [
             {"setNo": s.set_no, "homeGames": s.home_games, "awayGames": s.away_games, "outcome": s.outcome}
             for s in m.sets

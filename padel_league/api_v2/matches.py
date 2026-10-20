@@ -103,9 +103,56 @@ def _absences_for(m, absences):
     return [a for a in absences if a["kind"] == "full" or a["player"]["id"] not in present]
 
 
+def replaced_members(matches):
+    """{match_id: {(side, slot): Player}}: for each seat not held by a member, the member
+    the absence audit trail says was taken out of it (and is not back in the match)."""
+    from padel_league.models.v2 import AuditEvent
+
+    open_seats = {
+        m.id: {(s, n) for s in ("home", "away") for n in (1, 2)}
+        - {(p.side, p.slot) for p in m.participants if p.role == "member"}
+        for m in matches
+    }
+    ids = [mid for mid, seats in open_seats.items() if seats]
+    if not ids:
+        return {}
+    events = (
+        AuditEvent.query.filter(
+            AuditEvent.entity == "match", AuditEvent.action == "absence", AuditEvent.entity_id.in_(ids)
+        )
+        .order_by(AuditEvent.id.desc())
+        .all()
+    )
+    playing = {m.id: {p.player_id for p in m.participants} for m in matches}
+    found = {}
+    for event in events:
+        seats = open_seats[event.entity_id]
+        for p in (event.before or {}).get("participants", []):
+            seat = (p.get("side"), p.get("slot"))
+            if seat in seats and p.get("role") == "member":
+                seats.discard(seat)  # the latest member of the seat decides
+                if p.get("player_id") not in playing[event.entity_id]:
+                    found.setdefault(event.entity_id, {})[seat] = p.get("player_id")
+    players = {
+        pl.id: pl
+        for pl in Player.query.options(joinedload(Player.picture)).filter(
+            Player.id.in_({pid for seats in found.values() for pid in seats.values()})
+        )
+    } if found else {}
+    return {mid: {seat: players.get(pid) for seat, pid in seats.items()} for mid, seats in found.items()}
+
+
 def serialize_matches(matches):
     absences = absences_by_round(matches)
-    return [ser.match(m, absences=_absences_for(m, absences.get((m.group_id, m.round_id), []))) for m in matches]
+    replaces = replaced_members(matches)
+    return [
+        ser.match(
+            m,
+            absences=_absences_for(m, absences.get((m.group_id, m.round_id), [])),
+            replaces=replaces.get(m.id),
+        )
+        for m in matches
+    ]
 
 
 def get_group(group_id):

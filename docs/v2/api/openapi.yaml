@@ -253,6 +253,39 @@ paths:
         "404": { $ref: "#/components/responses/Error" }
         "409": { $ref: "#/components/responses/Error" }
 
+  /matches/{matchId}/slots:
+    parameters: [{ $ref: "#/components/parameters/matchId" }]
+    put:
+      tags: [matches]
+      summary: Who played in one seat of a match (any signed-in player)
+      description: |
+        The per-player control of the result modal, before or after the result is saved.
+        Seat held by a member and `playerId` is someone else or null: the member missed
+        this match (partial absence, `playerId` = substitute, null = unknown). Seat held
+        by a substitute (or nobody) and `playerId` is the member taken out of it: the
+        member is put back (the absence goes once they play the whole round again).
+        Otherwise the substitute is replaced. A group member can't be a substitute.
+        Standings (and, for a closed group, awards and ranking) follow.
+      security: [{ bearer: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [side, slot]
+              properties:
+                side: { type: string, enum: [home, away] }
+                slot: { type: integer, enum: [1, 2] }
+                playerId: { type: [integer, "null"] }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Match" } } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+
   /rounds/{roundId}/absences:
     parameters: [{ name: roundId, in: path, required: true, schema: { type: integer } }]
     post:
@@ -858,6 +891,9 @@ components:
         slot: { type: integer, enum: [1, 2] }
         role: { type: string, enum: [member, substitute, unknown] }
         player: { oneOf: [{ $ref: "#/components/schemas/PlayerRef" }, { type: "null" }], description: null when an unknown substitute played }
+        replaces:
+          oneOf: [{ $ref: "#/components/schemas/PlayerRef" }, { type: "null" }]
+          description: Substitute / unknown seats only. The member taken out of this seat (absence audit trail); null when not recorded.
 
     MatchSet:
       type: object

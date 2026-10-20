@@ -65,3 +65,27 @@ def test_undo_leaves_played_matches_alone(pg):
     db.session.flush()
     absence = Absence.query.filter_by(entry_id=e[2].id).one()
     assert results.undo_absence(absence.id) == 2
+
+
+def test_undo_keeps_a_match_played_with_the_substitute_as_partial(pg):
+    grp, e, ms = _round_of_three()
+    results.mark_absent(grp.id, 1, e[2].player_id)
+    results.record_sets(ms[0].id, [{"home_games": 6, "away_games": 2}])
+    db.session.flush()
+    absence = Absence.query.filter_by(entry_id=e[2].id).one()
+    results.undo_absence(absence.id)
+    db.session.flush()
+    kept = Absence.query.filter_by(entry_id=e[2].id).one()
+    assert kept.kind == "partial"  # the seat in the played match is still the substitute's
+
+
+def test_undo_restores_a_played_match_the_player_was_taken_out_of_afterwards(pg):
+    grp, e, ms = _round_of_three()
+    results.record_sets(ms[0].id, [{"home_games": 6, "away_games": 2}])
+    db.session.flush()
+    results.mark_absent(grp.id, 1, e[2].player_id)
+    db.session.flush()
+    absence = Absence.query.filter_by(entry_id=e[2].id).one()
+    assert results.undo_absence(absence.id) == 3
+    db.session.flush()
+    assert Absence.query.filter_by(entry_id=e[2].id).first() is None
