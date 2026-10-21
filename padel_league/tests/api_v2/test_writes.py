@@ -180,3 +180,17 @@ def test_partial_absence_shows_only_on_missed_matches(client, make_user):
         headers=bearer(make_user()),
     )
     assert resp.status_code == 400 and resp.get_json()["code"] == "match_ids_required"
+
+
+def test_clear_result(client, make_user):
+    grp, _, _, (m, _m2) = _classica_group(n_rounds=2)  # one result left open, so the group stays open
+    path = "/matches/{matchId}/result"
+    h = bearer(make_user())
+    check(client.delete(f"/api/v2/matches/{m.id}/result"), path, "delete", 401)
+    client.put(f"/api/v2/matches/{m.id}/result", json={"sets": [{"homeGames": 6, "awayGames": 4, "outcome": "completed"}]}, headers=h)
+    body = check(client.delete(f"/api/v2/matches/{m.id}/result", headers=h), path, "delete")
+    assert (body["status"], body["sets"], body["homeScore"]) == ("scheduled", [], None)
+    grp.has_ended = True
+    persist()
+    resp = client.delete(f"/api/v2/matches/{m.id}/result", headers=h)
+    assert resp.status_code == 409 and resp.get_json()["code"] == "group_closed"

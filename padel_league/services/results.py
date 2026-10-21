@@ -155,6 +155,25 @@ def record_sets(match_id, sets=(), walkover_winner=None, court=None, actor_user_
     return match
 
 
+def clear_result(match_id, actor_user_id=None):
+    """Undo a result saved by mistake: the match goes back to scheduled with no sets.
+    Absences stay (they are undone on their own)."""
+    match = db.session.get(CompetitionMatch, match_id)
+    if match is None:
+        raise NotFound(f"Jogo {match_id} não existe.", "match_not_found")
+    before = _match_state(match)
+    for old in list(match.sets):
+        match.sets.remove(old)
+        db.session.delete(old)
+    match.status = "scheduled"
+    match.walkover_winner = None
+    match.updated_by_user_id = actor_user_id
+    match.updated_at = datetime.utcnow()
+    unfreeze_group_standings(match.group_id)
+    _audit(actor_user_id, "match", match.id, "result_cleared", before, _match_state(match))
+    return match
+
+
 def _member_entry(group_id, player_id):
     return (
         Entry.query.join(GroupMember, GroupMember.entry_id == Entry.id)

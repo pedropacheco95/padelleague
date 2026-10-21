@@ -91,6 +91,22 @@ def put_result(match_id):
     return jsonify(serialize_matches([fresh])[0])
 
 
+@bp.route("/matches/<int:match_id>/result", methods=["DELETE"])
+@role_required("player")
+def delete_result(match_id):
+    """A result saved on the wrong match: back to scheduled. Not on a finished group."""
+    user = require_user()
+    match = db.session.get(CompetitionMatch, match_id)
+    if match is None:
+        raise not_found("Jogo não encontrado.", "match_not_found")
+    if match.group.has_ended:
+        raise conflict("Este grupo já terminou; não é possível apagar resultados.", "group_closed")
+    results.clear_result(match.id, actor_user_id=user.id)
+    db.session.commit()
+    fresh = match_query().filter(CompetitionMatch.id == match_id).one()
+    return jsonify(serialize_matches([fresh])[0])
+
+
 @bp.route("/rounds/<int:round_id>/absences", methods=["POST"])
 @role_required("player")
 def post_absence(round_id):

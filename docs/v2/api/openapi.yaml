@@ -252,6 +252,19 @@ paths:
         "403": { $ref: "#/components/responses/Error" }
         "404": { $ref: "#/components/responses/Error" }
         "409": { $ref: "#/components/responses/Error" }
+    delete:
+      tags: [matches]
+      summary: Clear a result saved by mistake (any signed-in player)
+      description: |
+        The match goes back to scheduled with no sets and standings follow. Absences stay
+        (undo them on their own). Refused (409 group_closed) on a finished group.
+      security: [{ bearer: [] }]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Match" } } } }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
 
   /matches/{matchId}/slots:
     parameters: [{ $ref: "#/components/parameters/matchId" }]
