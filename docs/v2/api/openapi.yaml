@@ -266,6 +266,31 @@ paths:
         "404": { $ref: "#/components/responses/Error" }
         "409": { $ref: "#/components/responses/Error" }
 
+  /substitutes:
+    get:
+      tags: [players]
+      summary: Outside substitutes (players who are not league members), by name
+      security: [{ bearer: [] }]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/PlayerRef" } } } } }
+        "401": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [players]
+      summary: Add an outside substitute (admin)
+      description: A player with the same name (any status) is returned as is (200) instead of a duplicate.
+      security: [{ bearer: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [name], properties: { name: { type: string, maxLength: 60 } } }
+      responses:
+        "200": { description: Existing player, content: { application/json: { schema: { $ref: "#/components/schemas/PlayerRef" } } } }
+        "201": { description: Created, content: { application/json: { schema: { $ref: "#/components/schemas/PlayerRef" } } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+
   /matches/{matchId}/slots:
     parameters: [{ $ref: "#/components/parameters/matchId" }]
     put:

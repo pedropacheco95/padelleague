@@ -107,6 +107,32 @@ def delete_result(match_id):
     return jsonify(serialize_matches([fresh])[0])
 
 
+@bp.route("/substitutes", methods=["GET"])
+@role_required("player")
+def list_substitutes():
+    """Outside substitutes (not league members), for the result modal's "Quem jogou?"."""
+    subs = Player.query.filter(Player.status == "external").order_by(Player.name).all()
+    return jsonify([ser.player_ref(p) for p in subs])
+
+
+@bp.route("/substitutes", methods=["POST"])
+@role_required("admin")
+def create_substitute():
+    """Add an outside substitute by name. A player with that name (any status) is reused: 200; new: 201."""
+    name = " ".join(str(json_body().get("name") or "").split())
+    if not name or len(name) > 60:
+        raise bad_request("Indica o nome do substituto.", "invalid_input")
+    existing = Player.query.filter(
+        db.or_(db.func.lower(Player.name) == name.lower(), db.func.lower(Player.full_name) == name.lower())
+    ).first()
+    if existing:
+        return jsonify(ser.player_ref(existing)), 200
+    player = Player(name=name, full_name=name, status="external", ranking_points=0, ranking_position=0)
+    db.session.add(player)
+    db.session.commit()
+    return jsonify(ser.player_ref(player)), 201
+
+
 @bp.route("/rounds/<int:round_id>/absences", methods=["POST"])
 @role_required("player")
 def post_absence(round_id):

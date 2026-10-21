@@ -194,3 +194,21 @@ def test_clear_result(client, make_user):
     persist()
     resp = client.delete(f"/api/v2/matches/{m.id}/result", headers=h)
     assert resp.status_code == 409 and resp.get_json()["code"] == "group_closed"
+
+
+def test_substitutes_list_and_create(client, make_user):
+    path = "/substitutes"
+    check(client.get("/api/v2/substitutes"), path, "get", 401)
+    check(client.post("/api/v2/substitutes", json={"name": "Zé Fora"}, headers=bearer(make_user())), path, "post", 403)
+    admin = bearer(make_user(role="admin"))
+    check(client.post("/api/v2/substitutes", json={"name": "  "}, headers=admin), path, "post", 400)
+    made = check(client.post("/api/v2/substitutes", json={"name": "Zé  Fora"}, headers=admin), path, "post", 201)
+    assert made["name"] == "Zé Fora"
+    again = check(client.post("/api/v2/substitutes", json={"name": "zé fora"}, headers=admin), path, "post", 200)
+    assert again["id"] == made["id"]
+    listed = check(client.get("/api/v2/substitutes", headers=admin), path, "get")
+    assert made["id"] in [p["id"] for p in listed]
+    member = f.player()
+    persist()
+    reused = check(client.post("/api/v2/substitutes", json={"name": member.name}, headers=admin), path, "post", 200)
+    assert reused["id"] == member.id
