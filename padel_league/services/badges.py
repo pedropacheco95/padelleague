@@ -114,6 +114,9 @@ REGISTRY = (
           progress="Melhor Shuffle: {value}º"),
     Badge("podio_shuffle", "Pódio Shuffle", "Acabar um Shuffle no pódio.", "shuffle_podiums"),
     # --- Teams
+    Badge("estreia_teams", "Estreia Teams", "Jogar um jogo num torneio Teams.", "teams_matches"),
+    Badge("vitoria_teams", "Vitória Teams", "Ganhar um jogo num torneio Teams.", "teams_wins"),
+    Badge("dupla_afinada", "Dupla Afinada", "Ganhar 5 jogos Teams com o mesmo par.", "teams_pair_wins", target=5),
     Badge("campeao_teams", "Campeão Teams", "Ganhar uma divisão de um torneio Teams.", "teams_titles"),
     # --- Estreia
 

@@ -374,3 +374,29 @@ def test_top10_shuffle_reads_the_best_ended_shuffle_place(fx):
     assert fx.facts()["shuffle_best_place"] == 11 and not earned(fx, "top10_shuffle")
     fx.entry(ME, fx.competition(7, "30ª Edição", fmt="shuffle"), place=10)
     assert earned(fx, "top10_shuffle")
+
+
+# --- teams --------------------------------------------------------------------------------
+
+TEAMS_WIN = [(6, 3), (4, 6), (6, 2)]
+TEAMS_LOSS = [(3, 6), (6, 4), (2, 6)]
+
+
+def test_estreia_and_vitoria_teams_count_teams_matches_by_sets(fx):
+    fx.results(10, "W" * 3)
+    assert not earned(fx, "estreia_teams")
+    gid = fx.group(70, fx.competition(7, "23ª Edição", fmt="teams", status="planned"))
+    fx.results(gid, "L", partner=1000, sets=lambda i, r: TEAMS_LOSS)
+    assert earned(fx, "estreia_teams") and not earned(fx, "vitoria_teams")
+    fx.results(gid, "W", partner=1000, sets=lambda i, r: TEAMS_WIN)
+    assert earned(fx, "vitoria_teams")
+
+
+def test_dupla_afinada_counts_teams_wins_with_one_partner(fx):
+    gid = fx.group(70, fx.competition(7, "23ª Edição", fmt="teams", status="planned"))
+    fx.results(gid, "W" * 4, partner=1000, sets=lambda i, r: TEAMS_WIN)
+    fx.results(gid, "W" * 4, partner=1001, sets=lambda i, r: TEAMS_WIN)
+    fx.results(10, "W" * 5, partner=1000)  # Clássica wins with the same partner do not count
+    assert fx.facts()["teams_pair_wins"] == 4 and not earned(fx, "dupla_afinada")
+    fx.results(gid, "W", partner=1000, sets=lambda i, r: TEAMS_WIN)
+    assert earned(fx, "dupla_afinada")
