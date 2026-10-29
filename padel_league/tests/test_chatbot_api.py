@@ -204,8 +204,25 @@ def test_logging_failure_does_not_break_the_answer(app, fake_orchestrator, monke
     def explode(*_args, **_kwargs):
         raise RuntimeError("db down")
 
-    monkeypatch.setattr(chatbot_api.db.session, "commit", explode)
+    monkeypatch.setattr(chatbot_api, "_insert_log", explode)
     client = app.test_client()
     resp = client.post("/api/v1/chatbot/chat", data={"user_input": "olá"})
     assert resp.status_code == 200
     assert resp.get_json()["response"] == "echo: olá"
+
+
+def test_logging_never_commits_the_shared_session(app, fake_orchestrator, monkeypatch):
+    # The log row goes through its own connection: the request's db.session is
+    # neither committed nor rolled back by the chatbot, so the row still lands
+    # when the shared session cannot commit at all.
+    def explode(*_args, **_kwargs):
+        raise AssertionError("log_question committed the shared session")
+
+    monkeypatch.setattr(chatbot_api.db.session, "commit", explode)
+    monkeypatch.setattr(chatbot_api.db.session, "rollback", explode)
+    client = app.test_client()
+    resp = client.post("/api/v1/chatbot/chat", data={"user_input": "olá"})
+    assert resp.status_code == 200
+
+    with app.app_context():
+        assert ChatbotLog.query.count() == 1

@@ -101,10 +101,9 @@ def test_v1_admin_guard_refuses_unknown_user(locked_app, client, monkeypatch):
 LEGACY_API = [
     ("POST", "/api/edit/user/1"),
     ("POST", "/api/delete/user/1"),
-    ("GET", "/api/delete/user/1"),
     ("POST", "/api/delete_player/1"),
     ("POST", "/api/delete_tournament/1"),
-    ("GET", "/api/delete_order_line/1"),
+    ("POST", "/api/delete_order_line/1"),
     ("POST", "/api/remove_relationship"),
     ("GET", "/api/modal_create_page/user"),
     ("POST", "/api/modal_create_page/user"),
@@ -120,6 +119,25 @@ def test_legacy_api_redirects_anonymous_to_login(client, method, path):
     response = client.open(path, method=method, json={})
     assert response.status_code == 302
     assert "/auth/login" in response.headers["Location"]
+
+
+@pytest.fixture
+def admin_client(locked_app):
+    """A client whose requests Flask-Login resolves to an admin, without a database."""
+    admin = SimpleNamespace(
+        is_authenticated=True, is_active=True, is_anonymous=False,
+        is_admin=True, super_admin=True, id=1, get_id=lambda: "1",
+    )
+    locked_app.login_manager.request_loader(lambda _request: admin)
+    return locked_app.test_client()
+
+
+@pytest.mark.parametrize("path", ["/api/delete/users/1", "/api/delete_order_line/1"])
+def test_legacy_api_deletes_never_run_on_get(client, admin_client, path):
+    # Even an admin's GET (a link, a prefetch, a crawler on a logged-in browser)
+    # must not delete anything: the routes answer POST only, for everyone.
+    assert client.get(path).status_code == 405
+    assert admin_client.get(path).status_code == 405
 
 
 @pytest.mark.parametrize(

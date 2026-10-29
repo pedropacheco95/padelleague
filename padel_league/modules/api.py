@@ -89,14 +89,14 @@ def points_by_matchweek(division_id):
     return json.dumps(points_by_matchweek)
 
 
-@bp.route("/delete_order_line/<id>", methods=("GET", "POST"))
+@bp.route("/delete_order_line/<id>", methods=["POST"])
 def delete_order_line(id):
     order_line = OrderLine.query.filter_by(id=id).first_or_404()
     order = order_line.order
     if not current_user.is_admin and (order is None or order.user_id != current_user.id):
         abort(403)
     order_line.delete()
-    return True
+    return jsonify(success=True)
 
 
 @bp.route("/delete_player/<id>", methods=["POST"])
@@ -149,17 +149,17 @@ def edit(model, id):
     return jsonify(success=True, id=obj.id)
 
 
-@bp.route("/delete/<model>/<id>", methods=("GET", "POST"))
+@bp.route("/delete/<model>/<id>", methods=["POST"])
 def delete(model, id):
-    model_name = model
-    if request.method == "POST":
-        model = MODELS[model]
-        if is_compat_model(model):
-            return jsonify(success=False, error=compat_write_message(model)), 409
-        obj = model.query.filter_by(id=id).first()
-        obj.delete()
-        return jsonify(url_for("editor.display_all", model=model_name))
-    return jsonify(sucess=False)
+    # POST only: a delete must never be reachable from a link or a prefetch.
+    model_cls = MODELS.get(model)
+    if not model_cls:
+        return jsonify(success=False, error=f"Model {model} not found"), 404
+    if is_compat_model(model_cls):
+        return jsonify(success=False, error=compat_write_message(model_cls)), 409
+    obj = model_cls.query.filter_by(id=id).first_or_404()
+    obj.delete()
+    return jsonify(url_for("editor.display_all", model=model))
 
 
 @bp.route("/query/<model>", methods=("GET", "POST"))
