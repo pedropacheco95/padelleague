@@ -6,6 +6,8 @@ database: competitions, groups, entries and matches are declared by the test, so
 is checked at its threshold and one step below it.
 """
 
+import json
+import os
 from collections import defaultdict
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -14,7 +16,7 @@ from types import SimpleNamespace
 import pytest
 
 from padel_league.services import badges
-from padel_league.services.badges import BY_KEY, player_facts
+from padel_league.services.badges import BY_KEY, REGISTRY, player_facts
 from padel_league.services.player_story import League, Match
 
 ME = 1
@@ -115,6 +117,21 @@ def fx():
     f.competition(1, "1ª Edição")
     f.group(10, 1, tier=2)
     return f
+
+
+# --- registry -----------------------------------------------------------------------------
+
+
+def test_registry_has_fifty_badges_with_unique_keys():
+    assert len(REGISTRY) == 50
+    assert len({b.key for b in REGISTRY}) == 50
+
+
+def test_every_metric_exists_in_player_facts(fx):
+    fx.results(10, "WLD")
+    facts = fx.facts()
+    for b in REGISTRY:
+        assert b.metric in facts, b.key
 
 
 # --- volume -------------------------------------------------------------------------------
@@ -412,3 +429,23 @@ def test_estreia_vitoriosa_reads_the_first_match_in_time(fx):
     g.group(10, g.competition(1, "1ª Edição"))
     g.results(10, "WLLL")
     assert earned(g, "estreia_vitoriosa")
+
+
+# --- the proposal numbers -----------------------------------------------------------------
+
+
+@pytest.mark.skipif(not os.environ.get("BADGES_SNAPSHOT_URI"), reason="BADGES_SNAPSHOT_URI (the 2026-10-29 prod restore) not set")
+def test_holder_counts_match_the_proposal():
+    """Every badge's holder count on the 29 Oct 2026 production restore equals the proposal."""
+    from padel_league import create_app
+    from padel_league.services.player_story import League
+    from padel_league.tests.conftest import pg_config
+
+    expected = json.loads(SNAPSHOT.read_text())
+    app = create_app(pg_config(os.environ["BADGES_SNAPSHOT_URI"]))
+    with app.app_context():
+        c = badges.compute(League(date(2026, 10, 29)))
+    assert len(c["players"]) == expected["playersCount"]
+    got = {key: len(d["holders"]) for key, d in c["badges"].items()}
+    assert got == expected["holders"]
+    assert {key: d["tier"] for key, d in c["badges"].items()} == expected["tiers"]
