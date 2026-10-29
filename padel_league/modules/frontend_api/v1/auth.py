@@ -14,6 +14,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from padel_league.model import Image
 from padel_league.models import Player, User
 from padel_league.tools import image_tools
+from padel_league.tools.rate_limit import code_requests
 
 bp = Blueprint("api_v1_auth", __name__, url_prefix="/api/v1/auth")
 
@@ -74,6 +75,28 @@ def me():
     return jsonify({"user": user.serialize()})
 
 
+# Anyone can ask for a code for any account (that is what forgot-password is), so
+# requests are rate limited per client IP and per account. The counters are
+# in-process (tools/rate_limit.py): per gunicorn worker, reset on restart.
+CODE_REQUESTS_PER_IP = 20
+CODE_REQUESTS_PER_ACCOUNT = 5
+CODE_REQUESTS_WINDOW_SECONDS = 15 * 60
+TOO_MANY_CODE_REQUESTS = {"error": "Demasiados pedidos de código. Tenta mais tarde."}
+
+
+def _client_ip():
+    # Behind the host nginx every request arrives from 127.0.0.1; the first
+    # X-Forwarded-For hop is the client. Spoofable, hence the per-account limit too.
+    forwarded = request.headers.get("X-Forwarded-For", "")
+    return (forwarded.split(",")[0].strip() if forwarded else None) or request.remote_addr or "?"
+
+
+def _code_request_allowed(account_key):
+    if not code_requests.allow(("ip", _client_ip()), CODE_REQUESTS_PER_IP, CODE_REQUESTS_WINDOW_SECONDS):
+        return False
+    return code_requests.allow(("account", account_key), CODE_REQUESTS_PER_ACCOUNT, CODE_REQUESTS_WINDOW_SECONDS)
+
+
 def _request_code(user):
     """Keep the pending code, or make one. The emails on file are mostly fake, so the code is
     not emailed: an admin sends it by WhatsApp from /admin/passwords (api/v2/admin/password-codes).
@@ -88,6 +111,8 @@ def forgot_password():
     data = request.get_json(silent=True) or {}
     username = (data.get("username") or "").strip()
 
+    if not _code_request_allowed(username.lower()):
+        return jsonify(TOO_MANY_CODE_REQUESTS), 429
     user = User.query.filter_by(username=username).first() if username else None
     if user is None:
         return jsonify({"error": "Enganaste-te no username oh burro."}), 404
@@ -121,6 +146,8 @@ def verify_generated_code(user_id):
 @bp.route("/generate_new_code/<int:user_id>", methods=["POST"])
 def generate_new_code(user_id):
     """Same as forgot_password (no email; a pending code is kept)."""
+    if not _code_request_allowed(user_id):
+        return jsonify(TOO_MANY_CODE_REQUESTS), 429
     user = User.query.filter_by(id=user_id).first()
     if not user:
         return jsonify({"error": "Utilizador não encontrado."}), 404

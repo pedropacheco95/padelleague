@@ -186,19 +186,6 @@ def verify_generated_code(user_id):
     return render_template("auth/verify_generated_code.html", user_id=user_id)
 
 
-@bp.route("/generate_new_code/<user_id>", methods=("GET", "POST"))
-def generate_new_code(user_id):
-    user = User.query.filter_by(id=user_id).first()
-    email = user.email
-    generated_code = user.new_code()
-    user.save()
-    mail_body = render_template(
-        "messages/forgot_password_email.html", user=user, generated_code=generated_code
-    )
-    email_tools.send_email("Código autenticação", [email], html=mail_body)
-    return redirect(url_for("auth.verify_generated_code", user_id=user.id))
-
-
 @bp.route("/logout")
 @login_required
 def logout():

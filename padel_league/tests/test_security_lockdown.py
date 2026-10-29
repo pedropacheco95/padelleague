@@ -212,6 +212,22 @@ def test_tournament_page_refuses_post(client, path):
     assert client.post(path).status_code == 405
 
 
+@pytest.mark.parametrize(
+    "method,path",
+    [
+        # Rendered a player-edit template with no context: 500 for everyone, never used.
+        ("GET", "/users/edit/1"),
+        ("POST", "/users/edit/1"),
+        # Legacy forgot-password step that emailed a fresh code to any user id, on GET.
+        # Codes are now admin-sent (api/v2/admin/password-codes); the v1 route stays.
+        ("GET", "/auth/generate_new_code/1"),
+        ("POST", "/auth/generate_new_code/1"),
+    ],
+)
+def test_dead_legacy_routes_are_gone(client, method, path):
+    assert client.open(path, method=method).status_code == 404
+
+
 def test_export_db_to_csv_is_gone(client):
     assert client.get("/uploads/export_db_to_csv").status_code == 404
     assert client.post("/uploads/export_db_to_csv").status_code == 404
