@@ -248,6 +248,8 @@ def remove_player_from_matchweek(id):
     return jsonify({"removedAssociations": removed_count})
 
 
+# Any signed-in player may refresh standings (cerebrum decision 2026-10-15), so a
+# JWT is enough here; this recomputes, it does not let the caller choose values.
 @bp.route("/<int:id>/refresh_standings", methods=["POST"])
 @jwt_required()
 def refresh_standings(id):
