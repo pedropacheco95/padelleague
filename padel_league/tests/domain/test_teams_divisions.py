@@ -123,3 +123,31 @@ def test_bootstrap_is_idempotent(pg):
     first = ranking.bootstrap()
     assert first[0] == "awarded shuffle 26" and "written" in first[-1]
     assert ranking.bootstrap() == [f"ranking snapshot {ranking.latest_snapshot(1).id} already current"]
+
+
+def test_building_the_first_divisions_starts_the_competition(pg):
+    """Prod, Oct 2026: Teams 2026/27 stayed 'planned' (card said "upcoming") with 24 matches
+    played — nothing flipped it. Building a mini-tournament's divisions starts the Teams."""
+    comp, stage = _teams_stage1()
+    ranking.bootstrap()
+    teams_pairing.close(stage)
+    comp.status = "planned"
+    teams_divisions.build_divisions(stage)
+    assert stage.status == "running" and comp.status == "running"
+
+
+def test_building_divisions_leaves_a_started_or_ended_competition_alone(pg):
+    comp, stage = _teams_stage1()
+    ranking.bootstrap()
+    teams_pairing.close(stage)
+    comp.status = "running"
+    teams_divisions.build_divisions(stage)
+    assert comp.status == "running"
+    # An ended Teams never gets new divisions: the seeding guard refuses it first (no awards
+    # for an "ended" competition in the window), and its status is left as it was.
+    comp.status = "ended"
+    stage2 = Stage.query.filter_by(competition_id=comp.id, number=2).one()
+    stage2.pairing_deadline = datetime(2026, 10, 18, 23, 0)
+    with pytest.raises(Conflict):
+        teams_divisions.build_divisions(stage2)
+    assert comp.status == "ended"

@@ -39,6 +39,25 @@ TIERS = (("lendaria", "Lendária", 5), ("epica", "Épica", 15), ("rara", "Rara",
 
 MIN_TIGHT = 20  # sangue-frio: decided-by-1-or-2 games needed to be ranked
 INVICTO_MIN_MATCHES = 10
+BIG_WIN_MARGIN = 5  # rolo compressor: a win by this many games or more
+FULL_EDITIONS = 5  # assíduo: Clássica editions attended in full
+FULL_EDITION_MIN_NIGHTS = 5  # ... an edition counts when its group played at least this many nights
+TIEBREAK = (7, 6)  # rei do tie-break: a set won by this score
+
+
+# Catalogue groups, in display order (the "---" comments in REGISTRY follow the same order).
+THEMES = (
+    ("volume", "Volume"),
+    ("titulos", "Títulos e pódios"),
+    ("sequencias", "Sequências e presenças"),
+    ("resultados", "Resultados e noites"),
+    ("pessoas", "Parceiros e rivais"),
+    ("lealdade", "Lealdade e divisões"),
+    ("shuffle", "Shuffle"),
+    ("teams", "Teams"),
+    ("estreia", "Estreia"),
+)
+THEME_LABEL = dict(THEMES)
 
 
 @dataclass(frozen=True)
@@ -50,27 +69,77 @@ class Badge:
     target: float = 1
     kind: str = "at_least"  # at_least | at_most | leader
     progress: object = None  # template (or singular/plural pair, by value) for a locked badge; None = COPY["progress"]
+    theme: str = "volume"  # a THEMES key
 
 
 REGISTRY = (
-    Badge("sangue_frio", "Sangue-frio", f"A melhor % de vitórias da liga nos jogos decididos por 1 ou 2 (mín. {MIN_TIGHT}).",
-          "tight_pct", kind="leader", progress="{value}% (o melhor tem {target}%)"),
-    Badge("podio_shuffle", "Pódio Shuffle", "Acabar um Shuffle no pódio.", "shuffle_podiums"),
+    # --- Volume
+    Badge("clube_100", "Clube 100", "Jogar 100 jogos.", "matches", target=100, theme="volume"),
+    Badge("clube_300", "Clube 300", "Jogar 300 jogos.", "matches", target=300, theme="volume"),
+    Badge("clube_400", "Clube 400", "Jogar 400 jogos.", "matches", target=400, theme="volume"),
+    Badge("centuriao", "Centurião", "Ganhar 100 jogos.", "wins", target=100, theme="volume"),
+    Badge("clube_200", "Clube 200", "Ganhar 200 jogos.", "wins", target=200, theme="volume"),
+    Badge("mil_games", "Mil Games", "Ganhar 1000 games (os pontos de cada set).", "games_won", target=1000, theme="volume"),
+    # --- Títulos e pódios
+    Badge("campeao", "Campeão", "Ganhar uma divisão.", "titles", theme="titulos"),
+    Badge("bicampeao", "Bicampeão", "Ganhar 2 divisões.", "titles", target=2, theme="titulos"),
+    Badge("tricampeao", "Tricampeão", "Ganhar 3 divisões.", "titles", target=3, theme="titulos"),
+    Badge("tetracampeao", "Tetracampeão", "Ganhar 4 divisões.", "titles", target=4, theme="titulos"),
+    Badge("pentacampeao", "Pentacampeão", "Ganhar 5 divisões.", "titles", target=5, theme="titulos"),
+    Badge("rei_da_1", "Rei da 1ª", "Ganhar a 1ª Divisão.", "first_division_titles", theme="titulos"),
+    Badge("dinastia", "Dinastia", "Ganhar a divisão em duas edições Clássicas seguidas.", "consecutive_titles", target=2, theme="titulos"),
+    Badge("habitue_podio", "Habitué do Pódio", "Acabar 5 edições no pódio.", "podiums", target=5, theme="titulos"),
+    Badge("prata", "Prata", "Acabar 3 edições em 2º lugar.", "seconds", target=3, theme="titulos"),
     Badge("invicto", "Invicto", f"Uma edição Clássica com {INVICTO_MIN_MATCHES} ou mais jogos e nenhuma derrota.",
-          "invicto_losses", target=0, kind="at_most", progress=("Melhor edição: {value} derrota", "Melhor edição: {value} derrotas")),
-    Badge("pentacampeao", "Pentacampeão", "Ganhar 5 divisões.", "titles", target=5),
-    Badge("tetracampeao", "Tetracampeão", "Ganhar 4 divisões.", "titles", target=4),
-    Badge("rei_da_1", "Rei da 1ª", "Ganhar a 1ª Divisão.", "first_division_titles"),
-    Badge("clube_300", "Clube 300", "Jogar 300 jogos.", "matches", target=300),
-    Badge("ferro_30", "Ferro 30", "Estar presente em 30 jornadas seguidas.", "best_attendance", target=30),
-    Badge("centuriao", "Centurião", "Ganhar 100 jogos.", "wins", target=100),
-    Badge("veterano", "Veterano", "Jogar 10 edições.", "editions", target=10),
-    Badge("pneu", "Pneu", "Ganhar um jogo sem perder um único jogo de ténis (X–0).", "shutouts"),
-    Badge("elevador", "Elevador", "Subir de divisão.", "promotions"),
-    Badge("clube_200", "Clube 200", "Ganhar 200 jogos.", "wins", target=200),
-    Badge("campeao_teams", "Campeão Teams", "Ganhar uma divisão de um torneio Teams.", "teams_titles"),
+          "invicto_losses", target=0, kind="at_most", progress=("Melhor edição: {value} derrota", "Melhor edição: {value} derrotas"), theme="titulos"),
+    # --- Sequências e presenças
+    Badge("sete_seguidas", "Sete Seguidas", "Ganhar 7 jogos seguidos.", "best_win_streak", target=7, theme="sequencias"),
+    Badge("dez_seguidas", "Dez Seguidas", "Ganhar 10 jogos seguidos.", "best_win_streak", target=10, theme="sequencias"),
+    Badge("quinze_seguidas", "Quinze Seguidas", "Ganhar 15 jogos seguidos.", "best_win_streak", target=15, theme="sequencias"),
+    Badge("ferro_30", "Ferro 30", "Estar presente em 30 jornadas seguidas.", "best_attendance", target=30, theme="sequencias"),
+    Badge("ferro_50", "Ferro 50", "Estar presente em 50 jornadas seguidas.", "best_attendance", target=50, theme="sequencias"),
+    Badge("assiduo", "Assíduo", f"{FULL_EDITIONS} edições Clássicas sem faltar a uma única jornada.",
+          "full_attendance_editions", target=FULL_EDITIONS, theme="sequencias"),
+    Badge("veterano", "Veterano", "Jogar 10 edições.", "editions", target=10, theme="sequencias"),
+    Badge("vinte_edicoes", "Vinte Edições", "Jogar 20 edições.", "editions", target=20, theme="sequencias"),
+    # --- Resultados e noites
+    Badge("pneu", "Pneu", "Ganhar um jogo sem perder um único jogo de ténis (X–0).", "shutouts", theme="resultados"),
+    Badge("rolo_compressor", "Rolo Compressor", f"Ganhar 25 jogos por {BIG_WIN_MARGIN} ou mais games de diferença.", "big_wins", target=25, theme="resultados"),
+    Badge("sangue_frio", "Sangue-frio", f"A melhor % de vitórias da liga nos jogos decididos por 1 ou 2 (mín. {MIN_TIGHT}).",
+          "tight_pct", kind="leader", progress="{value}% (o melhor tem {target}%)", theme="resultados"),
+    Badge("rei_tiebreak", "Rei do Tie-break", "Ganhar 20 sets por 7–6.", "tiebreak_set_wins", target=20, theme="resultados"),
+    Badge("salomao", "Salomão", "Empatar 20 jogos.", "draws", target=20, theme="resultados"),
+    Badge("noite_perfeita", "Noite Perfeita", "Ganhar os 3 jogos de uma jornada.", "perfect_nights", theme="resultados"),
+    Badge("dono_da_noite", "Dono da Noite", "15 jornadas com os 3 jogos ganhos.", "perfect_nights", target=15, theme="resultados"),
+    Badge("ressuscitador", "Ressuscitador", "Perder o 1º jogo da noite e ganhar os outros dois, 8 vezes.", "comebacks", target=8, theme="resultados"),
+    # --- Parceiros e rivais
+    Badge("sociavel", "Sociável", "Jogar com 30 parceiros diferentes.", "distinct_partners", target=30, theme="pessoas"),
+    Badge("quimica", "Química", "Ganhar 15 jogos com o mesmo parceiro.", "max_wins_with_partner", target=15, theme="pessoas"),
+    Badge("conhece_toda_a_gente", "Conhece Toda a Gente", "Defrontar 45 adversários diferentes.", "distinct_opponents", target=45, theme="pessoas"),
+    Badge("carrasco", "Carrasco", "Ganhar 20 jogos ao mesmo adversário.", "max_wins_vs_opponent", target=20, theme="pessoas"),
+    # --- Lealdade e divisões
+    Badge("da_primeira_hora", "Da Primeira Hora", "Ter jogado o Play Off ou a 1ª Edição, em 2022.", "founder", theme="lealdade"),
+    Badge("regresso", "Regresso", "Voltar a jogar depois de falhar uma edição Clássica.", "returns", theme="lealdade"),
+    Badge("elevador", "Elevador", "Subir de divisão.", "promotions", theme="lealdade"),
+    Badge("foguetao", "Foguetão", "Subir de divisão em duas edições seguidas.", "double_promotions", theme="lealdade"),
+    Badge("fenix", "Fénix", "Subir de divisão logo na edição a seguir a ter descido.", "fenix", theme="lealdade"),
+    Badge("elite", "Elite", "Jogar 5 edições na 1ª Divisão.", "first_division_editions", target=5, theme="lealdade"),
+    # --- Shuffle
+    Badge("baralhado", "Baralhado", "Jogar um Shuffle.", "shuffle_matches", theme="shuffle"),
+    Badge("top10_shuffle", "Top 10 Shuffle", "Acabar um Shuffle nos 10 primeiros.", "shuffle_best_place", target=10, kind="at_most",
+          progress="Melhor Shuffle: {value}º", theme="shuffle"),
+    Badge("podio_shuffle", "Pódio Shuffle", "Acabar um Shuffle no pódio.", "shuffle_podiums", theme="shuffle"),
+    # --- Teams
+    Badge("estreia_teams", "Estreia Teams", "Jogar um jogo num torneio Teams.", "teams_matches", theme="teams"),
+    Badge("vitoria_teams", "Vitória Teams", "Ganhar um jogo num torneio Teams.", "teams_wins", theme="teams"),
+    Badge("dupla_afinada", "Dupla Afinada", "Ganhar 5 jogos Teams com o mesmo par.", "teams_pair_wins", target=5, theme="teams"),
+    Badge("campeao_teams", "Campeão Teams", "Ganhar uma divisão de um torneio Teams.", "teams_titles", theme="teams"),
+    # --- Estreia
+    Badge("estreia_vitoriosa", "Estreia Vitoriosa", "Ganhar o primeiro jogo na liga.", "first_match_win", theme="estreia"),
+
 )
 BY_KEY = {b.key: b for b in REGISTRY}
+assert all(b.theme in THEME_LABEL for b in REGISTRY)
 
 
 def tier_of(pct):
@@ -89,18 +158,23 @@ def player_facts(league, pid, teams_titles):
     entries = [e for e in league.entries.get(pid, []) if league.comps[e.competition_id].status != "planned"]
     ended = {e.competition_id: e.final_place for e in league.entries.get(pid, [])
              if league.comps[e.competition_id].status == "ended" and e.final_place is not None}
+    ended_places = league.ended_places(pid)  # [(cid, place)] in edition order
     my_groups = league.member_groups.get(pid, set())
     tier_by_comp = {}
     for g in my_groups:
         grp = league.groups.get(g)
         if grp is not None and league.comps[grp.competition_id].format == "classica":
             tier_by_comp[grp.competition_id] = grp.tier
-    # Promotions: a lower tier number than the previous Clássica edition.
+    # Promotions: a lower tier number than the previous Clássica edition; relegations the other way.
     classic = sorted(tier_by_comp, key=league.edition_key)
-    promotions = sum(
-        1 for a, b in zip(classic, classic[1:])
-        if tier_by_comp[a] is not None and tier_by_comp[b] is not None and tier_by_comp[b] < tier_by_comp[a]
-    )
+    moves = [
+        (tier_by_comp[b] > tier_by_comp[a]) - (tier_by_comp[b] < tier_by_comp[a])  # -1 up, +1 down, 0 stay
+        for a, b in zip(classic, classic[1:])
+        if tier_by_comp[a] is not None and tier_by_comp[b] is not None
+    ]
+    promotions = sum(1 for mv in moves if mv == -1)
+    double_promotions = sum(1 for x, y in zip(moves, moves[1:]) if x == -1 and y == -1)
+    fenix = sum(1 for x, y in zip(moves, moves[1:]) if x == 1 and y == -1)
     # Invicto: fewest losses in an ended Clássica edition with enough matches.
     per_comp = defaultdict(lambda: [0, 0])
     for m, r in results:
@@ -108,28 +182,122 @@ def player_facts(league, pid, teams_titles):
             per_comp[m.competition_id][0] += 1
             per_comp[m.competition_id][1] += r == "L"
     eligible = [losses for n, losses in per_comp.values() if n >= INVICTO_MIN_MATCHES]
-    # Pneu: a won match where the other side scored no game (walkovers have no sets).
-    shutouts = sum(
-        1 for m, r in results
-        if r == "W" and m.sets and not m.corrupt and sum(s[1] if m.side_of(pid) == "home" else s[0] for s in m.sets) == 0
+    # Games, shutouts, margins and tie-break sets (walkovers have no sets; corrupt sets stay out).
+    games_won = shutouts = big_wins = tiebreak_set_wins = 0
+    tight = []
+    for m, r in results:
+        margin = m.margin(pid)
+        if margin is not None and 0 < abs(margin) <= 2:
+            tight.append(margin)
+        if margin is not None and margin >= BIG_WIN_MARGIN:
+            big_wins += 1
+        if not m.sets or m.corrupt:
+            continue
+        home = m.side_of(pid) == "home"
+        mine = [h if home else a for h, a in m.sets]
+        theirs = [a if home else h for h, a in m.sets]
+        games_won += sum(mine)
+        shutouts += r == "W" and sum(theirs) == 0
+        tiebreak_set_wins += sum(1 for g in zip(mine, theirs) if g == TIEBREAK)
+    # Clássica nights of three matches, in game order.
+    by_night = defaultdict(list)
+    for m, _ in results:
+        if m.format == "classica":
+            by_night[(m.group_id, m.round_id)].append(m)
+    three = [[m.result(pid) for m in sorted(ms, key=lambda m: m.order)] for ms in by_night.values() if len(ms) == 3]
+    # Partners and opponents (member seats only).
+    partners = defaultdict(lambda: [0, 0])  # played, wins
+    opponents = defaultdict(lambda: [0, 0])
+    for m, r in results:
+        for p in m.partners(pid):
+            partners[p][0] += 1
+            partners[p][1] += r == "W"
+        for o in m.opponents(pid):
+            opponents[o][0] += 1
+            opponents[o][1] += r == "W"
+    # Editions: full attendance, returns after a missed Clássica edition, founders.
+    nights_by_comp = defaultdict(list)
+    for _day, _rno, cid, _gid, present, _est, _rid in league.nights(pid):
+        if league.comps[cid].format == "classica":
+            nights_by_comp[cid].append(present)
+    full_editions = sum(
+        1 for cid, flags in nights_by_comp.items()
+        if len(flags) >= FULL_EDITION_MIN_NIGHTS and all(flags) and league.comps[cid].status == "ended"
     )
-    tight = [mg for m, _ in results for mg in [m.margin(pid)] if mg is not None and 0 < abs(mg) <= 2]
+    my_classic = sorted({m.competition_id for m, _ in results if m.format == "classica"}, key=league.edition_key)
+    order = _classic_order(league)
+    mine_idx = sorted(order[c] for c in my_classic if c in order)
+    returns = sum(1 for a, b in zip(mine_idx, mine_idx[1:]) if b - a > 1)
+    founder = any(league.edition_key(c)[0] <= 1 for c in my_classic)
+    # Shuffle and Teams.
+    shuffle_places = [p for cid, p in ended.items() if league.comps[cid].format == "shuffle"]
+    teams = [(m, r) for m, r in results if m.format == "teams"]
+    teams_pair_wins = defaultdict(int)
+    for m, r in teams:
+        for p in m.partners(pid):
+            teams_pair_wins[p] += r == "W"
+    streaks = streak_values(league, pid)
     return {
         "matches": len(results),
         "wins": wins,
+        "draws": sum(1 for _, r in results if r == "D"),
+        "games_won": games_won,
         "editions": len(entries),
         "titles": sum(1 for p in ended.values() if p == 1),
         "first_division_titles": sum(
             1 for cid, p in ended.items() if p == 1 and tier_by_comp.get(cid) == 1
         ),
+        "consecutive_titles": _best_run(
+            p == 1 for cid, p in ended_places if league.comps[cid].format == "classica"
+        ),
+        "podiums": sum(1 for _, p in ended_places if p <= 3),
+        "seconds": sum(1 for _, p in ended_places if p == 2),
         "shuffle_podiums": sum(1 for cid, p in ended.items() if league.comps[cid].format == "shuffle" and p <= 3),
+        "shuffle_best_place": min(shuffle_places) if shuffle_places else None,
+        "shuffle_matches": sum(1 for m, _ in results if m.format == "shuffle"),
         "invicto_losses": min(eligible) if eligible else None,
         "shutouts": shutouts,
+        "big_wins": big_wins,
+        "tiebreak_set_wins": tiebreak_set_wins,
         "promotions": promotions,
-        "best_attendance": streak_values(league, pid)["nights"][1],
+        "double_promotions": double_promotions,
+        "fenix": fenix,
+        "first_division_editions": sum(1 for t in tier_by_comp.values() if t == 1),
+        "best_attendance": streaks["nights"][1],
+        "best_win_streak": streaks["wins"][1],
+        "full_attendance_editions": full_editions,
+        "returns": returns,
+        "founder": int(founder),
+        "perfect_nights": sum(1 for s in three if s == ["W", "W", "W"]),
+        "comebacks": sum(1 for s in three if s == ["L", "W", "W"]),
+        "distinct_partners": len(partners),
+        "max_wins_with_partner": max((w for _, w in partners.values()), default=0),
+        "distinct_opponents": len(opponents),
+        "max_wins_vs_opponent": max((w for _, w in opponents.values()), default=0),
         "tight_pct": round(100 * sum(1 for mg in tight if mg > 0) / len(tight)) if len(tight) >= MIN_TIGHT else None,
+        "teams_matches": len(teams),
+        "teams_wins": sum(1 for _, r in teams if r == "W"),
+        "teams_pair_wins": max(teams_pair_wins.values(), default=0),
         "teams_titles": teams_titles.get(pid, 0),
+        "first_match_win": int(results[0][1] == "W") if results else 0,
     }
+
+
+def _best_run(flags):
+    best = cur = 0
+    for f in flags:
+        cur = cur + 1 if f else 0
+        best = max(best, cur)
+    return best
+
+
+def _classic_order(league):
+    """{competition_id: index} of the ended Clássica editions in edition order; memoised on the league."""
+    order = getattr(league, "classic_order", None)
+    if order is None:
+        ended = [c.id for c in league.comps.values() if c.format == "classica" and c.status == "ended"]
+        order = league.classic_order = {cid: i for i, cid in enumerate(sorted(ended, key=league.edition_key))}
+    return order
 
 
 def _teams_titles():
@@ -196,6 +364,8 @@ def _item(b, data, pid=None):
         "name": b.name,
         "rule": b.rule,
         "kind": b.kind,
+        "theme": b.theme,
+        "themeLabel": THEME_LABEL[b.theme],
         "target": data["target"],
         "holdersCount": len(data["holders"]),
         "rarityPct": round(data["pct"], 1),
@@ -228,14 +398,19 @@ def _pct_text(pct):
 
 
 def catalogue(league):
-    """GET /badges: every badge with its rule, rarity and holders, rarest first."""
+    """GET /badges: every badge with its rule, rarity and holders, rarest first, plus the themes in display order."""
     c = compute(league)
     badges = []
     for b in REGISTRY:
         data = c["badges"][b.key]
         badges.append({**_item(b, data), "holders": [league.ref(p) for p in data["holders"]]})
     badges.sort(key=lambda x: (x["rarityPct"], x["key"]))
-    return {"playersCount": len(c["players"]), "info": {"key": "badges.info", "text": COPY["info"]}, "badges": badges}
+    return {
+        "playersCount": len(c["players"]),
+        "info": {"key": "badges.info", "text": COPY["info"]},
+        "themes": [{"key": key, "label": label} for key, label in THEMES],
+        "badges": badges,
+    }
 
 
 def detail(league, key, closest=10):

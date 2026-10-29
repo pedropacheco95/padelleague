@@ -123,6 +123,7 @@ def test_substitute_only_player(client):
 
 def test_badge_catalogue(client):
     body = check(client.get("/api/v2/badges"), "/badges")
+    from padel_league.services import badges as badges_mod
     from padel_league.services.badges import REGISTRY
 
     assert {b["key"] for b in body["badges"]} == {b.key for b in REGISTRY}
@@ -132,6 +133,10 @@ def test_badge_catalogue(client):
         pct = b["rarityPct"]
         assert b["tier"] == ("lendaria" if pct < 5 else "epica" if pct < 15 else "rara" if pct < 40 else "comum")
     assert [b["rarityPct"] for b in body["badges"]] == sorted(b["rarityPct"] for b in body["badges"])
+    themes = [t["key"] for t in body["themes"]]
+    assert themes == [k for k, _ in badges_mod.THEMES] and len(themes) == len(set(themes))
+    labels = dict((t["key"], t["label"]) for t in body["themes"])
+    assert all(b["theme"] in labels and b["themeLabel"] == labels[b["theme"]] for b in body["badges"])
 
 
 def test_badge_detail(client):

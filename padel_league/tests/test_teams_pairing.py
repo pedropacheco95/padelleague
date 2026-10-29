@@ -47,6 +47,14 @@ def test_auto_pairs_refuses_an_odd_count():
 
 @pytest.fixture
 def app(pg):
+    # The template database holds a fixed calendar deadline that eventually passes;
+    # keep pair choice open relative to now so these tests do not expire.
+    from padel_league.services import teams_pairing
+    from padel_league.sql_db import db
+
+    stage = teams_pairing.current_mini_tournament()
+    stage.pairing_deadline = datetime.utcnow() + timedelta(days=7)
+    db.session.commit()
     return pg
 
 

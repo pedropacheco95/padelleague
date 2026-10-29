@@ -87,8 +87,14 @@ def test_record_sets_validates_format(pg):
     grp = f.group(stg)
     a, b = f.entry(comp, f.player()), f.entry(comp, f.player())
     m = f.match(grp, f.round_(stg, 1), home=(a,), away=(b,))
+    # Set by set (Oct 2026): 1-2 completed sets are a result in progress, not an error
+    results.record_sets(m.id, [W, W])
+    assert m.status == "scheduled" and len(m.sets) == 2 and results.is_in_progress(m)
     with pytest.raises(InvalidInput) as err:
-        results.record_sets(m.id, [W, W])
+        results.record_sets(m.id, [])
+    assert err.value.code == "teams_needs_three_sets"
+    with pytest.raises(InvalidInput) as err:  # a time-out chain always sends the 3 sets
+        results.record_sets(m.id, [W, {"home_games": 2, "away_games": 1, "outcome": "timeout_draw"}])
     assert err.value.code == "teams_needs_three_sets"
     with pytest.raises(InvalidInput):
         results.record_sets(m.id, [W, W, {"home_games": 4, "away_games": 4}])

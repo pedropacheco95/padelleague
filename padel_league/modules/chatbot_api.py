@@ -129,26 +129,31 @@ def log_question(question, trace, started, answer=None, error=None):
     Persists one ChatbotLog row. Never raises: a logging problem must not
     turn a good answer into an error for the user.
     """
+    values = dict(
+        session_id=session.get("conversation_id"),
+        question=question,
+        agent_name=trace.get("agent_name"),
+        agent_questions=_json(trace.get("agent_questions")),
+        sql_queries=_json(trace.get("sql_queries")),
+        answer=answer,
+        status="ok" if error is None else "error",
+        error=error,
+        duration_ms=int((time.monotonic() - started) * 1000),
+    )
     try:
-        row = ChatbotLog(
-            session_id=session.get("conversation_id"),
-            question=question,
-            agent_name=trace.get("agent_name"),
-            agent_questions=_json(trace.get("agent_questions")),
-            sql_queries=_json(trace.get("sql_queries")),
-            answer=answer,
-            status="ok" if error is None else "error",
-            error=error,
-            duration_ms=int((time.monotonic() - started) * 1000),
-        )
-        db.session.add(row)
-        db.session.commit()
+        _insert_log(values)
     except Exception:  # noqa: BLE001
         logging.exception("Could not write chatbot log")
-        try:
-            db.session.rollback()
-        except Exception:  # noqa: BLE001
-            pass
+
+
+def _insert_log(values):
+    """
+    Writes the row on its own connection. The request's shared db.session is
+    never committed (or rolled back) from here, so logging cannot flush or
+    persist whatever else the request has pending.
+    """
+    with db.engine.begin() as connection:
+        connection.execute(ChatbotLog.__table__.insert().values(**values))
 
 
 def _json(value):

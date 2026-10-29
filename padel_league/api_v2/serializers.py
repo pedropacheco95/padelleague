@@ -201,6 +201,8 @@ def match(m, group=None, competition=None, absences=(), replaces=None):
         "scheduledAt": iso_datetime(m.scheduled_at),
         "court": m.court,
         "status": m.status,
+        # Teams result saved set by set, not complete: sets below, nothing counts it yet.
+        "inProgress": m.status == "scheduled" and bool(m.sets),
         "participants": participants(m, replaces),
         "sets": [
             {"setNo": s.set_no, "homeGames": s.home_games, "awayGames": s.away_games, "outcome": s.outcome}

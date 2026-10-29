@@ -38,6 +38,9 @@ def for_edit():
     )
 
 
+# Any signed-in player may enter results (cerebrum decision 2026-10-15: only the
+# super admins are admins; every signed-in player may enter results, mark absences
+# and refresh standings). Same role as v2 PUT /api/v2/matches/<id>/result.
 @bp.route("/<int:id>/edit", methods=["POST"])
 @jwt_required()
 def edit_match(id):
@@ -72,6 +75,7 @@ def edit_match(id):
     return jsonify(serialize_match(Match.query.filter_by(id=id).first()))
 
 
+# Signed-in player level on purpose, see edit_match above.
 @bp.route("/<id>/edit_shuffle", methods=["POST"])
 @jwt_required()
 def edit_shuffle_match(id):

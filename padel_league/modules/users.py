@@ -9,8 +9,3 @@ bp = Blueprint("users", __name__, url_prefix="/users")
 def user(id):
     user = User.query.filter_by(id=id).first()
     return render_template("users/user.html", user=user)
-
-
-@bp.route("/edit/<id>", methods=("GET", "POST"))
-def edit(id):
-    return render_template("players/edit_player.html")

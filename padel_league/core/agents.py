@@ -1,5 +1,7 @@
 import re
-from pandas.errors import DatabaseError
+from sqlalchemy.exc import DatabaseError
+
+from padel_league.core.services import UnsafeSQLError
 import json
 import copy
 from .llm_handler import LLMConversation, LLMClient
@@ -382,7 +384,7 @@ class DataAgent(Agent):
             rows = self.sql_client.execute(sql)
             return {"sql": sql, "rows": rows}
 
-        except DatabaseError as e:
+        except (DatabaseError, UnsafeSQLError) as e:
             if max_retries <= 0:
                 raise
 
@@ -395,7 +397,7 @@ class DataAgent(Agent):
                     "repaired_from": sql,
                     "error": str(e),
                 }
-            except DatabaseError:
+            except (DatabaseError, UnsafeSQLError):
                 return {
                     "sql": repaired_sql,
                     "rows": "There was an error retrieving the data",
