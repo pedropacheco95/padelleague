@@ -1088,12 +1088,14 @@ components:
 
     Badge:
       type: object
-      required: [key, name, rule, kind, holdersCount, rarityPct, tier, tierLabel, rarityLine]
+      required: [key, name, rule, kind, theme, themeLabel, holdersCount, rarityPct, tier, tierLabel, rarityLine]
       properties:
         key: { type: string }
         name: { type: string }
         rule: { type: string }
         kind: { type: string, enum: [at_least, at_most, leader] }
+        theme: { type: string, description: catalogue group key (BadgeCatalogue.themes) }
+        themeLabel: { type: string }
         target: { type: [number, "null"] }
         holdersCount: { type: integer }
         rarityPct: { type: number, description: share of players with at least one game who own it }
@@ -1123,12 +1125,20 @@ components:
         info: { $ref: "#/components/schemas/StoryLine" }
         items: { type: array, items: { $ref: "#/components/schemas/PlayerBadge" } }
 
+    BadgeTheme:
+      type: object
+      required: [key, label]
+      properties:
+        key: { type: string }
+        label: { type: string }
+
     BadgeCatalogue:
       type: object
-      required: [playersCount, info, badges]
+      required: [playersCount, info, themes, badges]
       properties:
         playersCount: { type: integer }
         info: { $ref: "#/components/schemas/StoryLine" }
+        themes: { type: array, items: { $ref: "#/components/schemas/BadgeTheme" }, description: catalogue groups in display order }
         badges:
           type: array
           items:
