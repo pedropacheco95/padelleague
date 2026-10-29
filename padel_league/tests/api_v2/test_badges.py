@@ -262,3 +262,37 @@ def test_ressuscitador_counts_lose_then_win_twice_nights(fx):
     assert fx.facts()["comebacks"] == 7 and not earned(fx, "ressuscitador")
     fx.results(10, "LWW", per_night=3)
     assert earned(fx, "ressuscitador")
+
+
+# --- parceiros e rivais -------------------------------------------------------------------
+
+
+def test_sociavel_counts_distinct_partners(fx):
+    fx.results(10, "L" * 29, partner=lambda i: 1000 + i)
+    fx.results(10, "L" * 5, partner=1000)  # the same partner again
+    assert fx.facts()["distinct_partners"] == 29 and not earned(fx, "sociavel")
+    fx.results(10, "L", partner=1999)
+    assert earned(fx, "sociavel")
+
+
+def test_quimica_counts_wins_with_one_partner(fx):
+    fx.results(10, "W" * 14 + "L" * 3, partner=1000)
+    fx.results(10, "W" * 5, partner=1001)
+    assert fx.facts()["max_wins_with_partner"] == 14 and not earned(fx, "quimica")
+    fx.results(10, "W", partner=1000)
+    assert earned(fx, "quimica")
+
+
+def test_conhece_toda_a_gente_counts_distinct_opponents(fx):
+    fx.results(10, "L" * 22, opponents=lambda i: (2000 + 2 * i, 2001 + 2 * i))  # 44 opponents
+    assert fx.facts()["distinct_opponents"] == 44 and not earned(fx, "conhece_toda_a_gente")
+    fx.results(10, "L", opponents=(2000, 2999))
+    assert earned(fx, "conhece_toda_a_gente")
+
+
+def test_carrasco_counts_wins_against_one_opponent(fx):
+    fx.results(10, "W" * 19 + "L" * 4, opponents=(2000, 2001))
+    fx.results(10, "W" * 3, opponents=(2002, 2003))
+    assert fx.facts()["max_wins_vs_opponent"] == 19 and not earned(fx, "carrasco")
+    fx.results(10, "W", opponents=(2000, 2500))
+    assert earned(fx, "carrasco")

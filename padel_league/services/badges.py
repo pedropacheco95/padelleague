@@ -97,6 +97,10 @@ REGISTRY = (
     Badge("dono_da_noite", "Dono da Noite", "15 jornadas com os 3 jogos ganhos.", "perfect_nights", target=15),
     Badge("ressuscitador", "Ressuscitador", "Perder o 1º jogo da noite e ganhar os outros dois, 8 vezes.", "comebacks", target=8),
     # --- Parceiros e rivais
+    Badge("sociavel", "Sociável", "Jogar com 30 parceiros diferentes.", "distinct_partners", target=30),
+    Badge("quimica", "Química", "Ganhar 15 jogos com o mesmo parceiro.", "max_wins_with_partner", target=15),
+    Badge("conhece_toda_a_gente", "Conhece Toda a Gente", "Defrontar 45 adversários diferentes.", "distinct_opponents", target=45),
+    Badge("carrasco", "Carrasco", "Ganhar 20 jogos ao mesmo adversário.", "max_wins_vs_opponent", target=20),
     # --- Lealdade e divisões
     Badge("elevador", "Elevador", "Subir de divisão.", "promotions"),
     # --- Shuffle
