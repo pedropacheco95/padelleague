@@ -40,6 +40,10 @@ class Config:
     SESSION_TYPE = "filesystem"
 
     LLM_API_KEY = os.getenv("LLM_API_KEY", "")
+    # Chatbot SQL: a dedicated read-only role (docs/security/chatbot_readonly_role.sql)
+    # when set, else the application's connection; every query gets this timeout.
+    CHATBOT_DATABASE_URI = os.getenv("CHATBOT_DATABASE_URI")
+    CHATBOT_STATEMENT_TIMEOUT_MS = int(os.getenv("CHATBOT_STATEMENT_TIMEOUT_MS", "5000"))
 
 
 class DevConfig(Config):
