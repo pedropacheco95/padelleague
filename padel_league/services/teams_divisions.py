@@ -107,6 +107,9 @@ def build_divisions(stage, points=None, positions=None, with_fixtures=True):
                     _add_match(group, rounds[number], division[home], division[away], entry_of)
         built.append((group, division))
     stage.status = "running" if stage.status == "planned" else stage.status
+    competition = stage.competition
+    if competition.status == "planned":  # the first mini-tournament's divisions start the Teams
+        competition.status = "running"
     db.session.flush()
     return built
 

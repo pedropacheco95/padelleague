@@ -80,6 +80,10 @@ def put_result(match_id):
     except ResultError as exc:
         db.session.rollback()
         raise bad_request(str(exc), "invalid_result")
+    if match.group.has_ended and results.is_in_progress(match):
+        # A set-by-set save would un-count a closed group's match and rewrite its awards.
+        db.session.rollback()
+        raise conflict("Este grupo já terminou; regista o resultado completo.", "group_closed")
     db.session.commit()
     try:
         # Closes the group once its last result lands (snapshot → awards → ranking); commits.
