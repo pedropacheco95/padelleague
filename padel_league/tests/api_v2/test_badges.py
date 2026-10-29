@@ -172,3 +172,46 @@ def test_prata_counts_second_places_only(fx):
     assert not earned(fx, "prata")
     fx.entry(ME, fx.competition(30, "7ª Edição"), place=2)
     assert earned(fx, "prata")
+
+
+# --- sequências e presenças ---------------------------------------------------------------
+
+
+@pytest.mark.parametrize("key,target", [("sete_seguidas", 7), ("dez_seguidas", 10), ("quinze_seguidas", 15)])
+def test_win_streaks_break_on_a_draw(fx, key, target):
+    fx.results(10, "W" * (target - 1) + "D" + "W" * (target - 1))
+    assert not earned(fx, key)
+    fx.results(10, "W")
+    assert earned(fx, key)
+
+
+def test_ferro_50_counts_consecutive_nights_present(fx):
+    fx.results(10, "L" * 49)
+    fx.night(10)  # a night I missed
+    fx.results(10, "L" * 30)
+    assert fx.facts()["best_attendance"] == 49 and not earned(fx, "ferro_50")
+    fx.results(10, "L" * 20)
+    assert earned(fx, "ferro_50")
+
+
+def test_assiduo_counts_ended_editions_without_an_absence(fx):
+    for n in range(5):
+        cid = fx.competition(20 + n, f"{n + 2}ª Edição")
+        gid = fx.group(100 + n, cid, tier=3)
+        fx.results(gid, "LLLLLLL")
+        if n == 4:
+            fx.night(gid)  # one absence in the fifth edition
+    assert fx.facts()["full_attendance_editions"] == 4 and not earned(fx, "assiduo")
+    gid = fx.group(200, fx.competition(60, "8ª Edição"), tier=3)
+    fx.results(gid, "LLLLL")
+    assert earned(fx, "assiduo")
+
+
+@pytest.mark.parametrize("key,target", [("veterano", 10), ("vinte_edicoes", 20)])
+def test_editions_count_entries_in_unplanned_competitions(fx, key, target):
+    for n in range(target - 1):
+        fx.entry(ME, fx.competition(20 + n, f"{n + 2}ª Edição"))
+    fx.entry(ME, fx.competition(90, "50ª Edição", status="planned"))
+    assert not earned(fx, key)
+    fx.entry(ME, fx.competition(91, "51ª Edição", status="ongoing"))
+    assert earned(fx, key)

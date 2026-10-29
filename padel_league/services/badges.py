@@ -77,8 +77,15 @@ REGISTRY = (
     Badge("invicto", "Invicto", f"Uma edição Clássica com {INVICTO_MIN_MATCHES} ou mais jogos e nenhuma derrota.",
           "invicto_losses", target=0, kind="at_most", progress=("Melhor edição: {value} derrota", "Melhor edição: {value} derrotas")),
     # --- Sequências e presenças
+    Badge("sete_seguidas", "Sete Seguidas", "Ganhar 7 jogos seguidos.", "best_win_streak", target=7),
+    Badge("dez_seguidas", "Dez Seguidas", "Ganhar 10 jogos seguidos.", "best_win_streak", target=10),
+    Badge("quinze_seguidas", "Quinze Seguidas", "Ganhar 15 jogos seguidos.", "best_win_streak", target=15),
     Badge("ferro_30", "Ferro 30", "Estar presente em 30 jornadas seguidas.", "best_attendance", target=30),
+    Badge("ferro_50", "Ferro 50", "Estar presente em 50 jornadas seguidas.", "best_attendance", target=50),
+    Badge("assiduo", "Assíduo", f"{FULL_EDITIONS} edições Clássicas sem faltar a uma única jornada.",
+          "full_attendance_editions", target=FULL_EDITIONS),
     Badge("veterano", "Veterano", "Jogar 10 edições.", "editions", target=10),
+    Badge("vinte_edicoes", "Vinte Edições", "Jogar 20 edições.", "editions", target=20),
     # --- Resultados e noites
     Badge("pneu", "Pneu", "Ganhar um jogo sem perder um único jogo de ténis (X–0).", "shutouts"),
     Badge("sangue_frio", "Sangue-frio", f"A melhor % de vitórias da liga nos jogos decididos por 1 ou 2 (mín. {MIN_TIGHT}).",
