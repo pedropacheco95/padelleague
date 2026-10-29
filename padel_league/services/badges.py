@@ -39,6 +39,10 @@ TIERS = (("lendaria", "Lendária", 5), ("epica", "Épica", 15), ("rara", "Rara",
 
 MIN_TIGHT = 20  # sangue-frio: decided-by-1-or-2 games needed to be ranked
 INVICTO_MIN_MATCHES = 10
+BIG_WIN_MARGIN = 5  # rolo compressor: a win by this many games or more
+FULL_EDITIONS = 5  # assíduo: Clássica editions attended in full
+FULL_EDITION_MIN_NIGHTS = 5  # ... an edition counts when its group played at least this many nights
+TIEBREAK = (7, 6)  # rei do tie-break: a set won by this score
 
 
 @dataclass(frozen=True)
@@ -53,22 +57,32 @@ class Badge:
 
 
 REGISTRY = (
-    Badge("sangue_frio", "Sangue-frio", f"A melhor % de vitórias da liga nos jogos decididos por 1 ou 2 (mín. {MIN_TIGHT}).",
-          "tight_pct", kind="leader", progress="{value}% (o melhor tem {target}%)"),
-    Badge("podio_shuffle", "Pódio Shuffle", "Acabar um Shuffle no pódio.", "shuffle_podiums"),
+    # --- Volume
+    Badge("clube_300", "Clube 300", "Jogar 300 jogos.", "matches", target=300),
+    Badge("centuriao", "Centurião", "Ganhar 100 jogos.", "wins", target=100),
+    Badge("clube_200", "Clube 200", "Ganhar 200 jogos.", "wins", target=200),
+    # --- Títulos e pódios
+    Badge("tetracampeao", "Tetracampeão", "Ganhar 4 divisões.", "titles", target=4),
+    Badge("pentacampeao", "Pentacampeão", "Ganhar 5 divisões.", "titles", target=5),
+    Badge("rei_da_1", "Rei da 1ª", "Ganhar a 1ª Divisão.", "first_division_titles"),
     Badge("invicto", "Invicto", f"Uma edição Clássica com {INVICTO_MIN_MATCHES} ou mais jogos e nenhuma derrota.",
           "invicto_losses", target=0, kind="at_most", progress=("Melhor edição: {value} derrota", "Melhor edição: {value} derrotas")),
-    Badge("pentacampeao", "Pentacampeão", "Ganhar 5 divisões.", "titles", target=5),
-    Badge("tetracampeao", "Tetracampeão", "Ganhar 4 divisões.", "titles", target=4),
-    Badge("rei_da_1", "Rei da 1ª", "Ganhar a 1ª Divisão.", "first_division_titles"),
-    Badge("clube_300", "Clube 300", "Jogar 300 jogos.", "matches", target=300),
+    # --- Sequências e presenças
     Badge("ferro_30", "Ferro 30", "Estar presente em 30 jornadas seguidas.", "best_attendance", target=30),
-    Badge("centuriao", "Centurião", "Ganhar 100 jogos.", "wins", target=100),
     Badge("veterano", "Veterano", "Jogar 10 edições.", "editions", target=10),
+    # --- Resultados e noites
     Badge("pneu", "Pneu", "Ganhar um jogo sem perder um único jogo de ténis (X–0).", "shutouts"),
+    Badge("sangue_frio", "Sangue-frio", f"A melhor % de vitórias da liga nos jogos decididos por 1 ou 2 (mín. {MIN_TIGHT}).",
+          "tight_pct", kind="leader", progress="{value}% (o melhor tem {target}%)"),
+    # --- Parceiros e rivais
+    # --- Lealdade e divisões
     Badge("elevador", "Elevador", "Subir de divisão.", "promotions"),
-    Badge("clube_200", "Clube 200", "Ganhar 200 jogos.", "wins", target=200),
+    # --- Shuffle
+    Badge("podio_shuffle", "Pódio Shuffle", "Acabar um Shuffle no pódio.", "shuffle_podiums"),
+    # --- Teams
     Badge("campeao_teams", "Campeão Teams", "Ganhar uma divisão de um torneio Teams.", "teams_titles"),
+    # --- Estreia
+
 )
 BY_KEY = {b.key: b for b in REGISTRY}
 
@@ -89,18 +103,23 @@ def player_facts(league, pid, teams_titles):
     entries = [e for e in league.entries.get(pid, []) if league.comps[e.competition_id].status != "planned"]
     ended = {e.competition_id: e.final_place for e in league.entries.get(pid, [])
              if league.comps[e.competition_id].status == "ended" and e.final_place is not None}
+    ended_places = league.ended_places(pid)  # [(cid, place)] in edition order
     my_groups = league.member_groups.get(pid, set())
     tier_by_comp = {}
     for g in my_groups:
         grp = league.groups.get(g)
         if grp is not None and league.comps[grp.competition_id].format == "classica":
             tier_by_comp[grp.competition_id] = grp.tier
-    # Promotions: a lower tier number than the previous Clássica edition.
+    # Promotions: a lower tier number than the previous Clássica edition; relegations the other way.
     classic = sorted(tier_by_comp, key=league.edition_key)
-    promotions = sum(
-        1 for a, b in zip(classic, classic[1:])
-        if tier_by_comp[a] is not None and tier_by_comp[b] is not None and tier_by_comp[b] < tier_by_comp[a]
-    )
+    moves = [
+        (tier_by_comp[b] > tier_by_comp[a]) - (tier_by_comp[b] < tier_by_comp[a])  # -1 up, +1 down, 0 stay
+        for a, b in zip(classic, classic[1:])
+        if tier_by_comp[a] is not None and tier_by_comp[b] is not None
+    ]
+    promotions = sum(1 for mv in moves if mv == -1)
+    double_promotions = sum(1 for x, y in zip(moves, moves[1:]) if x == -1 and y == -1)
+    fenix = sum(1 for x, y in zip(moves, moves[1:]) if x == 1 and y == -1)
     # Invicto: fewest losses in an ended Clássica edition with enough matches.
     per_comp = defaultdict(lambda: [0, 0])
     for m, r in results:
@@ -108,28 +127,122 @@ def player_facts(league, pid, teams_titles):
             per_comp[m.competition_id][0] += 1
             per_comp[m.competition_id][1] += r == "L"
     eligible = [losses for n, losses in per_comp.values() if n >= INVICTO_MIN_MATCHES]
-    # Pneu: a won match where the other side scored no game (walkovers have no sets).
-    shutouts = sum(
-        1 for m, r in results
-        if r == "W" and m.sets and not m.corrupt and sum(s[1] if m.side_of(pid) == "home" else s[0] for s in m.sets) == 0
+    # Games, shutouts, margins and tie-break sets (walkovers have no sets; corrupt sets stay out).
+    games_won = shutouts = big_wins = tiebreak_set_wins = 0
+    tight = []
+    for m, r in results:
+        margin = m.margin(pid)
+        if margin is not None and 0 < abs(margin) <= 2:
+            tight.append(margin)
+        if margin is not None and margin >= BIG_WIN_MARGIN:
+            big_wins += 1
+        if not m.sets or m.corrupt:
+            continue
+        home = m.side_of(pid) == "home"
+        mine = [h if home else a for h, a in m.sets]
+        theirs = [a if home else h for h, a in m.sets]
+        games_won += sum(mine)
+        shutouts += r == "W" and sum(theirs) == 0
+        tiebreak_set_wins += sum(1 for g in zip(mine, theirs) if g == TIEBREAK)
+    # Clássica nights of three matches, in game order.
+    by_night = defaultdict(list)
+    for m, _ in results:
+        if m.format == "classica":
+            by_night[(m.group_id, m.round_id)].append(m)
+    three = [[m.result(pid) for m in sorted(ms, key=lambda m: m.order)] for ms in by_night.values() if len(ms) == 3]
+    # Partners and opponents (member seats only).
+    partners = defaultdict(lambda: [0, 0])  # played, wins
+    opponents = defaultdict(lambda: [0, 0])
+    for m, r in results:
+        for p in m.partners(pid):
+            partners[p][0] += 1
+            partners[p][1] += r == "W"
+        for o in m.opponents(pid):
+            opponents[o][0] += 1
+            opponents[o][1] += r == "W"
+    # Editions: full attendance, returns after a missed Clássica edition, founders.
+    nights_by_comp = defaultdict(list)
+    for _day, _rno, cid, _gid, present, _est, _rid in league.nights(pid):
+        if league.comps[cid].format == "classica":
+            nights_by_comp[cid].append(present)
+    full_editions = sum(
+        1 for cid, flags in nights_by_comp.items()
+        if len(flags) >= FULL_EDITION_MIN_NIGHTS and all(flags) and league.comps[cid].status == "ended"
     )
-    tight = [mg for m, _ in results for mg in [m.margin(pid)] if mg is not None and 0 < abs(mg) <= 2]
+    my_classic = sorted({m.competition_id for m, _ in results if m.format == "classica"}, key=league.edition_key)
+    order = _classic_order(league)
+    mine_idx = sorted(order[c] for c in my_classic if c in order)
+    returns = sum(1 for a, b in zip(mine_idx, mine_idx[1:]) if b - a > 1)
+    founder = any(league.edition_key(c)[0] <= 1 for c in my_classic)
+    # Shuffle and Teams.
+    shuffle_places = [p for cid, p in ended.items() if league.comps[cid].format == "shuffle"]
+    teams = [(m, r) for m, r in results if m.format == "teams"]
+    teams_pair_wins = defaultdict(int)
+    for m, r in teams:
+        for p in m.partners(pid):
+            teams_pair_wins[p] += r == "W"
+    streaks = streak_values(league, pid)
     return {
         "matches": len(results),
         "wins": wins,
+        "draws": sum(1 for _, r in results if r == "D"),
+        "games_won": games_won,
         "editions": len(entries),
         "titles": sum(1 for p in ended.values() if p == 1),
         "first_division_titles": sum(
             1 for cid, p in ended.items() if p == 1 and tier_by_comp.get(cid) == 1
         ),
+        "consecutive_titles": _best_run(
+            p == 1 for cid, p in ended_places if league.comps[cid].format == "classica"
+        ),
+        "podiums": sum(1 for _, p in ended_places if p <= 3),
+        "seconds": sum(1 for _, p in ended_places if p == 2),
         "shuffle_podiums": sum(1 for cid, p in ended.items() if league.comps[cid].format == "shuffle" and p <= 3),
+        "shuffle_best_place": min(shuffle_places) if shuffle_places else None,
+        "shuffle_matches": sum(1 for m, _ in results if m.format == "shuffle"),
         "invicto_losses": min(eligible) if eligible else None,
         "shutouts": shutouts,
+        "big_wins": big_wins,
+        "tiebreak_set_wins": tiebreak_set_wins,
         "promotions": promotions,
-        "best_attendance": streak_values(league, pid)["nights"][1],
+        "double_promotions": double_promotions,
+        "fenix": fenix,
+        "first_division_editions": sum(1 for t in tier_by_comp.values() if t == 1),
+        "best_attendance": streaks["nights"][1],
+        "best_win_streak": streaks["wins"][1],
+        "full_attendance_editions": full_editions,
+        "returns": returns,
+        "founder": int(founder),
+        "perfect_nights": sum(1 for s in three if s == ["W", "W", "W"]),
+        "comebacks": sum(1 for s in three if s == ["L", "W", "W"]),
+        "distinct_partners": len(partners),
+        "max_wins_with_partner": max((w for _, w in partners.values()), default=0),
+        "distinct_opponents": len(opponents),
+        "max_wins_vs_opponent": max((w for _, w in opponents.values()), default=0),
         "tight_pct": round(100 * sum(1 for mg in tight if mg > 0) / len(tight)) if len(tight) >= MIN_TIGHT else None,
+        "teams_matches": len(teams),
+        "teams_wins": sum(1 for _, r in teams if r == "W"),
+        "teams_pair_wins": max(teams_pair_wins.values(), default=0),
         "teams_titles": teams_titles.get(pid, 0),
+        "first_match_win": int(results[0][1] == "W") if results else 0,
     }
+
+
+def _best_run(flags):
+    best = cur = 0
+    for f in flags:
+        cur = cur + 1 if f else 0
+        best = max(best, cur)
+    return best
+
+
+def _classic_order(league):
+    """{competition_id: index} of the ended Clássica editions in edition order; memoised on the league."""
+    order = getattr(league, "classic_order", None)
+    if order is None:
+        ended = [c.id for c in league.comps.values() if c.format == "classica" and c.status == "ended"]
+        order = league.classic_order = {cid: i for i, cid in enumerate(sorted(ended, key=league.edition_key))}
+    return order
 
 
 def _teams_titles():
