@@ -215,3 +215,50 @@ def test_editions_count_entries_in_unplanned_competitions(fx, key, target):
     assert not earned(fx, key)
     fx.entry(ME, fx.competition(91, "51ª Edição", status="ongoing"))
     assert earned(fx, key)
+
+
+# --- resultados e noites ------------------------------------------------------------------
+
+
+def test_rolo_compressor_counts_wins_by_five_or_more_games(fx):
+    fx.results(10, "W" * 24, sets=lambda i, r: [(9, 4)])
+    fx.results(10, "W" * 5, sets=lambda i, r: [(9, 5)])
+    assert fx.facts()["big_wins"] == 24 and not earned(fx, "rolo_compressor")
+    fx.results(10, "W", sets=lambda i, r: [(5, 0)])
+    assert earned(fx, "rolo_compressor")
+
+
+def test_rei_tiebreak_counts_sets_won_seven_six(fx):
+    fx.results(10, "W" * 19, sets=lambda i, r: [(7, 6)])
+    fx.results(10, "L" * 5, sets=lambda i, r: [(6, 7)])
+    assert fx.facts()["tiebreak_set_wins"] == 19 and not earned(fx, "rei_tiebreak")
+    fx.results(10, "W", sets=lambda i, r: [(7, 6)])
+    assert earned(fx, "rei_tiebreak")
+
+
+def test_salomao_counts_draws(fx):
+    fx.results(10, "D" * 19 + "WL")
+    assert not earned(fx, "salomao")
+    fx.results(10, "D")
+    assert earned(fx, "salomao")
+
+
+def test_noite_perfeita_needs_all_three_wins_of_a_night(fx):
+    fx.results(10, "WWL", per_night=3)
+    assert not earned(fx, "noite_perfeita")
+    fx.results(10, "WWW", per_night=3)
+    assert earned(fx, "noite_perfeita")
+
+
+def test_dono_da_noite_counts_perfect_nights(fx):
+    fx.results(10, "WWW" * 14 + "WWD", per_night=3)
+    assert fx.facts()["perfect_nights"] == 14 and not earned(fx, "dono_da_noite")
+    fx.results(10, "WWW", per_night=3)
+    assert earned(fx, "dono_da_noite")
+
+
+def test_ressuscitador_counts_lose_then_win_twice_nights(fx):
+    fx.results(10, "LWW" * 7 + "WLW" + "LWL", per_night=3)
+    assert fx.facts()["comebacks"] == 7 and not earned(fx, "ressuscitador")
+    fx.results(10, "LWW", per_night=3)
+    assert earned(fx, "ressuscitador")

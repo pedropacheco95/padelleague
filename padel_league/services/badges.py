@@ -88,8 +88,14 @@ REGISTRY = (
     Badge("vinte_edicoes", "Vinte Edições", "Jogar 20 edições.", "editions", target=20),
     # --- Resultados e noites
     Badge("pneu", "Pneu", "Ganhar um jogo sem perder um único jogo de ténis (X–0).", "shutouts"),
+    Badge("rolo_compressor", "Rolo Compressor", f"Ganhar 25 jogos por {BIG_WIN_MARGIN} ou mais games de diferença.", "big_wins", target=25),
     Badge("sangue_frio", "Sangue-frio", f"A melhor % de vitórias da liga nos jogos decididos por 1 ou 2 (mín. {MIN_TIGHT}).",
           "tight_pct", kind="leader", progress="{value}% (o melhor tem {target}%)"),
+    Badge("rei_tiebreak", "Rei do Tie-break", "Ganhar 20 sets por 7–6.", "tiebreak_set_wins", target=20),
+    Badge("salomao", "Salomão", "Empatar 20 jogos.", "draws", target=20),
+    Badge("noite_perfeita", "Noite Perfeita", "Ganhar os 3 jogos de uma jornada.", "perfect_nights"),
+    Badge("dono_da_noite", "Dono da Noite", "15 jornadas com os 3 jogos ganhos.", "perfect_nights", target=15),
+    Badge("ressuscitador", "Ressuscitador", "Perder o 1º jogo da noite e ganhar os outros dois, 8 vezes.", "comebacks", target=8),
     # --- Parceiros e rivais
     # --- Lealdade e divisões
     Badge("elevador", "Elevador", "Subir de divisão.", "promotions"),
