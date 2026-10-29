@@ -400,3 +400,15 @@ def test_dupla_afinada_counts_teams_wins_with_one_partner(fx):
     assert fx.facts()["teams_pair_wins"] == 4 and not earned(fx, "dupla_afinada")
     fx.results(gid, "W", partner=1000, sets=lambda i, r: TEAMS_WIN)
     assert earned(fx, "dupla_afinada")
+
+
+# --- estreia ------------------------------------------------------------------------------
+
+
+def test_estreia_vitoriosa_reads_the_first_match_in_time(fx):
+    fx.results(10, "LWWW")
+    assert not earned(fx, "estreia_vitoriosa")
+    g = Fixture()
+    g.group(10, g.competition(1, "1ª Edição"))
+    g.results(10, "WLLL")
+    assert earned(g, "estreia_vitoriosa")

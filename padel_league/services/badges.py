@@ -119,7 +119,7 @@ REGISTRY = (
     Badge("dupla_afinada", "Dupla Afinada", "Ganhar 5 jogos Teams com o mesmo par.", "teams_pair_wins", target=5),
     Badge("campeao_teams", "Campeão Teams", "Ganhar uma divisão de um torneio Teams.", "teams_titles"),
     # --- Estreia
-
+    Badge("estreia_vitoriosa", "Estreia Vitoriosa", "Ganhar o primeiro jogo na liga.", "first_match_win"),
 )
 BY_KEY = {b.key: b for b in REGISTRY}
 
