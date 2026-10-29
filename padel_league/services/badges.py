@@ -45,6 +45,21 @@ FULL_EDITION_MIN_NIGHTS = 5  # ... an edition counts when its group played at le
 TIEBREAK = (7, 6)  # rei do tie-break: a set won by this score
 
 
+# Catalogue groups, in display order (the "---" comments in REGISTRY follow the same order).
+THEMES = (
+    ("volume", "Volume"),
+    ("titulos", "Títulos e pódios"),
+    ("sequencias", "Sequências e presenças"),
+    ("resultados", "Resultados e noites"),
+    ("pessoas", "Parceiros e rivais"),
+    ("lealdade", "Lealdade e divisões"),
+    ("shuffle", "Shuffle"),
+    ("teams", "Teams"),
+    ("estreia", "Estreia"),
+)
+THEME_LABEL = dict(THEMES)
+
+
 @dataclass(frozen=True)
 class Badge:
     key: str
@@ -54,74 +69,77 @@ class Badge:
     target: float = 1
     kind: str = "at_least"  # at_least | at_most | leader
     progress: object = None  # template (or singular/plural pair, by value) for a locked badge; None = COPY["progress"]
+    theme: str = "volume"  # a THEMES key
 
 
 REGISTRY = (
     # --- Volume
-    Badge("clube_100", "Clube 100", "Jogar 100 jogos.", "matches", target=100),
-    Badge("clube_300", "Clube 300", "Jogar 300 jogos.", "matches", target=300),
-    Badge("clube_400", "Clube 400", "Jogar 400 jogos.", "matches", target=400),
-    Badge("centuriao", "Centurião", "Ganhar 100 jogos.", "wins", target=100),
-    Badge("clube_200", "Clube 200", "Ganhar 200 jogos.", "wins", target=200),
-    Badge("mil_games", "Mil Games", "Ganhar 1000 games (os pontos de cada set).", "games_won", target=1000),
+    Badge("clube_100", "Clube 100", "Jogar 100 jogos.", "matches", target=100, theme="volume"),
+    Badge("clube_300", "Clube 300", "Jogar 300 jogos.", "matches", target=300, theme="volume"),
+    Badge("clube_400", "Clube 400", "Jogar 400 jogos.", "matches", target=400, theme="volume"),
+    Badge("centuriao", "Centurião", "Ganhar 100 jogos.", "wins", target=100, theme="volume"),
+    Badge("clube_200", "Clube 200", "Ganhar 200 jogos.", "wins", target=200, theme="volume"),
+    Badge("mil_games", "Mil Games", "Ganhar 1000 games (os pontos de cada set).", "games_won", target=1000, theme="volume"),
     # --- Títulos e pódios
-    Badge("campeao", "Campeão", "Ganhar uma divisão.", "titles"),
-    Badge("bicampeao", "Bicampeão", "Ganhar 2 divisões.", "titles", target=2),
-    Badge("tricampeao", "Tricampeão", "Ganhar 3 divisões.", "titles", target=3),
-    Badge("tetracampeao", "Tetracampeão", "Ganhar 4 divisões.", "titles", target=4),
-    Badge("pentacampeao", "Pentacampeão", "Ganhar 5 divisões.", "titles", target=5),
-    Badge("rei_da_1", "Rei da 1ª", "Ganhar a 1ª Divisão.", "first_division_titles"),
-    Badge("dinastia", "Dinastia", "Ganhar a divisão em duas edições Clássicas seguidas.", "consecutive_titles", target=2),
-    Badge("habitue_podio", "Habitué do Pódio", "Acabar 5 edições no pódio.", "podiums", target=5),
-    Badge("prata", "Prata", "Acabar 3 edições em 2º lugar.", "seconds", target=3),
+    Badge("campeao", "Campeão", "Ganhar uma divisão.", "titles", theme="titulos"),
+    Badge("bicampeao", "Bicampeão", "Ganhar 2 divisões.", "titles", target=2, theme="titulos"),
+    Badge("tricampeao", "Tricampeão", "Ganhar 3 divisões.", "titles", target=3, theme="titulos"),
+    Badge("tetracampeao", "Tetracampeão", "Ganhar 4 divisões.", "titles", target=4, theme="titulos"),
+    Badge("pentacampeao", "Pentacampeão", "Ganhar 5 divisões.", "titles", target=5, theme="titulos"),
+    Badge("rei_da_1", "Rei da 1ª", "Ganhar a 1ª Divisão.", "first_division_titles", theme="titulos"),
+    Badge("dinastia", "Dinastia", "Ganhar a divisão em duas edições Clássicas seguidas.", "consecutive_titles", target=2, theme="titulos"),
+    Badge("habitue_podio", "Habitué do Pódio", "Acabar 5 edições no pódio.", "podiums", target=5, theme="titulos"),
+    Badge("prata", "Prata", "Acabar 3 edições em 2º lugar.", "seconds", target=3, theme="titulos"),
     Badge("invicto", "Invicto", f"Uma edição Clássica com {INVICTO_MIN_MATCHES} ou mais jogos e nenhuma derrota.",
-          "invicto_losses", target=0, kind="at_most", progress=("Melhor edição: {value} derrota", "Melhor edição: {value} derrotas")),
+          "invicto_losses", target=0, kind="at_most", progress=("Melhor edição: {value} derrota", "Melhor edição: {value} derrotas"), theme="titulos"),
     # --- Sequências e presenças
-    Badge("sete_seguidas", "Sete Seguidas", "Ganhar 7 jogos seguidos.", "best_win_streak", target=7),
-    Badge("dez_seguidas", "Dez Seguidas", "Ganhar 10 jogos seguidos.", "best_win_streak", target=10),
-    Badge("quinze_seguidas", "Quinze Seguidas", "Ganhar 15 jogos seguidos.", "best_win_streak", target=15),
-    Badge("ferro_30", "Ferro 30", "Estar presente em 30 jornadas seguidas.", "best_attendance", target=30),
-    Badge("ferro_50", "Ferro 50", "Estar presente em 50 jornadas seguidas.", "best_attendance", target=50),
+    Badge("sete_seguidas", "Sete Seguidas", "Ganhar 7 jogos seguidos.", "best_win_streak", target=7, theme="sequencias"),
+    Badge("dez_seguidas", "Dez Seguidas", "Ganhar 10 jogos seguidos.", "best_win_streak", target=10, theme="sequencias"),
+    Badge("quinze_seguidas", "Quinze Seguidas", "Ganhar 15 jogos seguidos.", "best_win_streak", target=15, theme="sequencias"),
+    Badge("ferro_30", "Ferro 30", "Estar presente em 30 jornadas seguidas.", "best_attendance", target=30, theme="sequencias"),
+    Badge("ferro_50", "Ferro 50", "Estar presente em 50 jornadas seguidas.", "best_attendance", target=50, theme="sequencias"),
     Badge("assiduo", "Assíduo", f"{FULL_EDITIONS} edições Clássicas sem faltar a uma única jornada.",
-          "full_attendance_editions", target=FULL_EDITIONS),
-    Badge("veterano", "Veterano", "Jogar 10 edições.", "editions", target=10),
-    Badge("vinte_edicoes", "Vinte Edições", "Jogar 20 edições.", "editions", target=20),
+          "full_attendance_editions", target=FULL_EDITIONS, theme="sequencias"),
+    Badge("veterano", "Veterano", "Jogar 10 edições.", "editions", target=10, theme="sequencias"),
+    Badge("vinte_edicoes", "Vinte Edições", "Jogar 20 edições.", "editions", target=20, theme="sequencias"),
     # --- Resultados e noites
-    Badge("pneu", "Pneu", "Ganhar um jogo sem perder um único jogo de ténis (X–0).", "shutouts"),
-    Badge("rolo_compressor", "Rolo Compressor", f"Ganhar 25 jogos por {BIG_WIN_MARGIN} ou mais games de diferença.", "big_wins", target=25),
+    Badge("pneu", "Pneu", "Ganhar um jogo sem perder um único jogo de ténis (X–0).", "shutouts", theme="resultados"),
+    Badge("rolo_compressor", "Rolo Compressor", f"Ganhar 25 jogos por {BIG_WIN_MARGIN} ou mais games de diferença.", "big_wins", target=25, theme="resultados"),
     Badge("sangue_frio", "Sangue-frio", f"A melhor % de vitórias da liga nos jogos decididos por 1 ou 2 (mín. {MIN_TIGHT}).",
-          "tight_pct", kind="leader", progress="{value}% (o melhor tem {target}%)"),
-    Badge("rei_tiebreak", "Rei do Tie-break", "Ganhar 20 sets por 7–6.", "tiebreak_set_wins", target=20),
-    Badge("salomao", "Salomão", "Empatar 20 jogos.", "draws", target=20),
-    Badge("noite_perfeita", "Noite Perfeita", "Ganhar os 3 jogos de uma jornada.", "perfect_nights"),
-    Badge("dono_da_noite", "Dono da Noite", "15 jornadas com os 3 jogos ganhos.", "perfect_nights", target=15),
-    Badge("ressuscitador", "Ressuscitador", "Perder o 1º jogo da noite e ganhar os outros dois, 8 vezes.", "comebacks", target=8),
+          "tight_pct", kind="leader", progress="{value}% (o melhor tem {target}%)", theme="resultados"),
+    Badge("rei_tiebreak", "Rei do Tie-break", "Ganhar 20 sets por 7–6.", "tiebreak_set_wins", target=20, theme="resultados"),
+    Badge("salomao", "Salomão", "Empatar 20 jogos.", "draws", target=20, theme="resultados"),
+    Badge("noite_perfeita", "Noite Perfeita", "Ganhar os 3 jogos de uma jornada.", "perfect_nights", theme="resultados"),
+    Badge("dono_da_noite", "Dono da Noite", "15 jornadas com os 3 jogos ganhos.", "perfect_nights", target=15, theme="resultados"),
+    Badge("ressuscitador", "Ressuscitador", "Perder o 1º jogo da noite e ganhar os outros dois, 8 vezes.", "comebacks", target=8, theme="resultados"),
     # --- Parceiros e rivais
-    Badge("sociavel", "Sociável", "Jogar com 30 parceiros diferentes.", "distinct_partners", target=30),
-    Badge("quimica", "Química", "Ganhar 15 jogos com o mesmo parceiro.", "max_wins_with_partner", target=15),
-    Badge("conhece_toda_a_gente", "Conhece Toda a Gente", "Defrontar 45 adversários diferentes.", "distinct_opponents", target=45),
-    Badge("carrasco", "Carrasco", "Ganhar 20 jogos ao mesmo adversário.", "max_wins_vs_opponent", target=20),
+    Badge("sociavel", "Sociável", "Jogar com 30 parceiros diferentes.", "distinct_partners", target=30, theme="pessoas"),
+    Badge("quimica", "Química", "Ganhar 15 jogos com o mesmo parceiro.", "max_wins_with_partner", target=15, theme="pessoas"),
+    Badge("conhece_toda_a_gente", "Conhece Toda a Gente", "Defrontar 45 adversários diferentes.", "distinct_opponents", target=45, theme="pessoas"),
+    Badge("carrasco", "Carrasco", "Ganhar 20 jogos ao mesmo adversário.", "max_wins_vs_opponent", target=20, theme="pessoas"),
     # --- Lealdade e divisões
-    Badge("da_primeira_hora", "Da Primeira Hora", "Ter jogado o Play Off ou a 1ª Edição, em 2022.", "founder"),
-    Badge("regresso", "Regresso", "Voltar a jogar depois de falhar uma edição Clássica.", "returns"),
-    Badge("elevador", "Elevador", "Subir de divisão.", "promotions"),
-    Badge("foguetao", "Foguetão", "Subir de divisão em duas edições seguidas.", "double_promotions"),
-    Badge("fenix", "Fénix", "Subir de divisão logo na edição a seguir a ter descido.", "fenix"),
-    Badge("elite", "Elite", "Jogar 5 edições na 1ª Divisão.", "first_division_editions", target=5),
+    Badge("da_primeira_hora", "Da Primeira Hora", "Ter jogado o Play Off ou a 1ª Edição, em 2022.", "founder", theme="lealdade"),
+    Badge("regresso", "Regresso", "Voltar a jogar depois de falhar uma edição Clássica.", "returns", theme="lealdade"),
+    Badge("elevador", "Elevador", "Subir de divisão.", "promotions", theme="lealdade"),
+    Badge("foguetao", "Foguetão", "Subir de divisão em duas edições seguidas.", "double_promotions", theme="lealdade"),
+    Badge("fenix", "Fénix", "Subir de divisão logo na edição a seguir a ter descido.", "fenix", theme="lealdade"),
+    Badge("elite", "Elite", "Jogar 5 edições na 1ª Divisão.", "first_division_editions", target=5, theme="lealdade"),
     # --- Shuffle
-    Badge("baralhado", "Baralhado", "Jogar um Shuffle.", "shuffle_matches"),
+    Badge("baralhado", "Baralhado", "Jogar um Shuffle.", "shuffle_matches", theme="shuffle"),
     Badge("top10_shuffle", "Top 10 Shuffle", "Acabar um Shuffle nos 10 primeiros.", "shuffle_best_place", target=10, kind="at_most",
-          progress="Melhor Shuffle: {value}º"),
-    Badge("podio_shuffle", "Pódio Shuffle", "Acabar um Shuffle no pódio.", "shuffle_podiums"),
+          progress="Melhor Shuffle: {value}º", theme="shuffle"),
+    Badge("podio_shuffle", "Pódio Shuffle", "Acabar um Shuffle no pódio.", "shuffle_podiums", theme="shuffle"),
     # --- Teams
-    Badge("estreia_teams", "Estreia Teams", "Jogar um jogo num torneio Teams.", "teams_matches"),
-    Badge("vitoria_teams", "Vitória Teams", "Ganhar um jogo num torneio Teams.", "teams_wins"),
-    Badge("dupla_afinada", "Dupla Afinada", "Ganhar 5 jogos Teams com o mesmo par.", "teams_pair_wins", target=5),
-    Badge("campeao_teams", "Campeão Teams", "Ganhar uma divisão de um torneio Teams.", "teams_titles"),
+    Badge("estreia_teams", "Estreia Teams", "Jogar um jogo num torneio Teams.", "teams_matches", theme="teams"),
+    Badge("vitoria_teams", "Vitória Teams", "Ganhar um jogo num torneio Teams.", "teams_wins", theme="teams"),
+    Badge("dupla_afinada", "Dupla Afinada", "Ganhar 5 jogos Teams com o mesmo par.", "teams_pair_wins", target=5, theme="teams"),
+    Badge("campeao_teams", "Campeão Teams", "Ganhar uma divisão de um torneio Teams.", "teams_titles", theme="teams"),
     # --- Estreia
-    Badge("estreia_vitoriosa", "Estreia Vitoriosa", "Ganhar o primeiro jogo na liga.", "first_match_win"),
+    Badge("estreia_vitoriosa", "Estreia Vitoriosa", "Ganhar o primeiro jogo na liga.", "first_match_win", theme="estreia"),
+
 )
 BY_KEY = {b.key: b for b in REGISTRY}
+assert all(b.theme in THEME_LABEL for b in REGISTRY)
 
 
 def tier_of(pct):
@@ -346,6 +364,8 @@ def _item(b, data, pid=None):
         "name": b.name,
         "rule": b.rule,
         "kind": b.kind,
+        "theme": b.theme,
+        "themeLabel": THEME_LABEL[b.theme],
         "target": data["target"],
         "holdersCount": len(data["holders"]),
         "rarityPct": round(data["pct"], 1),
@@ -378,14 +398,19 @@ def _pct_text(pct):
 
 
 def catalogue(league):
-    """GET /badges: every badge with its rule, rarity and holders, rarest first."""
+    """GET /badges: every badge with its rule, rarity and holders, rarest first, plus the themes in display order."""
     c = compute(league)
     badges = []
     for b in REGISTRY:
         data = c["badges"][b.key]
         badges.append({**_item(b, data), "holders": [league.ref(p) for p in data["holders"]]})
     badges.sort(key=lambda x: (x["rarityPct"], x["key"]))
-    return {"playersCount": len(c["players"]), "info": {"key": "badges.info", "text": COPY["info"]}, "badges": badges}
+    return {
+        "playersCount": len(c["players"]),
+        "info": {"key": "badges.info", "text": COPY["info"]},
+        "themes": [{"key": key, "label": label} for key, label in THEMES],
+        "badges": badges,
+    }
 
 
 def detail(league, key, closest=10):

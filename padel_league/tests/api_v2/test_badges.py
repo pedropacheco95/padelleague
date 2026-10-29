@@ -16,7 +16,7 @@ from types import SimpleNamespace
 import pytest
 
 from padel_league.services import badges
-from padel_league.services.badges import BY_KEY, REGISTRY, player_facts
+from padel_league.services.badges import BY_KEY, REGISTRY, THEMES, player_facts
 from padel_league.services.player_story import League, Match
 
 ME = 1
@@ -125,6 +125,13 @@ def fx():
 def test_registry_has_fifty_badges_with_unique_keys():
     assert len(REGISTRY) == 50
     assert len({b.key for b in REGISTRY}) == 50
+
+
+def test_every_theme_has_badges_and_the_registry_follows_the_theme_order():
+    keys = [k for k, _ in THEMES]
+    assert {b.theme for b in REGISTRY} == set(keys)
+    seen = [b.theme for b in REGISTRY]
+    assert seen == sorted(seen, key=keys.index), "REGISTRY rows are grouped in THEMES order"
 
 
 def test_every_metric_exists_in_player_facts(fx):
