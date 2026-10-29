@@ -65,9 +65,15 @@ REGISTRY = (
     Badge("clube_200", "Clube 200", "Ganhar 200 jogos.", "wins", target=200),
     Badge("mil_games", "Mil Games", "Ganhar 1000 games (os pontos de cada set).", "games_won", target=1000),
     # --- Títulos e pódios
+    Badge("campeao", "Campeão", "Ganhar uma divisão.", "titles"),
+    Badge("bicampeao", "Bicampeão", "Ganhar 2 divisões.", "titles", target=2),
+    Badge("tricampeao", "Tricampeão", "Ganhar 3 divisões.", "titles", target=3),
     Badge("tetracampeao", "Tetracampeão", "Ganhar 4 divisões.", "titles", target=4),
     Badge("pentacampeao", "Pentacampeão", "Ganhar 5 divisões.", "titles", target=5),
     Badge("rei_da_1", "Rei da 1ª", "Ganhar a 1ª Divisão.", "first_division_titles"),
+    Badge("dinastia", "Dinastia", "Ganhar a divisão em duas edições Clássicas seguidas.", "consecutive_titles", target=2),
+    Badge("habitue_podio", "Habitué do Pódio", "Acabar 5 edições no pódio.", "podiums", target=5),
+    Badge("prata", "Prata", "Acabar 3 edições em 2º lugar.", "seconds", target=3),
     Badge("invicto", "Invicto", f"Uma edição Clássica com {INVICTO_MIN_MATCHES} ou mais jogos e nenhuma derrota.",
           "invicto_losses", target=0, kind="at_most", progress=("Melhor edição: {value} derrota", "Melhor edição: {value} derrotas")),
     # --- Sequências e presenças

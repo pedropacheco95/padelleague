@@ -133,3 +133,42 @@ def test_mil_games_sums_my_games_over_every_set(fx):
     assert fx.facts()["games_won"] == 999 and not earned(fx, "mil_games")
     fx.results(10, "L", sets=lambda i, r: [(1, 9)])
     assert earned(fx, "mil_games")
+
+
+# --- títulos e pódios ---------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("key,target", [("campeao", 1), ("bicampeao", 2), ("tricampeao", 3)])
+def test_titles_count_first_places_in_ended_competitions(fx, key, target):
+    for n in range(target - 1):
+        fx.entry(ME, fx.competition(20 + n, f"{n + 2}ª Edição"), place=1)
+    fx.entry(ME, fx.competition(40, "9ª Edição", status="ongoing"), place=1)  # not ended: no title yet
+    assert not earned(fx, key)
+    fx.entry(ME, fx.competition(41, "10ª Edição"), place=1)
+    assert earned(fx, key)
+
+
+def test_dinastia_needs_titles_in_consecutive_classica_editions(fx):
+    fx.entry(ME, 1, place=1)
+    fx.entry(ME, fx.competition(2, "2ª Edição"), place=3)
+    fx.entry(ME, fx.competition(3, "3ª Edição"), place=1)
+    assert fx.facts()["consecutive_titles"] == 1 and not earned(fx, "dinastia")
+    fx.entry(ME, fx.competition(4, "4ª Edição"), place=1)
+    assert earned(fx, "dinastia")
+
+
+def test_habitue_podio_counts_top_three_finishes(fx):
+    for n, place in enumerate((1, 2, 3, 3)):
+        fx.entry(ME, fx.competition(20 + n, f"{n + 2}ª Edição"), place=place)
+    fx.entry(ME, fx.competition(30, "7ª Edição"), place=4)
+    assert not earned(fx, "habitue_podio")
+    fx.entry(ME, fx.competition(31, "8ª Edição"), place=2)
+    assert earned(fx, "habitue_podio")
+
+
+def test_prata_counts_second_places_only(fx):
+    for n, place in enumerate((2, 2, 1, 3)):
+        fx.entry(ME, fx.competition(20 + n, f"{n + 2}ª Edição"), place=place)
+    assert not earned(fx, "prata")
+    fx.entry(ME, fx.competition(30, "7ª Edição"), place=2)
+    assert earned(fx, "prata")
