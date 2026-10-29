@@ -58,9 +58,12 @@ class Badge:
 
 REGISTRY = (
     # --- Volume
+    Badge("clube_100", "Clube 100", "Jogar 100 jogos.", "matches", target=100),
     Badge("clube_300", "Clube 300", "Jogar 300 jogos.", "matches", target=300),
+    Badge("clube_400", "Clube 400", "Jogar 400 jogos.", "matches", target=400),
     Badge("centuriao", "Centurião", "Ganhar 100 jogos.", "wins", target=100),
     Badge("clube_200", "Clube 200", "Ganhar 200 jogos.", "wins", target=200),
+    Badge("mil_games", "Mil Games", "Ganhar 1000 games (os pontos de cada set).", "games_won", target=1000),
     # --- Títulos e pódios
     Badge("tetracampeao", "Tetracampeão", "Ganhar 4 divisões.", "titles", target=4),
     Badge("pentacampeao", "Pentacampeão", "Ganhar 5 divisões.", "titles", target=5),
