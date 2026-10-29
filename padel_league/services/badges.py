@@ -109,6 +109,9 @@ REGISTRY = (
     Badge("fenix", "Fénix", "Subir de divisão logo na edição a seguir a ter descido.", "fenix"),
     Badge("elite", "Elite", "Jogar 5 edições na 1ª Divisão.", "first_division_editions", target=5),
     # --- Shuffle
+    Badge("baralhado", "Baralhado", "Jogar um Shuffle.", "shuffle_matches"),
+    Badge("top10_shuffle", "Top 10 Shuffle", "Acabar um Shuffle nos 10 primeiros.", "shuffle_best_place", target=10, kind="at_most",
+          progress="Melhor Shuffle: {value}º"),
     Badge("podio_shuffle", "Pódio Shuffle", "Acabar um Shuffle no pódio.", "shuffle_podiums"),
     # --- Teams
     Badge("campeao_teams", "Campeão Teams", "Ganhar uma divisão de um torneio Teams.", "teams_titles"),

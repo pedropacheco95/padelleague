@@ -355,3 +355,22 @@ def test_elite_counts_classica_editions_in_the_first_division():
     assert f.facts()["first_division_editions"] == 4 and not earned(f, "elite")
     f.group(200, f.competition(60, "9ª Edição"), tier=1)
     assert earned(f, "elite")
+
+
+# --- shuffle ------------------------------------------------------------------------------
+
+
+def test_baralhado_means_a_shuffle_match(fx):
+    fx.results(10, "W")
+    assert not earned(fx, "baralhado")
+    fx.results(fx.group(50, fx.competition(5, "20ª Edição", fmt="shuffle")), "L")
+    assert earned(fx, "baralhado")
+
+
+def test_top10_shuffle_reads_the_best_ended_shuffle_place(fx):
+    assert fx.facts()["shuffle_best_place"] is None and not earned(fx, "top10_shuffle")
+    fx.entry(ME, fx.competition(5, "20ª Edição", fmt="shuffle"), place=11)
+    fx.entry(ME, fx.competition(6, "25ª Edição", fmt="shuffle", status="ongoing"), place=1)
+    assert fx.facts()["shuffle_best_place"] == 11 and not earned(fx, "top10_shuffle")
+    fx.entry(ME, fx.competition(7, "30ª Edição", fmt="shuffle"), place=10)
+    assert earned(fx, "top10_shuffle")
