@@ -296,3 +296,62 @@ def test_carrasco_counts_wins_against_one_opponent(fx):
     assert fx.facts()["max_wins_vs_opponent"] == 19 and not earned(fx, "carrasco")
     fx.results(10, "W", opponents=(2000, 2500))
     assert earned(fx, "carrasco")
+
+
+# --- lealdade e divisões ------------------------------------------------------------------
+
+
+def test_da_primeira_hora_means_a_match_in_the_play_off_or_first_edition():
+    f = Fixture()
+    f.group(10, f.competition(1, "Play Off", starts_on=date(2022, 1, 12)))
+    f.group(20, f.competition(2, "1ª Edição", starts_on=date(2022, 3, 9)))
+    f.group(30, f.competition(3, "2ª Edição", starts_on=date(2022, 10, 12)))
+    f.results(30, "WW")
+    assert not earned(f, "da_primeira_hora")
+    f.results(20, "L")
+    assert earned(f, "da_primeira_hora")
+    g = Fixture()
+    g.group(10, g.competition(1, "Play Off", starts_on=date(2022, 1, 12)))
+    g.results(10, "L")
+    assert earned(g, "da_primeira_hora")
+
+
+def test_regresso_means_a_missed_ended_classica_edition_between_two_played(fx):
+    fx.results(10, "L")
+    fx.competition(2, "2ª Edição")  # ended without me
+    assert not earned(fx, "regresso")
+    fx.results(fx.group(30, fx.competition(3, "3ª Edição")), "L")
+    assert earned(fx, "regresso")
+    # Consecutive editions are not a return.
+    g = Fixture()
+    g.results(g.group(10, g.competition(1, "1ª Edição")), "L")
+    g.results(g.group(20, g.competition(2, "2ª Edição")), "L")
+    assert not earned(g, "regresso")
+
+
+def _tiers(f, tiers):
+    for n, tier in enumerate(tiers):
+        f.group(100 + n, f.competition(20 + n, f"{n + 2}ª Edição"), tier=tier)
+
+
+def test_elevador_foguetao_and_fenix_read_the_tier_sequence():
+    f = Fixture()
+    _tiers(f, (4, 3, 3))
+    assert earned(f, "elevador") and not earned(f, "foguetao") and not earned(f, "fenix")
+    f = Fixture()
+    _tiers(f, (4, 3, 2))
+    assert earned(f, "foguetao") and not earned(f, "fenix")
+    f = Fixture()
+    _tiers(f, (2, 3, 2))
+    assert earned(f, "fenix") and not earned(f, "foguetao")
+    f = Fixture()
+    _tiers(f, (2, 3, 3, 2))  # relegated, stayed, then rose: not straight back
+    assert not earned(f, "fenix")
+
+
+def test_elite_counts_classica_editions_in_the_first_division():
+    f = Fixture()
+    _tiers(f, (1, 1, 1, 1, 2))
+    assert f.facts()["first_division_editions"] == 4 and not earned(f, "elite")
+    f.group(200, f.competition(60, "9ª Edição"), tier=1)
+    assert earned(f, "elite")

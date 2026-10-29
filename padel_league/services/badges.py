@@ -102,7 +102,12 @@ REGISTRY = (
     Badge("conhece_toda_a_gente", "Conhece Toda a Gente", "Defrontar 45 adversários diferentes.", "distinct_opponents", target=45),
     Badge("carrasco", "Carrasco", "Ganhar 20 jogos ao mesmo adversário.", "max_wins_vs_opponent", target=20),
     # --- Lealdade e divisões
+    Badge("da_primeira_hora", "Da Primeira Hora", "Ter jogado o Play Off ou a 1ª Edição, em 2022.", "founder"),
+    Badge("regresso", "Regresso", "Voltar a jogar depois de falhar uma edição Clássica.", "returns"),
     Badge("elevador", "Elevador", "Subir de divisão.", "promotions"),
+    Badge("foguetao", "Foguetão", "Subir de divisão em duas edições seguidas.", "double_promotions"),
+    Badge("fenix", "Fénix", "Subir de divisão logo na edição a seguir a ter descido.", "fenix"),
+    Badge("elite", "Elite", "Jogar 5 edições na 1ª Divisão.", "first_division_editions", target=5),
     # --- Shuffle
     Badge("podio_shuffle", "Pódio Shuffle", "Acabar um Shuffle no pódio.", "shuffle_podiums"),
     # --- Teams
