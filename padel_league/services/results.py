@@ -93,7 +93,13 @@ def record_result(match_id, home_games, away_games, court=None, actor_user_id=No
 
 
 def _set_rows(fmt, sets):
-    """Validate the submitted sets for the competition format; returns MatchSet rows."""
+    """Validate the submitted sets for the competition format.
+
+    Returns (MatchSet rows, complete). Teams: 1 to 3 sets; fewer than 3, all
+    `completed`, is a result in progress (saved set by set, not complete yet);
+    a time-out chain (timeout_draw + not_started) always sends the 3 sets.
+    Clássica/Shuffle: exactly one completed set, always complete.
+    """
     parsed = []
     for raw in sets:
         outcome = raw.get("outcome") or "completed"
@@ -104,24 +110,39 @@ def _set_rows(fmt, sets):
             )
         )
     if fmt == "teams":
-        if len(parsed) != rules.TEAMS_SETS_PER_MATCH:
-            raise InvalidInput("Um encontro da Teams tem sempre exatamente 3 sets.", "teams_needs_three_sets")
+        if not parsed or len(parsed) > rules.TEAMS_SETS_PER_MATCH:
+            raise InvalidInput("Um encontro da Teams tem 1 a 3 sets.", "teams_needs_three_sets")
         for result in parsed:
             rules.set_points(result)  # raises on a completed set without a winner
+        complete = len(parsed) == rules.TEAMS_SETS_PER_MATCH
+        if not complete and any(r.outcome != "completed" for r in parsed):
+            raise InvalidInput("Com tempo esgotado envia os 3 sets.", "teams_needs_three_sets")
     else:
         if len(parsed) != 1 or parsed[0].outcome != "completed":
             raise InvalidInput("Este formato regista um só set terminado.", "one_set_expected")
         if parsed[0].home_games is None or parsed[0].away_games is None:
             raise InvalidInput("Indica os jogos das duas equipas.", "invalid_set_score")
-    return [
+        complete = True
+    rows = [
         MatchSet(set_no=n, home_games=r.home_games, away_games=r.away_games, outcome=r.outcome)
         for n, r in enumerate(parsed, start=1)
     ]
+    return rows, complete
+
+
+def is_in_progress(match):
+    """A Teams result saved set by set and not complete: sets stored, status still scheduled."""
+    return match.status == "scheduled" and bool(match.sets)
 
 
 def record_sets(match_id, sets=(), walkover_winner=None, court=None, actor_user_id=None):
-    """Record a full result: the sets (Teams: exactly 3; Clássica/Shuffle: 1) or a
-    walkover (Teams only: the present pair wins 3-0, no sets are stored)."""
+    """Record a result: the sets (Teams: 1 to 3, complete at 3; Clássica/Shuffle: 1) or a
+    walkover (Teams only: the present pair wins 3-0, no sets are stored).
+
+    A Teams result with 1 or 2 completed sets is saved in progress: the sets are
+    stored and shown, but the match stays `scheduled`, so nothing counts it
+    (standings, close-out, awards, ranking, projection all key on the status)
+    until the 3rd set arrives. Absences and seats are untouched either way."""
     match = db.session.get(CompetitionMatch, match_id)
     if match is None:
         raise NotFound(f"Jogo {match_id} não existe.", "match_not_found")
@@ -137,7 +158,8 @@ def record_sets(match_id, sets=(), walkover_winner=None, court=None, actor_user_
             raise InvalidInput("Uma falta de comparência não tem sets.", "walkover_has_no_sets")
         new_sets, status = [], "walkover"
     else:
-        new_sets, status = _set_rows(fmt, sets), "played"
+        new_sets, complete = _set_rows(fmt, sets)
+        status = "played" if complete else "scheduled"
 
     for old in list(match.sets):
         match.sets.remove(old)
