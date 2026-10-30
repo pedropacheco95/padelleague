@@ -471,7 +471,7 @@ def test_attach_manifest_commits_each_image_and_isolates_failures(app, tmp_path)
     assert [bool(r.get("error")) for r in results] == [False, False, True, True, True]
     assert "could not read image" in results[2]["error"]
     assert "was not found" in results[3]["error"]
-    assert "needs group_id, kind and file" in results[4]["error"]
+    assert "group_id or group_ids" in results[4]["error"]
     assert len(uploader.uploads) == 2
     # the two good images are committed (visible to a fresh session), the failed group untouched
     db.session.remove()
@@ -576,3 +576,94 @@ def test_groups_of_another_competition_are_refused_before_any_file_is_touched(ap
     assert single.exit_code == 1 and "belongs to competition" in single.output
     assert _group(theirs).large_picture_id is None
     assert len(uploader.uploads) == 1  # only the manifest's good entry (the service-level attach above used uploader=None → the patched GCS upload)
+
+
+# ── shared artwork: one upload for many groups ───────────────────────────────
+
+
+def _shuffle_like(stage_count=3, groups_per_stage=2):
+    comp = f.competition(format="shuffle", name="Shuffle shared")
+    ids = []
+    for n in range(1, stage_count + 1):
+        stg = f.stage(comp, number=n)
+        ids += [f.group(stg, tier=t, name=f"Divisão {t}").id for t in range(1, groups_per_stage + 1)]
+    db.session.commit()
+    return comp.id, ids
+
+
+def test_group_ids_entry_uploads_once_and_links_every_group(app, tmp_path):
+    comp_id, ids = _shuffle_like()
+    uploader = FakeUploader()
+    manifest = [
+        {"group_ids": ids, "kind": "poster", "file": str(_png(tmp_path, "poster.png", POSTER_SIZE))},
+        {"group_ids": ids, "kind": "banner", "file": str(_png(tmp_path, "banner.png", BANNER_SIZE))},
+    ]
+
+    results = attach_manifest(manifest, uploader=uploader, competition_id=comp_id)
+
+    assert [r.get("error") for r in results] == [None, None]
+    assert len(uploader.uploads) == 2  # one object per entry, not per group
+    poster, banner = results
+    assert poster["division_ids"] == ids and poster["skipped_group_ids"] == []
+    assert Image.query.filter(Image.object_key.in_([poster["object_key"], banner["object_key"]])).count() == 2
+    db.session.remove()
+    for group_id in ids:
+        assert (_group(group_id).logo_image_id, _group(group_id).large_picture_id) == (poster["image_id"], banner["image_id"])
+
+
+def test_group_ids_entry_skips_groups_that_already_have_artwork_unless_forced(app, tmp_path):
+    comp_id, ids = _shuffle_like(stage_count=2)
+    uploader = FakeUploader()
+    path = _png(tmp_path, "poster.png", POSTER_SIZE)
+    own = attach_file(_group(ids[1]), "poster", path, uploader=uploader)
+
+    shared = attach_manifest([{"group_ids": ids, "kind": "poster", "file": str(path)}], uploader=uploader, competition_id=comp_id)[0]
+    assert shared["division_ids"] == [i for i in ids if i != ids[1]] and shared["skipped_group_ids"] == [ids[1]]
+    assert len(uploader.uploads) == 2
+    assert _group(ids[1]).logo_image_id == own["image_id"]
+    assert all(_group(i).logo_image_id == shared["image_id"] for i in ids if i != ids[1])
+
+    nothing = attach_manifest([{"group_ids": ids, "kind": "poster", "file": str(tmp_path / "never.png")}], uploader=uploader, competition_id=comp_id)[0]
+    assert nothing["skipped"].startswith("already has artwork") and len(uploader.uploads) == 2  # file never read
+
+    forced = attach_manifest([{"group_ids": ids, "kind": "poster", "file": str(path)}], force=True, uploader=uploader, competition_id=comp_id)[0]
+    assert forced["division_ids"] == ids and forced["skipped_group_ids"] == [] and len(uploader.uploads) == 3
+    assert all(_group(i).logo_image_id == forced["image_id"] for i in ids)
+
+
+def test_group_ids_entry_is_all_or_nothing_under_the_competition_guard(app, tmp_path):
+    comp_id, ids = _shuffle_like(stage_count=1, groups_per_stage=3)
+    foreign = f.group(f.stage(f.competition(name="Other")), tier=1, name="1ª Divisão").id
+    db.session.commit()
+    uploader = FakeUploader()
+    missing = str(tmp_path / "never_read.png")
+    manifest = [
+        {"group_ids": ids + [foreign], "kind": "poster", "file": missing},
+        {"group_ids": ids + [999_999_999], "kind": "poster", "file": missing},
+        {"group_ids": [], "kind": "poster", "file": missing},
+        {"group_id": ids[0], "group_ids": ids, "kind": "poster", "file": missing},
+    ]
+
+    results = attach_manifest(manifest, uploader=uploader, competition_id=comp_id)
+
+    assert "belongs to competition" in results[0]["error"] and results[0]["division_ids"] == ids + [foreign]
+    assert "was not found" in results[1]["error"]
+    assert "group_id or group_ids" in results[2]["error"] and "group_id or group_ids" in results[3]["error"]
+    assert uploader.uploads == {}
+    assert all(_group(i).logo_image_id is None for i in ids + [foreign])
+
+
+def test_cli_manifest_accepts_group_ids(app, tmp_path, monkeypatch):
+    comp_id, ids = _shuffle_like(stage_count=2)
+    uploader = FakeUploader()
+    monkeypatch.setattr(artwork, "_upload_to_gcs", uploader)
+    _png(tmp_path, "shuffle_poster.png", POSTER_SIZE)
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text(json.dumps([{"group_ids": ids, "kind": "poster", "file": "shuffle_poster.png"}]))
+
+    result = app.test_cli_runner().invoke(args=["attach-artwork", "--competition-id", str(comp_id), "--manifest", str(manifest)])
+
+    assert result.exit_code == 0, result.output
+    (info,) = json.loads(result.output)
+    assert info["division_ids"] == ids and len(uploader.uploads) == 1
+    assert all(_group(i).logo_image_id == info["image_id"] for i in ids)

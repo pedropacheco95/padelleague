@@ -119,6 +119,17 @@ def publish(division, kind, image_bytes, stamp=None, uploader=None, commit=True)
     GCS_UPLOADS_BUCKET. Returns the info dict from `normalise` plus the image id
     and object key.
     """
+    info = publish_shared([division], kind, image_bytes, stamp=stamp, uploader=uploader, commit=commit)
+    info.update({"division_id": division.id, "division_name": division.name})
+    return info
+
+
+def publish_shared(groups, kind, image_bytes, stamp=None, uploader=None, commit=True):
+    """One normalise, one upload, one Image row — linked to every group in `groups`.
+
+    For artwork shared by many groups (a Shuffle's 60 groups get one poster and
+    one banner) this avoids one object and one Image row per group.
+    """
     normalised, info = normalise(image_bytes, kind)
 
     # Matches the existing production naming, e.g.
@@ -142,7 +153,8 @@ def publish(division, kind, image_bytes, stamp=None, uploader=None, commit=True)
     db.session.add(image)
     db.session.flush()
 
-    setattr(division, KINDS[kind]["column"], image.id)
+    for group in groups:
+        setattr(group, KINDS[kind]["column"], image.id)
 
     if commit:
         try:
@@ -155,8 +167,8 @@ def publish(division, kind, image_bytes, stamp=None, uploader=None, commit=True)
 
     info.update(
         {
-            "division_id": division.id,
-            "division_name": division.name,
+            "division_ids": [group.id for group in groups],
+            "division_names": [group.name for group in groups],
             "image_id": image.id,
             "object_key": object_key,
             "bytes": len(normalised),
@@ -263,13 +275,28 @@ def attach_file(group, kind, path, force=False, uploader=None, stamp=None):
     leaves them). Returns the publish info plus `file`, or a dict with
     `skipped` when nothing was done.
     """
+    info = attach_shared([group], kind, path, force=force, uploader=uploader, stamp=stamp)
+    info.update({"division_id": group.id, "division_name": group.name})
+    return info
+
+
+def attach_shared(groups, kind, path, force=False, uploader=None, stamp=None):
+    """Publish the file at `path` once and link the one Image to every group in
+    `groups` that has no `kind` artwork yet (all of them with `force`).
+
+    One commit. Groups that already had artwork are listed in
+    `skipped_group_ids`; when no group needs it the file is not even read and
+    the result carries `skipped`.
+    """
     if kind not in KINDS:
         raise ArtworkError(f"unknown artwork kind {kind!r}; expected one of {sorted(KINDS)}")
     column = KINDS[kind]["column"]
-    if getattr(group, column) and not force:
+    targets = [group for group in groups if force or not getattr(group, column)]
+    skipped = [group.id for group in groups if group not in targets]
+    if not targets:
         return {
-            "division_id": group.id,
-            "division_name": group.name,
+            "division_ids": [group.id for group in groups],
+            "division_names": [group.name for group in groups],
             "kind": kind,
             "file": str(path),
             "skipped": "already has artwork; pass force to replace",
@@ -279,29 +306,50 @@ def attach_file(group, kind, path, force=False, uploader=None, stamp=None):
             data = handle.read()
     except OSError as exc:
         raise ArtworkError(f"could not read {path}: {exc}")
-    info = publish(group, kind, data, stamp=stamp, uploader=uploader)
-    info["file"] = str(path)
+    info = publish_shared(targets, kind, data, stamp=stamp, uploader=uploader)
+    info.update({"file": str(path), "skipped_group_ids": skipped})
     return info
 
 
 def attach_manifest(entries, force=False, uploader=None, competition_id=None):
-    """Attach every ``{"group_id", "kind", "file"}`` in `entries`, one commit each.
+    """Attach every manifest entry, one commit each.
 
-    Same failure isolation as generate_for_edition: an entry that fails (bad
-    file, unknown group, a group outside `competition_id`, upload error) is
-    reported with `error` and the others still land. Returns one result dict
-    per entry, in order.
+    An entry is ``{"group_id": N, "kind": ..., "file": ...}`` or, for artwork
+    shared by several groups, ``{"group_ids": [N, ...], "kind": ..., "file": ...}``
+    (one upload and one Image row for all of them). Every id passes the
+    `competition_id` guard before the file is read. Same failure isolation as
+    generate_for_edition: an entry that fails (bad file, unknown group, a group
+    outside `competition_id`, upload error) is reported with `error` and the
+    others still land. Returns one result dict per entry, in order.
     """
     results = []
     for entry in entries:
-        if not isinstance(entry, dict) or not all(k in entry for k in ("group_id", "kind", "file")):
-            results.append({"entry": entry, "error": "each entry needs group_id, kind and file"})
+        ids = _entry_group_ids(entry)
+        if ids is None:
+            results.append({"entry": entry, "error": "each entry needs kind, file and group_id or group_ids (non-empty list)"})
             continue
-        group_id, kind, path = entry["group_id"], entry["kind"], entry["file"]
+        kind, path = entry["kind"], entry["file"]
         try:
-            group = load_group(group_id, competition_id=competition_id)
-            results.append(attach_file(group, kind, path, force=force, uploader=uploader))
+            groups = [load_group(group_id, competition_id=competition_id) for group_id in ids]
+            if "group_ids" in entry:
+                results.append(attach_shared(groups, kind, path, force=force, uploader=uploader))
+            else:
+                results.append(attach_file(groups[0], kind, path, force=force, uploader=uploader))
         except Exception as exc:
             db.session.rollback()
-            results.append({"division_id": group_id, "kind": kind, "file": str(path), "error": str(exc)})
+            failed = {"kind": kind, "file": str(path), "error": str(exc)}
+            failed["division_ids" if "group_ids" in entry else "division_id"] = entry.get("group_ids", entry.get("group_id"))
+            results.append(failed)
     return results
+
+
+def _entry_group_ids(entry):
+    """[group ids] of a well-formed manifest entry, else None."""
+    if not isinstance(entry, dict) or "kind" not in entry or "file" not in entry:
+        return None
+    if ("group_id" in entry) == ("group_ids" in entry):
+        return None
+    if "group_id" in entry:
+        return [entry["group_id"]]
+    ids = entry["group_ids"]
+    return list(ids) if isinstance(ids, (list, tuple)) and ids else None
