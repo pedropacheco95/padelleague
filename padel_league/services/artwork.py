@@ -1,5 +1,6 @@
 """Division artwork: normalise images to the exact sizes the site expects,
-publish them to GCS and link them to a division.
+publish them to GCS and link them to a division (a v2 CompetitionGroup; the
+pre-v2 Division is a read-only compat view and cannot take the image ids).
 
 Two images per division, both stored as JPEG in the uploads bucket under
 ``Division/``:
@@ -111,11 +112,23 @@ def _object_key(kind, stamp):
 
 def publish(division, kind, image_bytes, stamp=None, uploader=None, commit=True):
     """Normalise, upload to GCS, record an Image row and link it to `division`
-    (a v2 CompetitionGroup: same logo_image_id / large_picture_id columns).
+    (a v2 CompetitionGroup: same logo_image_id / large_picture_id columns, so
+    Teams divisions and Shuffle groups take artwork the same way).
 
     `uploader` is injectable for tests; by default it uploads to the bucket in
     GCS_UPLOADS_BUCKET. Returns the info dict from `normalise` plus the image id
     and object key.
+    """
+    info = publish_shared([division], kind, image_bytes, stamp=stamp, uploader=uploader, commit=commit)
+    info.update({"division_id": division.id, "division_name": division.name})
+    return info
+
+
+def publish_shared(groups, kind, image_bytes, stamp=None, uploader=None, commit=True):
+    """One normalise, one upload, one Image row — linked to every group in `groups`.
+
+    For artwork shared by many groups (a Shuffle's 60 groups get one poster and
+    one banner) this avoids one object and one Image row per group.
     """
     normalised, info = normalise(image_bytes, kind)
 
@@ -140,7 +153,8 @@ def publish(division, kind, image_bytes, stamp=None, uploader=None, commit=True)
     db.session.add(image)
     db.session.flush()
 
-    setattr(division, KINDS[kind]["column"], image.id)
+    for group in groups:
+        setattr(group, KINDS[kind]["column"], image.id)
 
     if commit:
         try:
@@ -153,8 +167,8 @@ def publish(division, kind, image_bytes, stamp=None, uploader=None, commit=True)
 
     info.update(
         {
-            "division_id": division.id,
-            "division_name": division.name,
+            "division_ids": [group.id for group in groups],
+            "division_names": [group.name for group in groups],
             "image_id": image.id,
             "object_key": object_key,
             "bytes": len(normalised),
@@ -226,3 +240,116 @@ def generate_for_edition(
                     }
                 )
     return results
+
+
+# --- local files -------------------------------------------------------------
+
+
+def load_group(group_id, competition_id=None):
+    """The v2 CompetitionGroup with `group_id`, else ArtworkError.
+
+    With `competition_id`, a group of any other competition is refused too, so
+    a mistyped id cannot land artwork on another edition's division.
+    """
+    from padel_league.models.v2 import CompetitionGroup
+
+    try:
+        group = db.session.get(CompetitionGroup, int(group_id))
+    except (TypeError, ValueError):
+        group = None
+    if group is None:
+        raise ArtworkError(f"group {group_id!r} was not found")
+    if competition_id is not None and group.stage.competition_id != int(competition_id):
+        raise ArtworkError(
+            f"group {group.id} ({group.name}) belongs to competition "
+            f"{group.stage.competition_id}, not {int(competition_id)}"
+        )
+    return group
+
+
+def attach_file(group, kind, path, force=False, uploader=None, stamp=None):
+    """Publish the local image file at `path` as the `kind` artwork of `group`.
+
+    One commit. Existing artwork is kept unless `force` (then the group points
+    at the new image; the old Image row and object stay, as generate_for_edition
+    leaves them). Returns the publish info plus `file`, or a dict with
+    `skipped` when nothing was done.
+    """
+    info = attach_shared([group], kind, path, force=force, uploader=uploader, stamp=stamp)
+    info.update({"division_id": group.id, "division_name": group.name})
+    return info
+
+
+def attach_shared(groups, kind, path, force=False, uploader=None, stamp=None):
+    """Publish the file at `path` once and link the one Image to every group in
+    `groups` that has no `kind` artwork yet (all of them with `force`).
+
+    One commit. Groups that already had artwork are listed in
+    `skipped_group_ids`; when no group needs it the file is not even read and
+    the result carries `skipped`.
+    """
+    if kind not in KINDS:
+        raise ArtworkError(f"unknown artwork kind {kind!r}; expected one of {sorted(KINDS)}")
+    column = KINDS[kind]["column"]
+    targets = [group for group in groups if force or not getattr(group, column)]
+    skipped = [group.id for group in groups if group not in targets]
+    if not targets:
+        return {
+            "division_ids": [group.id for group in groups],
+            "division_names": [group.name for group in groups],
+            "kind": kind,
+            "file": str(path),
+            "skipped": "already has artwork; pass force to replace",
+        }
+    try:
+        with open(path, "rb") as handle:
+            data = handle.read()
+    except OSError as exc:
+        raise ArtworkError(f"could not read {path}: {exc}")
+    info = publish_shared(targets, kind, data, stamp=stamp, uploader=uploader)
+    info.update({"file": str(path), "skipped_group_ids": skipped})
+    return info
+
+
+def attach_manifest(entries, force=False, uploader=None, competition_id=None):
+    """Attach every manifest entry, one commit each.
+
+    An entry is ``{"group_id": N, "kind": ..., "file": ...}`` or, for artwork
+    shared by several groups, ``{"group_ids": [N, ...], "kind": ..., "file": ...}``
+    (one upload and one Image row for all of them). Every id passes the
+    `competition_id` guard before the file is read. Same failure isolation as
+    generate_for_edition: an entry that fails (bad file, unknown group, a group
+    outside `competition_id`, upload error) is reported with `error` and the
+    others still land. Returns one result dict per entry, in order.
+    """
+    results = []
+    for entry in entries:
+        ids = _entry_group_ids(entry)
+        if ids is None:
+            results.append({"entry": entry, "error": "each entry needs kind, file and group_id or group_ids (non-empty list)"})
+            continue
+        kind, path = entry["kind"], entry["file"]
+        try:
+            groups = [load_group(group_id, competition_id=competition_id) for group_id in ids]
+            if "group_ids" in entry:
+                results.append(attach_shared(groups, kind, path, force=force, uploader=uploader))
+            else:
+                results.append(attach_file(groups[0], kind, path, force=force, uploader=uploader))
+        except Exception as exc:
+            db.session.rollback()
+            failed = {"kind": kind, "file": str(path), "error": str(exc)}
+            failed["division_ids" if "group_ids" in entry else "division_id"] = entry.get("group_ids", entry.get("group_id"))
+            results.append(failed)
+    return results
+
+
+def _entry_group_ids(entry):
+    """[group ids] of a well-formed manifest entry, else None."""
+    if not isinstance(entry, dict) or "kind" not in entry or "file" not in entry:
+        return None
+    if ("group_id" in entry) == ("group_ids" in entry):
+        return None
+    if "group_id" in entry:
+        return [entry["group_id"]]
+    ids = entry["group_ids"]
+    return list(ids) if isinstance(ids, (list, tuple)) and ids else None

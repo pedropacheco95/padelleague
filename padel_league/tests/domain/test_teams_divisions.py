@@ -17,6 +17,7 @@ from padel_league.services.teams_divisions import (
     slice_divisions,
 )
 from padel_league.sql_db import db
+from padel_league.tests import factories as f
 
 
 def test_seed_by_sum_then_best_individual():
@@ -159,6 +160,73 @@ def test_building_divisions_leaves_a_started_or_ended_competition_alone(pg):
     with pytest.raises(Conflict):
         teams_divisions.build_divisions(stage2)
     assert comp.status == "ended"
+
+
+# ── artwork carry-over between mini-tournaments ──────────────────────────────
+
+
+def _image(key):
+    from padel_league.model import Image
+
+    image = Image(object_key=key, content_type="image/jpeg", size_bytes=1, is_public=True)
+    db.session.add(image)
+    db.session.flush()
+    return image.id
+
+
+def test_next_stage_groups_inherit_the_previous_stage_artwork_by_name(pg):
+    comp = f.competition(format="teams", name="Teams artwork")
+    s1, s2 = f.stage(comp, number=1, status="ended"), f.stage(comp, number=2)
+    poster, banner, own_banner = (_image(f"Division/t{i}.png") for i in range(3))
+    f.group(s1, tier=1, name="1.ª Divisão", logo_image_id=poster, large_picture_id=banner)
+    f.group(s1, tier=2, name="2.ª Divisão", logo_image_id=poster)
+    first = f.group(s2, tier=1, name="1.ª Divisão")
+    second = f.group(s2, tier=2, name="2.ª Divisão", large_picture_id=own_banner)
+    third = f.group(s2, tier=3, name="3.ª Divisão")  # MT2 has one more division: no donor
+
+    touched = teams_divisions.inherit_artwork(s2)
+
+    assert [g.id for g in touched] == [first.id, second.id]
+    assert (first.logo_image_id, first.large_picture_id) == (poster, banner)
+    assert (second.logo_image_id, second.large_picture_id) == (poster, own_banner)  # its own banner is kept
+    assert (third.logo_image_id, third.large_picture_id) == (None, None)
+
+
+def test_artwork_comes_from_the_newest_previous_stage_that_has_it(pg):
+    comp = f.competition(format="teams", name="Teams artwork 3 stages")
+    s1, s2, s3, s4 = (f.stage(comp, number=n) for n in (1, 2, 3, 4))
+    poster1, poster2, banner1 = (_image(f"Division/n{i}.png") for i in range(3))
+    f.group(s1, tier=1, name="1.ª Divisão", logo_image_id=poster1, large_picture_id=banner1)
+    f.group(s2, tier=1, name="1.ª Divisão", logo_image_id=poster2)  # replaced the poster, banner never set
+    f.group(s3, tier=1, name="1.ª Divisão")  # built before any artwork existed
+    fourth = f.group(s4, tier=1, name="1.ª Divisão")
+    other = f.group(f.stage(f.competition(format="teams", name="Other Teams"), number=5), tier=1, name="1.ª Divisão")
+
+    teams_divisions.inherit_artwork(s4)
+
+    assert (fourth.logo_image_id, fourth.large_picture_id) == (poster2, banner1)
+    assert teams_divisions.inherit_artwork(s4) == []  # idempotent
+    assert (other.logo_image_id, other.large_picture_id) == (None, None)  # other competitions are not donors
+
+
+def test_build_divisions_carries_the_artwork_to_the_next_mini_tournament(pg):
+    comp, stage = _teams_stage1()
+    ranking.bootstrap()
+    teams_pairing.close(stage)
+    built = teams_divisions.build_divisions(stage)
+    posters = {group.name: _image(f"Division/mt1_{group.tier}.png") for group, _ in built}
+    for group, _ in built:
+        group.logo_image_id = posters[group.name]
+    db.session.flush()
+
+    stage2 = Stage.query.filter_by(competition_id=comp.id, number=2).one()
+    stage2.pairing_deadline = datetime(2026, 10, 18, 23, 0)
+    teams_pairing.close(stage2)
+    built2 = teams_divisions.build_divisions(stage2)
+
+    assert len(built2) == len(built)
+    assert all(group.logo_image_id == posters[group.name] for group, _ in built2)
+    assert all(group.large_picture_id is None for group, _ in built2)
 
 
 # Competition 27 after mini-tournament 1 was formed (live seeds read on 2026-10-30, 2 decimals).
