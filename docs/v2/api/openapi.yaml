@@ -853,6 +853,13 @@ components:
         name: { type: string }
         tier: { type: [integer, "null"] }
         rating: { type: [number, "null"] }
+        pointsRange:
+          type: [object, "null"]
+          description: Teams only — the ranking points one player can take out of this division this mini-tournament (min 8th place with no set, max 1st with all 9 sets); null for other formats
+          required: [min, max]
+          properties:
+            min: { type: number }
+            max: { type: number }
         hasEnded: { type: boolean }
         logoImage: { $ref: "#/components/schemas/Image" }
         bannerImage: { $ref: "#/components/schemas/Image" }

@@ -18,6 +18,11 @@ DRAW_BONUS_DIVISOR = 250
 
 # Teams ratings already are a quarter of the Clássica ones: never divide again.
 TEAMS_RATINGS = {1: 500, 2: 250, 3: 125, 4: 63, 5: 31, 6: 16}
+# A Teams division: 4 pairs, 3 round-robin matches per pair (services.teams_divisions.ROUND_ROBIN)
+# of 3 sets each (domain.standings.TEAMS_SETS_PER_MATCH); standings are per player, 8 rows.
+TEAMS_MATCHES_PER_PAIR = 3
+TEAMS_SETS_PER_MATCH = 3
+TEAMS_PLAYERS_PER_DIVISION = 8
 
 SHUFFLE_TOP = 2000
 SHUFFLE_FIRST_RATIO = 0.85
@@ -48,6 +53,19 @@ def place_points(rating, place, decay=PLACE_DECAY):
 
 def bonus_points(rating, wins, draws, win_divisor=WIN_BONUS_DIVISOR, draw_divisor=DRAW_BONUS_DIVISOR):
     return wins * rating / win_divisor + draws * rating / draw_divisor
+
+
+def teams_points_range(rating):
+    """(min, max) ranking points one player can take out of a Teams division of `rating`.
+
+    max: 1st place with every set of the pair's 3 matches won (9 set bonuses).
+    min: 8th place with no set won or drawn. A pair that plays everything and
+    loses everything shares 7th; 8th is one player's floor when the partner
+    has more presences (an absence), since ties share the highest place.
+    """
+    best = place_points(rating, 1) + bonus_points(rating, TEAMS_MATCHES_PER_PAIR * TEAMS_SETS_PER_MATCH, 0)
+    worst = place_points(rating, TEAMS_PLAYERS_PER_DIVISION)
+    return worst, best
 
 
 def group_awards(rows, rating):

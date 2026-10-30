@@ -4,7 +4,15 @@ from datetime import date
 
 import pytest
 
-from padel_league.domain.awards import TEAMS_RATINGS, group_awards, place_points, shuffle_curve
+from padel_league.domain.awards import (
+    TEAMS_MATCHES_PER_PAIR,
+    TEAMS_RATINGS,
+    TEAMS_SETS_PER_MATCH,
+    group_awards,
+    place_points,
+    shuffle_curve,
+    teams_points_range,
+)
 from padel_league.domain.errors import InvalidInput
 from padel_league.domain.ranking import AwardFact, CompetitionFact, Rule, compute
 from padel_league.domain.standings import (
@@ -213,3 +221,19 @@ def test_positions_are_distinct_points_then_previous_position():
 def test_unknown_rule_is_refused():
     with pytest.raises(InvalidInput):
         compute(Rule("best_of"), COMPS, AWARDS)
+
+
+def test_teams_points_range_per_tier():
+    """What one player can take out of a division (Parelhas heading, Pedro 30 Oct):
+    max = 1st + 9 won sets, min = 8th with nothing (a 0-0 pair shares 7th; 8th is
+    the floor of the partner with fewer presences)."""
+    from padel_league.domain.standings import TEAMS_SETS_PER_MATCH as SETS_IN_STANDINGS
+    from padel_league.services.teams_divisions import ROUND_ROBIN
+
+    assert TEAMS_SETS_PER_MATCH == SETS_IN_STANDINGS and TEAMS_MATCHES_PER_PAIR == len(ROUND_ROBIN)
+    expected = {1: (66, 545), 2: (33, 272.5), 3: (16, 136.25), 4: (8, 68.67), 5: (4, 33.79), 6: (2, 17.44)}
+    for tier, rating in TEAMS_RATINGS.items():
+        lo, hi = teams_points_range(rating)
+        assert (lo, hi) == (pytest.approx(expected[tier][0]), pytest.approx(expected[tier][1], abs=0.01)), tier
+        assert lo == place_points(rating, 8) and hi == rating + 9 * rating / 100
+    assert place_points(500, 7) == 88  # the 0-0 pair's shared place, for the record
