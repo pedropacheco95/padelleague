@@ -1,4 +1,5 @@
 import json
+import os
 
 import click
 from werkzeug.security import generate_password_hash
@@ -239,6 +240,56 @@ def register_cli(app):
                 click.echo(
                     f"{len(resized)} image(s) were not the exact size and were "
                     "cover-cropped — worth a human look."
+                )
+            if failed:
+                raise click.ClickException(f"{len(failed)} image(s) failed")
+
+    @app.cli.command("attach-artwork")
+    @click.option("--group-id", type=int, help="v2 competition group (division) id.")
+    @click.option("--kind", type=click.Choice(["poster", "banner"]))
+    @click.option("--file", "file_path", type=click.Path(exists=True, dir_okay=False), help="Local image file.")
+    @click.option(
+        "--manifest",
+        type=click.Path(exists=True, dir_okay=False),
+        help='JSON list of {"group_id", "kind", "file"}; relative files resolve beside the manifest.',
+    )
+    @click.option("--force", is_flag=True, help="Replace artwork the group already has.")
+    def attach_artwork(group_id, kind, file_path, manifest, force):
+        """Attach local poster/banner files to v2 competition groups (Teams divisions too).
+
+        One image per commit: a failing entry of a manifest does not undo the others.
+        Prints one JSON result per image; exits 1 when any image failed.
+        """
+        from padel_league.services import artwork
+
+        single = (group_id, kind, file_path)
+        if manifest and any(v is not None for v in single):
+            raise click.UsageError("use either --manifest or --group-id/--kind/--file, not both")
+        if not manifest and any(v is None for v in single):
+            raise click.UsageError("--group-id, --kind and --file are all required without --manifest")
+
+        with app.app_context():
+            if manifest:
+                with open(manifest, encoding="utf-8") as handle:
+                    entries = json.load(handle)
+                if not isinstance(entries, list):
+                    raise click.ClickException("the manifest must be a JSON list")
+                base = os.path.dirname(os.path.abspath(manifest))
+                for entry in entries:
+                    if isinstance(entry, dict) and isinstance(entry.get("file"), str) and not os.path.isabs(entry["file"]):
+                        entry["file"] = os.path.join(base, entry["file"])
+                results = artwork.attach_manifest(entries, force=force)
+            else:
+                try:
+                    results = [artwork.attach_file(artwork.load_group(group_id), kind, file_path, force=force)]
+                except artwork.ArtworkError as exc:
+                    raise click.ClickException(str(exc))
+            click.echo(json.dumps(results, indent=2, ensure_ascii=False))
+            failed = [r for r in results if r.get("error")]
+            resized = [r for r in results if r.get("was_resized")]
+            if resized:
+                click.echo(
+                    f"{len(resized)} image(s) were not the exact size and were cover-cropped — worth a human look."
                 )
             if failed:
                 raise click.ClickException(f"{len(failed)} image(s) failed")

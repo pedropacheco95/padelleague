@@ -1,5 +1,6 @@
 """Division artwork: normalise images to the exact sizes the site expects,
-publish them to GCS and link them to a division.
+publish them to GCS and link them to a division (a v2 CompetitionGroup; the
+pre-v2 Division is a read-only compat view and cannot take the image ids).
 
 Two images per division, both stored as JPEG in the uploads bucket under
 ``Division/``:
@@ -111,7 +112,8 @@ def _object_key(kind, stamp):
 
 def publish(division, kind, image_bytes, stamp=None, uploader=None, commit=True):
     """Normalise, upload to GCS, record an Image row and link it to `division`
-    (a v2 CompetitionGroup: same logo_image_id / large_picture_id columns).
+    (a v2 CompetitionGroup: same logo_image_id / large_picture_id columns, so
+    Teams divisions and Shuffle groups take artwork the same way).
 
     `uploader` is injectable for tests; by default it uploads to the bucket in
     GCS_UPLOADS_BUCKET. Returns the info dict from `normalise` plus the image id
@@ -225,4 +227,70 @@ def generate_for_edition(
                         "error": str(exc),
                     }
                 )
+    return results
+
+
+# --- local files -------------------------------------------------------------
+
+
+def load_group(group_id):
+    """The v2 CompetitionGroup with `group_id`, else ArtworkError."""
+    from padel_league.models.v2 import CompetitionGroup
+
+    try:
+        group = db.session.get(CompetitionGroup, int(group_id))
+    except (TypeError, ValueError):
+        group = None
+    if group is None:
+        raise ArtworkError(f"group {group_id!r} was not found")
+    return group
+
+
+def attach_file(group, kind, path, force=False, uploader=None, stamp=None):
+    """Publish the local image file at `path` as the `kind` artwork of `group`.
+
+    One commit. Existing artwork is kept unless `force` (then the group points
+    at the new image; the old Image row and object stay, as generate_for_edition
+    leaves them). Returns the publish info plus `file`, or a dict with
+    `skipped` when nothing was done.
+    """
+    if kind not in KINDS:
+        raise ArtworkError(f"unknown artwork kind {kind!r}; expected one of {sorted(KINDS)}")
+    column = KINDS[kind]["column"]
+    if getattr(group, column) and not force:
+        return {
+            "division_id": group.id,
+            "division_name": group.name,
+            "kind": kind,
+            "file": str(path),
+            "skipped": "already has artwork; pass force to replace",
+        }
+    try:
+        with open(path, "rb") as handle:
+            data = handle.read()
+    except OSError as exc:
+        raise ArtworkError(f"could not read {path}: {exc}")
+    info = publish(group, kind, data, stamp=stamp, uploader=uploader)
+    info["file"] = str(path)
+    return info
+
+
+def attach_manifest(entries, force=False, uploader=None):
+    """Attach every ``{"group_id", "kind", "file"}`` in `entries`, one commit each.
+
+    Same failure isolation as generate_for_edition: an entry that fails (bad
+    file, unknown group, upload error) is reported with `error` and the others
+    still land. Returns one result dict per entry, in order.
+    """
+    results = []
+    for entry in entries:
+        if not isinstance(entry, dict) or not all(k in entry for k in ("group_id", "kind", "file")):
+            results.append({"entry": entry, "error": "each entry needs group_id, kind and file"})
+            continue
+        group_id, kind, path = entry["group_id"], entry["kind"], entry["file"]
+        try:
+            results.append(attach_file(load_group(group_id), kind, path, force=force, uploader=uploader))
+        except Exception as exc:
+            db.session.rollback()
+            results.append({"division_id": group_id, "kind": kind, "file": str(path), "error": str(exc)})
     return results

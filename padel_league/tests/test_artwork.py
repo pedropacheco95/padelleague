@@ -1,4 +1,5 @@
 import io
+import json
 
 import pytest
 from PIL import Image as PILImage
@@ -8,14 +9,18 @@ from padel_league.models.v2 import Competition, CompetitionGroup, Stage
 from padel_league.tests import factories as f
 from padel_league.services import artwork, artwork_generation
 from padel_league.services.artwork import (
-    BANNER_SIZE,
-    POSTER_SIZE,
     ArtworkError,
+    attach_file,
+    attach_manifest,
+    BANNER_SIZE,
     generate_for_edition,
+    load_group,
     normalise,
+    POSTER_SIZE,
     publish,
 )
 from padel_league.sql_db import db
+
 
 @pytest.fixture
 def app(pg):
@@ -379,3 +384,161 @@ def test_bucket_name_is_required(monkeypatch):
     monkeypatch.delenv("GCS_UPLOADS_BUCKET", raising=False)
     with pytest.raises(ArtworkError, match="GCS_UPLOADS_BUCKET"):
         artwork._bucket_name()
+
+
+# ── attach local files ───────────────────────────────────────────────────────
+
+
+def _png(tmp_path, name, size):
+    path = tmp_path / name
+    path.write_bytes(make_image_bytes(size))
+    return path
+
+
+def _group(group_id):
+    db.session.expire_all()
+    return db.session.get(CompetitionGroup, group_id)
+
+
+def test_attach_file_publishes_a_local_file_to_a_v2_group(app, tmp_path):
+    group_id = _make_division(app, name="1.ª Divisão")
+    uploader = FakeUploader()
+    path = _png(tmp_path, "poster.png", POSTER_SIZE)
+
+    info = attach_file(_group(group_id), "poster", path, uploader=uploader, stamp="20261030090000")
+
+    assert info["file"] == str(path)
+    assert info["was_resized"] is False
+    assert info["object_key"] == "Division/20261030090000_logo_image_id.png"
+    assert _group(group_id).logo_image_id == info["image_id"]
+    assert dimensions(uploader.uploads[info["object_key"]]) == POSTER_SIZE
+
+
+def test_attach_file_keeps_existing_artwork_unless_forced(app, tmp_path):
+    group_id = _make_division(app)
+    uploader = FakeUploader()
+    path = _png(tmp_path, "banner.png", (1280, 294))
+
+    first = attach_file(_group(group_id), "banner", path, uploader=uploader)
+    again = attach_file(_group(group_id), "banner", path, uploader=uploader)
+    assert again["skipped"].startswith("already has artwork")
+    assert _group(group_id).large_picture_id == first["image_id"]
+    assert len(uploader.uploads) == 1
+
+    forced = attach_file(_group(group_id), "banner", path, force=True, uploader=uploader)
+    assert forced["image_id"] != first["image_id"]
+    assert forced["was_resized"] is True
+    assert _group(group_id).large_picture_id == forced["image_id"]
+    assert len(uploader.uploads) == 2
+    assert dimensions(uploader.uploads[forced["object_key"]]) == BANNER_SIZE
+
+
+def test_attach_file_refuses_missing_files_bad_kinds_and_unknown_groups(app, tmp_path):
+    group_id = _make_division(app)
+    uploader = FakeUploader()
+
+    with pytest.raises(ArtworkError, match="could not read"):
+        attach_file(_group(group_id), "poster", tmp_path / "missing.png", uploader=uploader)
+    with pytest.raises(ArtworkError, match="unknown artwork kind"):
+        attach_file(_group(group_id), "cover", _png(tmp_path, "x.png", POSTER_SIZE), uploader=uploader)
+    with pytest.raises(ArtworkError, match="was not found"):
+        load_group(999_999_999)
+    with pytest.raises(ArtworkError, match="was not found"):
+        load_group("abc")
+    assert uploader.uploads == {}
+    assert (_group(group_id).logo_image_id, _group(group_id).large_picture_id) == (None, None)
+
+
+def test_attach_manifest_commits_each_image_and_isolates_failures(app, tmp_path):
+    comp = f.competition(name="Teams manifest")
+    stg = f.stage(comp)
+    first = f.group(stg, tier=1, name="1.ª Divisão").id
+    second = f.group(stg, tier=2, name="2.ª Divisão").id
+    db.session.commit()
+    uploader = FakeUploader()
+    broken = tmp_path / "broken.png"
+    broken.write_bytes(b"not an image")
+    manifest = [
+        {"group_id": first, "kind": "poster", "file": str(_png(tmp_path, "p1.png", POSTER_SIZE))},
+        {"group_id": first, "kind": "banner", "file": str(_png(tmp_path, "b1.png", BANNER_SIZE))},
+        {"group_id": second, "kind": "poster", "file": str(broken)},
+        {"group_id": 999_999_999, "kind": "banner", "file": str(_png(tmp_path, "b2.png", BANNER_SIZE))},
+        {"group_id": second, "kind": "banner"},
+    ]
+
+    results = attach_manifest(manifest, uploader=uploader)
+
+    assert [bool(r.get("error")) for r in results] == [False, False, True, True, True]
+    assert "could not read image" in results[2]["error"]
+    assert "was not found" in results[3]["error"]
+    assert "needs group_id, kind and file" in results[4]["error"]
+    assert len(uploader.uploads) == 2
+    # the two good images are committed (visible to a fresh session), the failed group untouched
+    db.session.remove()
+    assert (_group(first).logo_image_id, _group(first).large_picture_id) == (results[0]["image_id"], results[1]["image_id"])
+    assert (_group(second).logo_image_id, _group(second).large_picture_id) == (None, None)
+
+
+def test_cli_attach_artwork_single_file(app, tmp_path, monkeypatch):
+    group_id = _make_division(app)
+    uploader = FakeUploader()
+    monkeypatch.setattr(artwork, "_upload_to_gcs", uploader)
+    path = _png(tmp_path, "poster.png", POSTER_SIZE)
+
+    result = app.test_cli_runner().invoke(
+        args=["attach-artwork", "--group-id", str(group_id), "--kind", "poster", "--file", str(path)]
+    )
+
+    assert result.exit_code == 0, result.output
+    (info,) = json.loads(result.output)
+    assert info["division_id"] == group_id and info["kind"] == "poster"
+    assert _group(group_id).logo_image_id == info["image_id"]
+    assert list(uploader.uploads) == [info["object_key"]]
+
+
+def test_cli_attach_artwork_manifest_resolves_files_beside_it_and_reports_failures(app, tmp_path, monkeypatch):
+    comp = f.competition(name="Teams manifest cli")
+    stg = f.stage(comp)
+    first = f.group(stg, tier=1, name="1.ª Divisão").id
+    second = f.group(stg, tier=2, name="2.ª Divisão").id
+    db.session.commit()
+    uploader = FakeUploader()
+    monkeypatch.setattr(artwork, "_upload_to_gcs", uploader)
+    folder = tmp_path / "artwork"
+    folder.mkdir()
+    _png(folder, "d1_poster.png", POSTER_SIZE)
+    _png(folder, "d1_banner.png", (1024, 340))
+    manifest = folder / "manifest.json"
+    manifest.write_text(
+        json.dumps(
+            [
+                {"group_id": first, "kind": "poster", "file": "d1_poster.png"},
+                {"group_id": first, "kind": "banner", "file": "d1_banner.png"},
+                {"group_id": second, "kind": "poster", "file": "does_not_exist.png"},
+            ]
+        )
+    )
+
+    result = app.test_cli_runner().invoke(args=["attach-artwork", "--manifest", str(manifest)])
+
+    assert result.exit_code == 1, result.output
+    assert "1 image(s) failed" in result.output
+    assert "cover-cropped" in result.output  # the 1024x340 banner was resized
+    body = result.output[: result.output.rindex("]") + 1]
+    results = json.loads(body)
+    assert [bool(r.get("error")) for r in results] == [False, False, True]
+    assert results[0]["file"] == str(folder / "d1_poster.png")
+    assert (_group(first).logo_image_id, _group(first).large_picture_id) == (results[0]["image_id"], results[1]["image_id"])
+    assert _group(second).logo_image_id is None
+    assert len(uploader.uploads) == 2
+
+
+def test_cli_attach_artwork_wants_one_mode(app, tmp_path):
+    runner = app.test_cli_runner()
+    assert runner.invoke(args=["attach-artwork"]).exit_code == 2
+    manifest = tmp_path / "m.json"
+    manifest.write_text("[]")
+    mixed = runner.invoke(args=["attach-artwork", "--manifest", str(manifest), "--group-id", "1"])
+    assert mixed.exit_code == 2 and "not both" in mixed.output
+    empty = runner.invoke(args=["attach-artwork", "--manifest", str(manifest)])
+    assert empty.exit_code == 0 and json.loads(empty.output) == []

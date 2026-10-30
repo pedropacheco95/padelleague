@@ -106,12 +106,54 @@ def build_divisions(stage, points=None, positions=None, with_fixtures=True):
                 for home, away in fixtures:
                     _add_match(group, rounds[number], division[home], division[away], entry_of)
         built.append((group, division))
+    inherit_artwork(stage, [group for group, _ in built])
     stage.status = "running" if stage.status == "planned" else stage.status
     competition = stage.competition
     if competition.status == "planned":  # the first mini-tournament's divisions start the Teams
         competition.status = "running"
     db.session.flush()
     return built
+
+
+ARTWORK_COLUMNS = ("logo_image_id", "large_picture_id")  # poster, banner
+
+
+def inherit_artwork(stage, groups=None):
+    """Give `stage`'s groups the poster/banner of the same-named group of the
+    previous mini-tournaments (newest first), where the new group has none.
+
+    Teams rebuilds its divisions every stage, and the competition card
+    (api_v2.cards: the current stage's top group) and the division pages
+    (group_summary: each group's own ids) read the artwork from the newest
+    stage's groups — without this the images would vanish at the 2nd
+    mini-tournament. The Image rows are shared, nothing is copied in GCS.
+    Returns the groups that received at least one id.
+    """
+    from padel_league.models.v2 import Stage
+
+    groups = list(stage.groups) if groups is None else groups
+    previous = (
+        CompetitionGroup.query.join(Stage, Stage.id == CompetitionGroup.stage_id)
+        .filter(Stage.competition_id == stage.competition_id, Stage.number < stage.number)
+        .order_by(Stage.number.desc(), CompetitionGroup.tier)
+        .all()
+    )
+    donors = {}  # (name, column) -> image id, from the newest previous stage that has one
+    for old in previous:
+        for column in ARTWORK_COLUMNS:
+            if getattr(old, column) is not None:
+                donors.setdefault((old.name, column), getattr(old, column))
+    touched = []
+    for group in groups:
+        changed = False
+        for column in ARTWORK_COLUMNS:
+            if getattr(group, column) is None and (group.name, column) in donors:
+                setattr(group, column, donors[(group.name, column)])
+                changed = True
+        if changed:
+            touched.append(group)
+    db.session.flush()
+    return touched
 
 
 def _add_match(group, rnd, home, away, entry_of):
