@@ -160,3 +160,20 @@ def test_group_summary_points_range(client):
     assert detail["pointsRange"] == {"min": 66.0, "max": 545.0}
     classica = check(client.get("/api/v2/competitions/25"), "/competitions/{competitionId}")
     assert {g["pointsRange"] for s in classica["stages"] for g in s["groups"]} == {None}
+
+
+def test_pairs_carry_movement_once_divisions_exist(client):
+    stage = _open_pairing()
+    teams_pairing.close(stage)
+    persist()
+    before = check(client.get(f"/api/v2/competitions/{TEAMS}/teams"), "/competitions/{competitionId}/teams")
+    assert {p["movement"] for p in before["pairs"]} == {None}
+    teams_divisions.build_divisions(stage)
+    persist()
+    after = check(client.get(f"/api/v2/competitions/{TEAMS}/teams"), "/competitions/{competitionId}/teams")
+    moves = {p["id"]: p["movement"] for p in after["pairs"]}
+    assert len(moves) == 24 and all(m is not None for m in moves.values())
+    by_points = sorted(after["pairs"], key=lambda p: -p["rankingPoints"])
+    top, bottom = moves[by_points[0]["id"]], moves[by_points[-1]["id"]]
+    assert top["up"] is False and top["gapUp"] is None and bottom["down"] is False and bottom["gapDown"] is None
+    assert all(set(m) == {"up", "down", "gapUp", "gapDown"} for m in moves.values())

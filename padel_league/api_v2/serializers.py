@@ -98,6 +98,13 @@ def points_range(g, fmt=None):
     return {"min": lo, "max": hi}
 
 
+def pair_movement(m):
+    """TeamsState pair.movement: null until the mini-tournament's divisions exist."""
+    if m is None:
+        return None
+    return {"up": m.up, "down": m.down, "gapUp": m.gap_up, "gapDown": m.gap_down}
+
+
 def group_summary(g, images=None, fmt=None):
     """images: {image_id: Image} (v2 groups carry only the ids); fmt: the competition format when known."""
     images = images or {}
