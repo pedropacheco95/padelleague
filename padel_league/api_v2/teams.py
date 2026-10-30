@@ -9,7 +9,7 @@ from flask import Blueprint, jsonify
 
 from padel_league.models import Player
 from padel_league.models.v2 import Stage
-from padel_league.services import teams_pairing
+from padel_league.services import teams_divisions, teams_pairing
 from padel_league.services.teams_pairing import PairingError
 from padel_league.sql_db import db
 
@@ -89,6 +89,9 @@ def state(mt, user=None):
 
     history = teams_pairing.times_together(mt)
     deadline = mt.pairing_deadline
+    pair_points = {pair.id: sum(rank(pid)[1] for pid in pair_players[pair.id]) for pair in pairs}
+    # Parelhas card (Pedro, 30 Oct): can this pair move up/down next time? Only once the divisions exist.
+    movements = teams_divisions.pair_movements(teams_divisions.formed_divisions(mt, pair_points))
 
     return {
         "miniTournament": {
@@ -114,7 +117,8 @@ def state(mt, user=None):
                 "id": pair.id,
                 "source": ser.PAIR_SOURCE.get(pair.formed_by, "auto"),
                 "players": [ser.player_ref(by_id[pid]) for pid in pair_players[pair.id]],
-                "rankingPoints": sum(rank(pid)[1] for pid in pair_players[pair.id]),
+                "rankingPoints": pair_points[pair.id],
+                "movement": ser.pair_movement(movements.get(pair.id)),
             }
             for pair in pairs
         ],

@@ -138,3 +138,42 @@ def test_simulate_locked_when_paired(client):
     assert body["baseline"]["partner"]["id"] == ids[1]
     row = next(c for c in body["candidates"] if c["player"]["id"] == ids[1])
     assert row["status"] == "confirmed" and row["pairedWith"]["id"] == ids[0]
+
+
+def test_group_summary_points_range(client):
+    """GroupSummary.pointsRange: Teams divisions carry what a player can take out of them; Clássica groups null."""
+    stage = _open_pairing()
+    teams_pairing.close(stage)
+    teams_divisions.build_divisions(stage)
+    persist()
+    teams = check(client.get(f"/api/v2/competitions/{TEAMS}"), "/competitions/{competitionId}")
+    groups = next(s for s in teams["stages"] if s["id"] == stage.id)["groups"]
+    assert [(g["tier"], g["pointsRange"]) for g in groups] == [
+        (1, {"min": 66.0, "max": 545.0}),
+        (2, {"min": 33.0, "max": 272.5}),
+        (3, {"min": 16.0, "max": 136.25}),
+        (4, {"min": 8.0, "max": 68.67}),
+        (5, {"min": 4.0, "max": 33.79}),
+        (6, {"min": 2.0, "max": 17.44}),
+    ]
+    detail = check(client.get(f"/api/v2/groups/{groups[0]['id']}"), "/groups/{groupId}")
+    assert detail["pointsRange"] == {"min": 66.0, "max": 545.0}
+    classica = check(client.get("/api/v2/competitions/25"), "/competitions/{competitionId}")
+    assert {g["pointsRange"] for s in classica["stages"] for g in s["groups"]} == {None}
+
+
+def test_pairs_carry_movement_once_divisions_exist(client):
+    stage = _open_pairing()
+    teams_pairing.close(stage)
+    persist()
+    before = check(client.get(f"/api/v2/competitions/{TEAMS}/teams"), "/competitions/{competitionId}/teams")
+    assert {p["movement"] for p in before["pairs"]} == {None}
+    teams_divisions.build_divisions(stage)
+    persist()
+    after = check(client.get(f"/api/v2/competitions/{TEAMS}/teams"), "/competitions/{competitionId}/teams")
+    moves = {p["id"]: p["movement"] for p in after["pairs"]}
+    assert len(moves) == 24 and all(m is not None for m in moves.values())
+    by_points = sorted(after["pairs"], key=lambda p: -p["rankingPoints"])
+    top, bottom = moves[by_points[0]["id"]], moves[by_points[-1]["id"]]
+    assert top["up"] is False and top["gapUp"] is None and bottom["down"] is False and bottom["gapDown"] is None
+    assert all(set(m) == {"up", "down", "gapUp", "gapDown"} for m in moves.values())

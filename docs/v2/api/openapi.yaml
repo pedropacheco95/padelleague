@@ -853,6 +853,13 @@ components:
         name: { type: string }
         tier: { type: [integer, "null"] }
         rating: { type: [number, "null"] }
+        pointsRange:
+          type: [object, "null"]
+          description: Teams only — the ranking points one player can take out of this division this mini-tournament (min 8th place with no set, max 1st with all 9 sets); null for other formats
+          required: [min, max]
+          properties:
+            min: { type: number }
+            max: { type: number }
         hasEnded: { type: boolean }
         logoImage: { $ref: "#/components/schemas/Image" }
         bannerImage: { $ref: "#/components/schemas/Image" }
@@ -1461,6 +1468,15 @@ components:
               source: { type: string, enum: [mutual, auto, admin], description: "formed_by mutual→mutual; ranking/draw/rotation→auto; manual→admin" }
               players: { type: array, items: { $ref: "#/components/schemas/PlayerRef" } }
               rankingPoints: { type: number }
+              movement:
+                type: [object, "null"]
+                description: If this pair is kept, can it change division next mini-tournament? Each rival at its own extreme, ties ignored. null until the divisions exist.
+                required: [up, down, gapUp, gapDown]
+                properties:
+                  up: { type: boolean, description: at least `seed` pairs above can finish below this pair's best case }
+                  down: { type: boolean, description: at least 5 - seed pairs below can finish above this pair's worst case }
+                  gapUp: { type: [number, "null"], description: "weakest pair of the division above at its worst minus this pair at its best: <= 0 folga, > 0 faltam; null in the 1.ª" }
+                  gapDown: { type: [number, "null"], description: "best pair of the division below at its best minus this pair at its worst: >= 0 risco, < 0 seguro; null in the last division" }
         me:
           type: object
           required: [playerId, inRoster, myChoice, choseMe, pairId, isAdmin]
