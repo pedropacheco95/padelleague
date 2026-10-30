@@ -233,8 +233,12 @@ def generate_for_edition(
 # --- local files -------------------------------------------------------------
 
 
-def load_group(group_id):
-    """The v2 CompetitionGroup with `group_id`, else ArtworkError."""
+def load_group(group_id, competition_id=None):
+    """The v2 CompetitionGroup with `group_id`, else ArtworkError.
+
+    With `competition_id`, a group of any other competition is refused too, so
+    a mistyped id cannot land artwork on another edition's division.
+    """
     from padel_league.models.v2 import CompetitionGroup
 
     try:
@@ -243,6 +247,11 @@ def load_group(group_id):
         group = None
     if group is None:
         raise ArtworkError(f"group {group_id!r} was not found")
+    if competition_id is not None and group.stage.competition_id != int(competition_id):
+        raise ArtworkError(
+            f"group {group.id} ({group.name}) belongs to competition "
+            f"{group.stage.competition_id}, not {int(competition_id)}"
+        )
     return group
 
 
@@ -275,12 +284,13 @@ def attach_file(group, kind, path, force=False, uploader=None, stamp=None):
     return info
 
 
-def attach_manifest(entries, force=False, uploader=None):
+def attach_manifest(entries, force=False, uploader=None, competition_id=None):
     """Attach every ``{"group_id", "kind", "file"}`` in `entries`, one commit each.
 
     Same failure isolation as generate_for_edition: an entry that fails (bad
-    file, unknown group, upload error) is reported with `error` and the others
-    still land. Returns one result dict per entry, in order.
+    file, unknown group, a group outside `competition_id`, upload error) is
+    reported with `error` and the others still land. Returns one result dict
+    per entry, in order.
     """
     results = []
     for entry in entries:
@@ -289,7 +299,8 @@ def attach_manifest(entries, force=False, uploader=None):
             continue
         group_id, kind, path = entry["group_id"], entry["kind"], entry["file"]
         try:
-            results.append(attach_file(load_group(group_id), kind, path, force=force, uploader=uploader))
+            group = load_group(group_id, competition_id=competition_id)
+            results.append(attach_file(group, kind, path, force=force, uploader=uploader))
         except Exception as exc:
             db.session.rollback()
             results.append({"division_id": group_id, "kind": kind, "file": str(path), "error": str(exc)})

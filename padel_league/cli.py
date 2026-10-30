@@ -245,6 +245,12 @@ def register_cli(app):
                 raise click.ClickException(f"{len(failed)} image(s) failed")
 
     @app.cli.command("attach-artwork")
+    @click.option(
+        "--competition-id",
+        type=int,
+        required=True,
+        help="The competition the groups must belong to; any other group id is refused.",
+    )
     @click.option("--group-id", type=int, help="v2 competition group (division) id.")
     @click.option("--kind", type=click.Choice(["poster", "banner"]))
     @click.option("--file", "file_path", type=click.Path(exists=True, dir_okay=False), help="Local image file.")
@@ -254,11 +260,12 @@ def register_cli(app):
         help='JSON list of {"group_id", "kind", "file"}; relative files resolve beside the manifest.',
     )
     @click.option("--force", is_flag=True, help="Replace artwork the group already has.")
-    def attach_artwork(group_id, kind, file_path, manifest, force):
+    def attach_artwork(competition_id, group_id, kind, file_path, manifest, force):
         """Attach local poster/banner files to v2 competition groups (Teams divisions too).
 
-        One image per commit: a failing entry of a manifest does not undo the others.
-        Prints one JSON result per image; exits 1 when any image failed.
+        Every group must belong to --competition-id (checked before any file is read
+        or uploaded). One image per commit: a failing entry of a manifest does not
+        undo the others. Prints one JSON result per image; exits 1 when any failed.
         """
         from padel_league.services import artwork
 
@@ -278,10 +285,11 @@ def register_cli(app):
                 for entry in entries:
                     if isinstance(entry, dict) and isinstance(entry.get("file"), str) and not os.path.isabs(entry["file"]):
                         entry["file"] = os.path.join(base, entry["file"])
-                results = artwork.attach_manifest(entries, force=force)
+                results = artwork.attach_manifest(entries, force=force, competition_id=competition_id)
             else:
                 try:
-                    results = [artwork.attach_file(artwork.load_group(group_id), kind, file_path, force=force)]
+                    group = artwork.load_group(group_id, competition_id=competition_id)
+                    results = [artwork.attach_file(group, kind, file_path, force=force)]
                 except artwork.ArtworkError as exc:
                     raise click.ClickException(str(exc))
             click.echo(json.dumps(results, indent=2, ensure_ascii=False))

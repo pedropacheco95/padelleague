@@ -485,8 +485,9 @@ def test_cli_attach_artwork_single_file(app, tmp_path, monkeypatch):
     monkeypatch.setattr(artwork, "_upload_to_gcs", uploader)
     path = _png(tmp_path, "poster.png", POSTER_SIZE)
 
+    comp_id = _group(group_id).stage.competition_id
     result = app.test_cli_runner().invoke(
-        args=["attach-artwork", "--group-id", str(group_id), "--kind", "poster", "--file", str(path)]
+        args=["attach-artwork", "--competition-id", str(comp_id), "--group-id", str(group_id), "--kind", "poster", "--file", str(path)]
     )
 
     assert result.exit_code == 0, result.output
@@ -519,7 +520,7 @@ def test_cli_attach_artwork_manifest_resolves_files_beside_it_and_reports_failur
         )
     )
 
-    result = app.test_cli_runner().invoke(args=["attach-artwork", "--manifest", str(manifest)])
+    result = app.test_cli_runner().invoke(args=["attach-artwork", "--competition-id", str(comp.id), "--manifest", str(manifest)])
 
     assert result.exit_code == 1, result.output
     assert "1 image(s) failed" in result.output
@@ -533,12 +534,45 @@ def test_cli_attach_artwork_manifest_resolves_files_beside_it_and_reports_failur
     assert len(uploader.uploads) == 2
 
 
-def test_cli_attach_artwork_wants_one_mode(app, tmp_path):
+def test_cli_attach_artwork_wants_one_mode_and_a_competition(app, tmp_path):
     runner = app.test_cli_runner()
-    assert runner.invoke(args=["attach-artwork"]).exit_code == 2
     manifest = tmp_path / "m.json"
     manifest.write_text("[]")
-    mixed = runner.invoke(args=["attach-artwork", "--manifest", str(manifest), "--group-id", "1"])
+    assert runner.invoke(args=["attach-artwork", "--competition-id", "1"]).exit_code == 2
+    no_comp = runner.invoke(args=["attach-artwork", "--manifest", str(manifest)])
+    assert no_comp.exit_code == 2 and "--competition-id" in no_comp.output
+    mixed = runner.invoke(args=["attach-artwork", "--competition-id", "1", "--manifest", str(manifest), "--group-id", "1"])
     assert mixed.exit_code == 2 and "not both" in mixed.output
-    empty = runner.invoke(args=["attach-artwork", "--manifest", str(manifest)])
+    empty = runner.invoke(args=["attach-artwork", "--competition-id", "1", "--manifest", str(manifest)])
     assert empty.exit_code == 0 and json.loads(empty.output) == []
+
+
+def test_groups_of_another_competition_are_refused_before_any_file_is_touched(app, tmp_path, monkeypatch):
+    ours = f.competition(format="teams", name="Teams 27")
+    mine = f.group(f.stage(ours), tier=1, name="1.ª Divisão").id
+    theirs = f.group(f.stage(f.competition(name="22ª Edição")), tier=1, name="1ª Divisão").id
+    db.session.commit()
+    uploader = FakeUploader()
+    monkeypatch.setattr(artwork, "_upload_to_gcs", uploader)
+    missing = tmp_path / "never_read.png"  # does not exist: proves the guard runs before the file is read
+
+    with pytest.raises(ArtworkError, match=f"group {theirs} .* belongs to competition .*, not {ours.id}"):
+        load_group(theirs, competition_id=ours.id)
+    assert load_group(mine, competition_id=ours.id).id == mine
+
+    results = attach_manifest(
+        [
+            {"group_id": theirs, "kind": "poster", "file": str(missing)},
+            {"group_id": mine, "kind": "poster", "file": str(_png(tmp_path, "ok.png", POSTER_SIZE))},
+        ],
+        competition_id=ours.id,
+    )
+    assert "belongs to competition" in results[0]["error"] and "image_id" in results[1]
+    assert _group(theirs).logo_image_id is None and _group(mine).logo_image_id == results[1]["image_id"]
+
+    single = app.test_cli_runner().invoke(
+        args=["attach-artwork", "--competition-id", str(ours.id), "--group-id", str(theirs), "--kind", "banner", "--file", str(_png(tmp_path, "b.png", BANNER_SIZE))]
+    )
+    assert single.exit_code == 1 and "belongs to competition" in single.output
+    assert _group(theirs).large_picture_id is None
+    assert len(uploader.uploads) == 1  # only the manifest's good entry (the service-level attach above used uploader=None → the patched GCS upload)
