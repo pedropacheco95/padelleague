@@ -7,7 +7,15 @@ import pytest
 from padel_league.domain.errors import Conflict
 from padel_league.models.v2 import Competition, CompetitionMatch, GroupMember, Stage
 from padel_league.services import closeout, ranking, results, teams_divisions, teams_pairing
-from padel_league.services.teams_divisions import seed_pairs, slice_divisions
+from padel_league.services.teams_divisions import (
+    ProjectedDivision,
+    ProjectedPair,
+    pair_best,
+    pair_movements,
+    pair_worst,
+    seed_pairs,
+    slice_divisions,
+)
 from padel_league.sql_db import db
 
 
@@ -151,3 +159,68 @@ def test_building_divisions_leaves_a_started_or_ended_competition_alone(pg):
     with pytest.raises(Conflict):
         teams_divisions.build_divisions(stage2)
     assert comp.status == "ended"
+
+
+# Competition 27 after mini-tournament 1 was formed (live seeds read on 2026-10-30, 2 decimals).
+LIVE_SEEDS = {
+    1: [("Pancho & Pi Magalhaes", 7062.00), ("Malafaya & Nathan", 6599.00), ("Miguel SG & Bernardo C", 5426.00), ("Talinho & Dudas", 3588.00)],
+    2: [("Miguel C. & Semelhe", 3398.92), ("Cuca & Henrique", 3385.00), ("Dinis & Gonçalo PA", 2818.00), ("Zé Santos & Falcão", 2663.50)],
+    3: [("Afonso Martinho & Freitas", 2603.00), ("Damásio & Lopo Sottomayor", 1779.00), ("Tomás Pacheco & Luís Folhadela", 970.50), ("Cou & Dainis", 827.25)],
+    4: [("Fred Baptista & Fezas", 798.50), ("Trepa & João Mendonça", 528.75), ("Tomás Duarte & Nuno Azevedo", 433.45), ("Martinho & Antonio A", 405.56)],
+    5: [("Cameira & João Leite", 392.00), ("Hugo & Pedro AR Pacheco", 379.75), ("Ricas & Manel Serôdio", 372.82), ("Bucas & Kiko SS Faro", 148.67)],
+    6: [("João Ribeiro & João Lello", 93.00), ("Diogo Garrett & Zé Pedro Graça", 88.09), ("Zema & Bernardo Vasconcelos", 78.36), ("La Serna & Álvaro Van Zeller", 67.81)],
+}
+RATINGS = {1: 500, 2: 250, 3: 125, 4: 63, 5: 31, 6: 16}
+
+
+def _live_divisions():
+    divisions, names, pid = [], {}, 0
+    for tier, pairs in LIVE_SEEDS.items():
+        d = ProjectedDivision(tier, f"{tier}.ª Divisão", RATINGS[tier])
+        for seed, (name, points) in enumerate(pairs, start=1):
+            pid += 1
+            names[name] = pid
+            d.pairs.append(ProjectedPair(pid, (), points, None, "mutual", seed))
+        divisions.append(d)
+    return divisions, names
+
+
+def test_pair_best_and_worst_follow_the_points_range():
+    assert pair_best(500) == 2 * 545 and pair_worst(500) == 88 + 66
+    assert pair_best(16) == pytest.approx(2 * 17.44) and pair_worst(16) == 2 + 2
+
+
+def test_pair_movements_on_the_live_mini_tournament_1():
+    """Pedro's card examples (30 Oct), verified on the live data before building."""
+    divisions, names = _live_divisions()
+    m = pair_movements(divisions)
+    talinho = m[names["Talinho & Dudas"]]
+    assert (talinho.up, talinho.down) == (False, True) and talinho.gap_up is None
+    assert talinho.gap_down == pytest.approx(201.92)  # "↓ risco 202"
+    miguel = m[names["Miguel C. & Semelhe"]]
+    assert (miguel.up, miguel.down) == (True, False)
+    assert miguel.gap_up == pytest.approx(-201.92)  # "↑ folga 202"
+    dinis = m[names["Dinis & Gonçalo PA"]]
+    assert (dinis.up, dinis.down) == (False, False)
+    assert dinis.gap_up == pytest.approx(379.0) and dinis.gap_down == pytest.approx(-19.5)  # "↑ faltam 379 · ↓ seguro 20"
+    for name, _ in LIVE_SEEDS[6]:  # the floor: nobody in the last division can go down
+        assert m[names[name]].down is False and m[names[name]].gap_down is None
+    assert [m[names[n]].up for n, _ in LIVE_SEEDS[6]] == [False] * 4  # 93 + 2x17.44 never reaches the 5.ª
+    assert sorted(n for n, pid in names.items() if m[pid].up) == sorted(
+        ["Miguel C. & Semelhe", "Cuca & Henrique", "Afonso Martinho & Freitas", "Fred Baptista & Fezas",
+         "Cameira & João Leite", "Hugo & Pedro AR Pacheco", "Ricas & Manel Serôdio"]
+    )
+    assert sorted(n for n, pid in names.items() if m[pid].down) == sorted(
+        ["Talinho & Dudas", "Zé Santos & Falcão", "Cou & Dainis", "Tomás Duarte & Nuno Azevedo", "Martinho & Antonio A"]
+    )
+
+
+def test_up_and_down_reduce_to_the_threshold_gaps():
+    """With seeds ordered by tier and ratings falling per tier, a same-tier higher seed is
+    always at least as passable as the weakest pair above, and the best pair below always
+    overtakes before any same-tier lower seed does: the counting condition equals the sign
+    of the gap to the neighbouring division (the coordinator's simpler test)."""
+    divisions, _ = _live_divisions()
+    for m in pair_movements(divisions).values():
+        assert m.up == (m.gap_up is not None and m.gap_up < 0)
+        assert m.down == (m.gap_down is not None and m.gap_down > 0)

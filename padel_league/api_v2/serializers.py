@@ -6,6 +6,8 @@ pre-loaded (see cards.py) so list endpoints stay one query per table.
 
 from datetime import date, datetime
 
+from padel_league.domain.awards import teams_points_range
+
 FORMAT_LABELS = {"classica": "Classic", "teams": "Teams", "shuffle": "Shuffle", "super_cup": "Super Cup"}
 COMPETITION_STATUS = {"planned": "upcoming", "running": "live", "ended": "ended"}
 # Pair.formed_by → TeamsState pair source
@@ -86,14 +88,32 @@ def round_(r):
     return {"id": r.id, "number": r.number, "date": iso_date(r.date)}
 
 
-def group_summary(g, images=None):
-    """images: {image_id: Image} (v2 groups carry only the ids)."""
+def points_range(g, fmt=None):
+    """Teams only: the ranking points one player can take out of the division, {min, max}."""
+    if fmt is None and g.stage is not None:
+        fmt = g.stage.competition.format
+    if fmt != "teams" or g.rating is None:
+        return None
+    lo, hi = teams_points_range(float(g.rating))
+    return {"min": lo, "max": hi}
+
+
+def pair_movement(m):
+    """TeamsState pair.movement: null until the mini-tournament's divisions exist."""
+    if m is None:
+        return None
+    return {"up": m.up, "down": m.down, "gapUp": m.gap_up, "gapDown": m.gap_down}
+
+
+def group_summary(g, images=None, fmt=None):
+    """images: {image_id: Image} (v2 groups carry only the ids); fmt: the competition format when known."""
     images = images or {}
     return {
         "id": g.id,
         "name": g.name or (f"Grupo {g.tier}" if g.tier is not None else f"Grupo {g.id}"),
         "tier": g.tier,
         "rating": float(g.rating) if g.rating is not None else None,
+        "pointsRange": points_range(g, fmt),
         "hasEnded": bool(g.has_ended),
         "logoImage": image(images.get(g.logo_image_id)),
         "bannerImage": image(images.get(g.large_picture_id)),
@@ -109,7 +129,7 @@ def stage(s, groups=None, rounds=None, images=None):
         "emitsAward": bool(s.emits_award),
         "pairingDeadline": iso_datetime(s.pairing_deadline),
         "pairingClosed": bool(s.pairing_closed),
-        "groups": [group_summary(g, images) for g in (s.groups if groups is None else groups)],
+        "groups": [group_summary(g, images, s.competition.format) for g in (s.groups if groups is None else groups)],
         "rounds": [round_(r) for r in (s.rounds if rounds is None else rounds)],
     }
 

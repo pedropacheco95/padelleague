@@ -17,7 +17,7 @@ would produce right now, optionally with one more pair, without writing.
 from dataclasses import dataclass, field
 from datetime import datetime
 
-from padel_league.domain.awards import TEAMS_RATINGS
+from padel_league.domain.awards import TEAMS_PLAYERS_PER_DIVISION, TEAMS_RATINGS, place_points, teams_points_range
 from padel_league.domain.errors import Conflict
 from padel_league.models.v2 import CompetitionGroup, CompetitionMatch, Entry, GroupMember, MatchParticipant, Round
 from padel_league.services import ranking as ranking_svc
@@ -393,3 +393,79 @@ def project_partners(stage, player_id, selected=None, now=None):
         selected_placement=selected_placement,
         thresholds=thresholds,
     )
+
+
+# --- can a pair move up or down next mini-tournament? ------------------------------
+# Pedro (30 Oct): "seta e folga em pontos" on the Parelhas card. If the pair is kept
+# and the ranking window does not move, its seed next time is seed + what it earns
+# now. Each rival is taken at its own extreme, ties ignored, so it is a possibility
+# test, not a forecast.
+
+
+@dataclass(frozen=True)
+class PairMovement:
+    pair_id: int
+    tier: int
+    seed: int  # position inside the tier, 1 = best
+    up: bool  # can end above its tier: at least `seed` pairs above it can finish below its best case
+    down: bool  # can end below its tier: at least 5 - seed pairs below it can finish above its worst case
+    gap_up: float | None  # weakest pair above at its worst - this pair at its best (<= 0: folga; > 0: faltam)
+    gap_down: float | None  # best pair below at its best - this pair at its worst (>= 0: risco; < 0: seguro)
+
+
+def pair_best(rating):
+    """Both players 1st with every set: 2 x the division max."""
+    return 2 * teams_points_range(rating)[1]
+
+
+def pair_worst(rating):
+    """Both players with nothing: they share 7th unless one has fewer presences, then 7th + 8th."""
+    return place_points(rating, TEAMS_PLAYERS_PER_DIVISION - 1) + place_points(rating, TEAMS_PLAYERS_PER_DIVISION)
+
+
+def pair_movements(divisions):
+    """{pair_id: PairMovement} for formed divisions ([ProjectedDivision] in tier order,
+    pairs in seed order, every division with a rating)."""
+    rows = [(d, pair) for d in divisions for pair in d.pairs]
+    rows.sort(key=lambda r: (-r[1].points, r[0].tier, r[1].seed))
+    last_tier = max((d.tier for d in divisions), default=0)
+    out = {}
+    for index, (d, pair) in enumerate(rows):
+        best, worst = pair.points + pair_best(d.rating), pair.points + pair_worst(d.rating)
+        passable = sum(1 for q_d, q in rows[:index] if q.points + pair_worst(q_d.rating) < best)
+        overtakers = sum(1 for q_d, q in rows[index + 1 :] if q.points + pair_best(q_d.rating) > worst)
+        thresholds = _thresholds(Projection(None, True, divisions), d.tier)
+        above, below = thresholds.weakest_above, thresholds.best_below
+        rating_above = next((x.rating for x in divisions if x.tier == d.tier - 1), None)
+        rating_below = next((x.rating for x in divisions if x.tier == d.tier + 1), None)
+        out[pair.pair_id] = PairMovement(
+            pair_id=pair.pair_id,
+            tier=d.tier,
+            seed=pair.seed,
+            up=d.tier > 1 and passable >= pair.seed,
+            down=d.tier < last_tier and overtakers >= PAIRS_PER_DIVISION + 1 - pair.seed,
+            gap_up=(above + pair_worst(rating_above) - best) if above is not None else None,
+            gap_down=(below + pair_best(rating_below) - worst) if below is not None else None,
+        )
+    return out
+
+
+def formed_divisions(stage, pair_points):
+    """The stage's built divisions as [ProjectedDivision] (pairs by seed), for pair_movements.
+    pair_points: {pair_id: the two players' ranking points summed}. [] until they are formed."""
+    groups = CompetitionGroup.query.filter_by(stage_id=stage.id).order_by(CompetitionGroup.tier).all()
+    out = []
+    for g in groups:
+        if g.tier is None or g.rating is None:
+            continue
+        members = GroupMember.query.filter_by(group_id=g.id).filter(GroupMember.pair_id.isnot(None)).order_by(GroupMember.seed).all()
+        division = ProjectedDivision(g.tier, g.name, float(g.rating))
+        seen = {}
+        for m in members:
+            if m.pair_id in seen:
+                continue
+            seen[m.pair_id] = ProjectedPair(m.pair_id, (), pair_points.get(m.pair_id, 0.0), None, "", m.seed or len(seen) + 1)
+            division.pairs.append(seen[m.pair_id])
+        division.points = sum(p.points for p in division.pairs)
+        out.append(division)
+    return out
