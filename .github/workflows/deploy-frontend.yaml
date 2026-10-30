@@ -5,6 +5,13 @@ on:
     branches:
       - main
 
+# Deploys of the same target must not overlap: two merges seconds apart
+# raced on the VM ("container name is already in use" while the other run
+# was still removing it). Queue instead, and never cancel a running deploy.
+concurrency:
+  group: deploy-frontend-gce
+  cancel-in-progress: false
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
