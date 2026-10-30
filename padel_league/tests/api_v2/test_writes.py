@@ -1,4 +1,4 @@
-from padel_league.models.v2 import Absence
+from padel_league.models.v2 import Absence, GroupMember
 from padel_league.sql_db import db
 from padel_league.tests import factories as f
 from padel_league.tests.api_v2.conftest import bearer, check, persist
@@ -212,3 +212,41 @@ def test_substitutes_list_and_create(client, make_user):
     persist()
     reused = check(client.post("/api/v2/substitutes", json={"name": member.name}, headers=admin), path, "post", 200)
     assert reused["id"] == member.id
+
+
+def test_last_teams_result_closes_the_group_itself(client, make_user):
+    """Pedro, 30 Oct: "Fechar grupo" should not exist, the group closes once the last result is saved.
+    This pins that: the last PUT /matches/{id}/result of a Teams group freezes it (status, standings
+    snapshot, awards, ranking) and leaves POST /groups/{id}/close with nothing to do (409)."""
+    from padel_league.models.v2 import AwardEvent, RankingSnapshot, StandingSnapshot
+
+    comp = f.competition(format="teams", name="Teams auto-close test")
+    stg = f.stage(comp, emits_award=True)
+    grp = f.group(stg, rating=500)
+    rounds = [f.round_(stg, number=i + 1) for i in range(2)]
+    entries = [f.entry(comp, f.player()) for _ in range(4)]
+    for e in entries:
+        f.member(grp, e)
+    m1 = f.match(grp, rounds[0], home=entries[:2], away=entries[2:])
+    m2 = f.match(grp, rounds[1], home=[entries[0], entries[2]], away=[entries[1], entries[3]])
+    persist()
+    h = bearer(make_user())
+    sets = [{"homeGames": 6, "awayGames": 2, "outcome": "completed"}, {"homeGames": 6, "awayGames": 3, "outcome": "completed"}, {"homeGames": 1, "awayGames": 6, "outcome": "completed"}]
+    before = RankingSnapshot.query.count()
+
+    check(client.put(f"/api/v2/matches/{m1.id}/result", json={"sets": sets}, headers=h), "/matches/{matchId}/result", "put")
+    db.session.expire_all()
+    assert not grp.has_ended and stg.status != "ended"  # one match still to play
+
+    check(client.put(f"/api/v2/matches/{m2.id}/result", json={"sets": sets}, headers=h), "/matches/{matchId}/result", "put")
+    db.session.expire_all()
+    assert grp.has_ended and grp.standings_up_to_date and grp.end_date is not None
+    assert stg.status == "ended" and comp.status == "ended"
+    event = AwardEvent.query.filter_by(group_id=grp.id).one()
+    # entries[0] won both, entries[3] lost both, the other two split: shared 2nd
+    assert sorted(a.place for a in event.awards) == [1, 2, 2, 4] and all(a.rating == 500 for a in event.awards)
+    assert StandingSnapshot.query.join(GroupMember, GroupMember.id == StandingSnapshot.group_member_id).filter(GroupMember.group_id == grp.id).count() == 4
+    assert RankingSnapshot.query.count() == before + 1
+    assert check(client.get(f"/api/v2/groups/{grp.id}"), "/groups/{groupId}")["hasEnded"] is True
+    resp = client.post(f"/api/v2/groups/{grp.id}/close", headers=bearer(make_user(role="admin")))
+    assert resp.status_code == 409 and resp.get_json()["code"] == "group_already_closed"
