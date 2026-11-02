@@ -3,13 +3,13 @@
 Same TeamsState shape as v1 GET /api/v1/teams/, but per competition id.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from flask import Blueprint, jsonify
 
 from padel_league.models import Player
 from padel_league.models.v2 import Stage
-from padel_league.services import teams_divisions, teams_pairing
+from padel_league.services import share_message, teams_divisions, teams_pairing
 from padel_league.services.teams_pairing import PairingError
 from padel_league.sql_db import db
 
@@ -203,3 +203,53 @@ def admin_add_to_roster(competition_id, player_id):
 @role_required("admin")
 def admin_remove_from_roster(competition_id, player_id):
     return _run(competition_id, lambda mt, user: teams_pairing.remove_from_roster(mt, player_id))
+
+
+def _share_state(competition, now=None):
+    """GET/POST /share-message body (services/share_message has the window and jornada rule)."""
+    from padel_league.models.users import User
+
+    current = share_message.state(competition.id, now)
+    target, copy = current["target"], current["copy"]
+    copied_by = db.session.get(User, copy.actor_user_id) if copy is not None and copy.actor_user_id else None
+    return {
+        "windowStartsAt": ser.iso_datetime(current["window_start"].astimezone(timezone.utc).replace(tzinfo=None)),
+        "round": None
+        if target is None
+        else {
+            "id": target["round"].id,
+            "stageId": target["round"].stage_id,
+            "stageNumber": target["stage_number"],
+            "number": target["round"].number,
+            "date": ser.iso_date(target["night"]),
+        },
+        "copied": copy is not None,
+        "copiedAt": ser.iso_datetime(copy.at) if copy is not None else None,
+        "copiedBy": {"id": copied_by.id, "username": copied_by.username} if copied_by is not None else None,
+    }
+
+
+def _teams_competition(competition_id):
+    competition = get_competition(competition_id)
+    if competition.format != "teams":
+        raise ApiError(409, "Só a Teams tem a mensagem da jornada.", "not_teams")
+    return competition
+
+
+@bp.route("/competitions/<int:competition_id>/share-message", methods=["GET"])
+@role_required("admin")
+def get_share_message(competition_id):
+    """Admin: the jornada the current WhatsApp window offers and whether an admin already copied it."""
+    return jsonify(_share_state(_teams_competition(competition_id)))
+
+
+@bp.route("/competitions/<int:competition_id>/share-message", methods=["POST"])
+@role_required("admin")
+def post_share_message(competition_id):
+    """Admin: the message of `roundId` was copied; hides the button for every admin until the next window."""
+    user = require_user()
+    competition = _teams_competition(competition_id)
+    round_id = int_arg(json_body().get("roundId"), "roundId", required=True)
+    share_message.record_copy(competition.id, round_id, user.id)
+    db.session.commit()
+    return jsonify(_share_state(competition))
