@@ -596,6 +596,39 @@ paths:
         "400": { $ref: "#/components/responses/Error" }
         "404": { $ref: "#/components/responses/Error" }
 
+  /competitions/{competitionId}/share-message:
+    parameters: [{ $ref: "#/components/parameters/competitionId" }]
+    get:
+      tags: [teams, admin]
+      summary: The jornada the current WhatsApp window offers (Wednesday 00:01 Europe/Lisbon) and whether an admin copied it
+      security: [{ bearer: [] }]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/ShareMessageState" } } } }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [teams, admin]
+      summary: Record that the window's message was copied (shared by every admin until the next window)
+      security: [{ bearer: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [roundId]
+              properties:
+                roundId: { type: integer }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/ShareMessageState" } } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+
   /competitions/{competitionId}/roster/{playerId}:
     parameters:
       - { $ref: "#/components/parameters/competitionId" }
@@ -920,6 +953,30 @@ components:
         username: { type: string }
         player: { oneOf: [{ $ref: "#/components/schemas/PlayerRef" }, { type: "null" }] }
         code: { type: string, description: "5 digits; the player types it at /verify-code/<userId>" }
+
+    ShareMessageState:
+      type: object
+      required: [windowStartsAt, round, copied, copiedAt, copiedBy]
+      properties:
+        windowStartsAt: { type: string, format: date-time, description: "Wednesday 00:01 Europe/Lisbon, in UTC" }
+        round:
+          description: "null when the window offers no message (no round left, or its matches do not exist yet)"
+          type: [object, "null"]
+          required: [id, stageId, stageNumber, number, date]
+          properties:
+            id: { type: integer }
+            stageId: { type: integer }
+            stageNumber: { type: integer }
+            number: { type: integer }
+            date: { type: [string, "null"], format: date }
+        copied: { type: boolean }
+        copiedAt: { type: [string, "null"], format: date-time }
+        copiedBy:
+          type: [object, "null"]
+          required: [id, username]
+          properties:
+            id: { type: integer }
+            username: { type: string }
 
     PlayerRef:
       type: object
