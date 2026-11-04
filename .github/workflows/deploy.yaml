@@ -70,6 +70,7 @@ jobs:
             -e LLM_API_KEY=${{ secrets.LLM_API_KEY }} \
             -e GCS_UPLOADS_BUCKET=${{ secrets.GCS_UPLOADS_BUCKET }} \
             ${{ secrets.DOCKERHUB_USERNAME }}/porto-padel-league:latest
+          sudo docker image prune -f
 
     - name: Copy backup script to VM
       uses: appleboy/scp-action@v0.1.4
