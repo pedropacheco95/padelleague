@@ -52,13 +52,13 @@ def test_subs_points_mendonca_sheet_shape():
     assert lines[0].by_group == {2: (3, 8, 1), 3: (18, 6, 6)}
 
 
-def test_engine_fallback_only_without_a_counted_award():
+def test_engine_adds_substitute_points_to_the_awards():
     rule = engine.Rule("last_n_completed_plus_current", last_n=1)
     comps = [engine.CompetitionFact(1, "classica", "ended", ends_on=date(2026, 10, 13))]
     awards = [engine.AwardFact(player_id=10, competition_id=1, place_points=200, bonus_points=0)]
     subs = {10: (60.0, []), 20: (132.0, []), 30: (0.0, [])}
     result = engine.compute(rule, comps, awards, subs=subs)
-    assert [(l.player_id, l.points, l.source) for l in result.lines] == [(10, 200, "awards"), (20, 132, "subs")]
+    assert [(l.player_id, l.points, l.source) for l in result.lines] == [(10, 260, "awards"), (20, 132, "subs")]
 
 
 # --- Postgres -------------------------------------------------------------------
@@ -107,7 +107,7 @@ def _sit_value(seat):
     return mine > theirs
 
 
-def test_art12_members_only_and_regulars_keep_their_points(pg):
+def test_substitute_points_add_up_for_members_only(pg):
     ranking.bootstrap()
     last = engine.last_completed(ranking.league_facts(1)[0]).id
     assert last in ranking.subs_ranking().competition_ids
@@ -131,7 +131,7 @@ def test_art12_members_only_and_regulars_keep_their_points(pg):
     lines = {l.player_id: l for l in ranking.compute(1).lines}
     assert (lines[newcomer.id].points, lines[newcomer.id].source) == (expected[newcomer.id], "subs")
     assert external.id not in lines
-    assert lines[regular].points == before[regular].points and lines[regular].source == "awards"
+    assert lines[regular].points == before[regular].points + expected[regular] and lines[regular].source == "awards"
     assert any(e.reason.startswith("pontos de substituto") for e in ranking.explain(newcomer.id))
 
     snap = ranking.recompute(1, note="test art. 12")
