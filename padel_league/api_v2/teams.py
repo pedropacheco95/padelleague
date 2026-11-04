@@ -5,10 +5,11 @@ Same TeamsState shape as v1 GET /api/v1/teams/, but per competition id.
 
 from datetime import datetime, timezone
 
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 
 from padel_league.models import Player
 from padel_league.models.v2 import Stage
+from padel_league.services import ranking as ranking_service
 from padel_league.services import share_message, teams_divisions, teams_pairing
 from padel_league.services.teams_pairing import PairingError
 from padel_league.sql_db import db
@@ -44,6 +45,13 @@ def mini_tournament(competition_id):
     return opened[-1] if opened else stages[0]
 
 
+def stage_or_404(competition_id, stage_id):
+    stage = Stage.query.filter_by(id=stage_id, competition_id=competition_id).first()
+    if stage is None:
+        raise not_found("Mini-torneio não encontrado.", "stage_not_found")
+    return stage
+
+
 def _preload_roster(mt):
     """Load roster players with pictures in one query; teams_pairing's per-entry
     lazy loads then hit the identity map instead of the database. The caller must
@@ -56,14 +64,17 @@ def _preload_roster(mt):
     return Player.query.options(joinedload(Player.picture)).filter(Player.id.in_(ids)).all()
 
 
-def state(mt, user=None):
+def state(mt, user=None, read_only=False):
+    """read_only: a stage other than mini_tournament(), which every write acts on."""
     roster = _preload_roster(mt)  # held: keeps them in the (weak) identity map
     assert roster is not None
-    # Same ranking as /players and /rankings (current snapshot), not the legacy
-    # players.ranking_* mirror; unranked players have no position (0 in this schema).
-    from .players import current_snapshot, ranking_by_player
+    # Same ranking as /players and /rankings, not the legacy players.ranking_* mirror; unranked
+    # players have no position (0 in this schema). Pedro (4 Nov): the points as this mini-tournament
+    # started, not the current ones, so a finished one keeps the seeds it was played with.
+    from .players import ranking_by_player
 
-    ranking = ranking_by_player(current_snapshot())
+    ranking = ranking_by_player(ranking_service.stage_start_snapshot(mt))
+    gains = ranking_service.stage_gains(mt)
 
     def rank(pid):
         pos, pts = ranking.get(pid, (None, 0.0))
@@ -93,13 +104,21 @@ def state(mt, user=None):
     # Parelhas card (Pedro, 30 Oct): can this pair move up/down next time? Only once the divisions exist.
     movements = teams_divisions.pair_movements(teams_divisions.formed_divisions(mt, pair_points))
 
+    def pair_gains(pair):
+        """What each player of the pair earned; null until the pair's division has closed."""
+        ids = pair_players[pair.id]
+        if not any(pid in gains for pid in ids):
+            return None
+        return [{"playerId": pid, "points": gains.get(pid, 0.0)} for pid in ids]
+
     return {
         "miniTournament": {
             "id": mt.id,
             "number": mt.number,
             "pairingDeadline": ser.iso_datetime(deadline),
             "pairingClosed": bool(mt.pairing_closed),
-            "pairingOpen": bool(not mt.pairing_closed and deadline and datetime.utcnow() <= deadline),
+            "pairingOpen": bool(not read_only and not mt.pairing_closed and deadline and datetime.utcnow() <= deadline),
+            "ended": mt.status == "ended",
         },
         "players": [
             {
@@ -118,7 +137,9 @@ def state(mt, user=None):
                 "source": ser.PAIR_SOURCE.get(pair.formed_by, "auto"),
                 "players": [ser.player_ref(by_id[pid]) for pid in pair_players[pair.id]],
                 "rankingPoints": pair_points[pair.id],
-                "movement": ser.pair_movement(movements.get(pair.id)),
+                # Once the points are in there is nothing left to project.
+                "movement": None if pair_gains(pair) else ser.pair_movement(movements.get(pair.id)),
+                "gains": pair_gains(pair),
             }
             for pair in pairs
         ],
@@ -128,7 +149,7 @@ def state(mt, user=None):
             "myChoice": my_choice,
             "choseMe": chose_me,
             "pairId": next((pid for pid, ids in pair_players.items() if my_id in ids), None),
-            "isAdmin": has_role(user, "admin"),
+            "isAdmin": not read_only and has_role(user, "admin"),
         },
     }
 
@@ -153,7 +174,11 @@ def _own_player(user):
 
 @bp.route("/competitions/<int:competition_id>/teams", methods=["GET"])
 def get_state(competition_id):
-    return jsonify(state(mini_tournament(competition_id), viewer()))
+    current = mini_tournament(competition_id)
+    stage_id = int_arg(request.args.get("stage"), "stage")  # the mini-tournament the page is showing
+    if stage_id is None or stage_id == current.id:
+        return jsonify(state(current, viewer()))
+    return jsonify(state(stage_or_404(competition_id, stage_id), viewer(), read_only=True))
 
 
 @bp.route("/competitions/<int:competition_id>/partner-requests", methods=["POST"])
