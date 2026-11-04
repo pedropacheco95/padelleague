@@ -496,9 +496,12 @@ paths:
     parameters: [{ $ref: "#/components/parameters/competitionId" }]
     get:
       tags: [teams]
-      summary: Teams pair choice state for the current mini-tournament (same shape as v1 /teams/)
+      summary: Teams pair choice state of a mini-tournament (same shape as v1 /teams/); points are those at its start
+      parameters:
+        - { name: stage, in: query, required: false, schema: { type: integer }, description: "Mini-tournament (stage id); default the one pair choice acts on. Any other stage is read-only: isAdmin and pairingOpen are false." }
       responses:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/TeamsState" } } } }
+        "400": { $ref: "#/components/responses/Error" }
         "404": { $ref: "#/components/responses/Error" }
 
   /competitions/{competitionId}/teams/projection:
@@ -1496,13 +1499,14 @@ components:
       properties:
         miniTournament:
           type: object
-          required: [id, number, pairingDeadline, pairingClosed, pairingOpen]
+          required: [id, number, pairingDeadline, pairingClosed, pairingOpen, ended]
           properties:
             id: { type: integer, description: stage id }
             number: { type: integer }
             pairingDeadline: { type: [string, "null"], format: date-time }
             pairingClosed: { type: boolean }
             pairingOpen: { type: boolean }
+            ended: { type: boolean, description: every division of the mini-tournament has closed }
         players:
           type: array
           items:
@@ -1519,15 +1523,24 @@ components:
           type: array
           items:
             type: object
-            required: [id, source, players, rankingPoints]
+            required: [id, source, players, rankingPoints, gains]
             properties:
               id: { type: integer }
               source: { type: string, enum: [mutual, auto, admin], description: "formed_by mutual→mutual; ranking/draw/rotation→auto; manual→admin" }
               players: { type: array, items: { $ref: "#/components/schemas/PlayerRef" } }
-              rankingPoints: { type: number }
+              rankingPoints: { type: number, description: "The two players' points as the mini-tournament started" }
+              gains:
+                type: [array, "null"]
+                description: Ranking points each player earned in this mini-tournament; null until the pair's division has closed.
+                items:
+                  type: object
+                  required: [playerId, points]
+                  properties:
+                    playerId: { type: integer }
+                    points: { type: number }
               movement:
                 type: [object, "null"]
-                description: If this pair is kept, can it change division next mini-tournament? Each rival at its own extreme, ties ignored. null until the divisions exist.
+                description: If this pair is kept, can it change division next mini-tournament? Each rival at its own extreme, ties ignored. null until the divisions exist, and once the pair has its gains.
                 required: [up, down, gapUp, gapDown]
                 properties:
                   up: { type: boolean, description: at least `seed` pairs above can finish below this pair's best case }

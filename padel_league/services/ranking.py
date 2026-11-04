@@ -114,6 +114,34 @@ def current_snapshot(league_id=1):
     return latest_snapshot(league_id)
 
 
+def stage_start_snapshot(stage, league_id=1):
+    """The ranking as a mini-tournament started: the last snapshot before its first award.
+    A stage with no awards yet has not changed the ranking, so that is the current one."""
+    first = db.session.query(db.func.min(AwardEvent.awarded_at)).filter(AwardEvent.stage_id == stage.id).scalar()
+    if first is None:
+        return current_snapshot(league_id)
+    earlier = (
+        RankingSnapshot.query.filter_by(league_id=league_id, is_dry_run=False)
+        .filter(RankingSnapshot.computed_at < first)
+        .order_by(RankingSnapshot.id.desc())
+        .first()
+    )
+    return earlier or current_snapshot(league_id)
+
+
+def stage_gains(stage):
+    """{player_id: ranking points the stage awarded}, once a division has closed."""
+    rows = (
+        db.session.query(Award.player_id, Award.place_points, Award.bonus_points)
+        .join(AwardEvent, AwardEvent.id == Award.award_event_id)
+        .filter(AwardEvent.stage_id == stage.id)
+    )
+    gains = {}
+    for player_id, place_points, bonus_points in rows:
+        gains[player_id] = gains.get(player_id, 0.0) + float(place_points or 0) + float(bonus_points or 0)
+    return gains
+
+
 def compute(league_id, rule=None):
     """The ranking as it stands now (nothing written).
 
