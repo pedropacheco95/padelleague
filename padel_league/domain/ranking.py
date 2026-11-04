@@ -16,9 +16,9 @@ Which competitions are eligible at all is data, in ranking_rules.options:
   include_competition_ids   always eligible regardless of format
 No rounding anywhere: totals are sums of unrounded awards.
 
-Art. 12 (Pedro, 2026-10-16): a player with no counted award but with
-substitute points (domain.subs, last completed competition) gets those as
-their ranking points, line source "subs". Players with awards never add them.
+Substitute points (Pedro, 2026-11-04) follow the same logic as awards: what a
+member scored as a substitute in a competition the ranking counts adds to their
+total (domain.subs). Line source "subs" when that is all the player has.
 """
 
 from collections import defaultdict
@@ -79,7 +79,7 @@ class RankingLine:
     player_id: int
     points: float
     position: int = 0
-    source: str = "awards"  # "awards" | "subs" (art. 12)
+    source: str = "awards"  # "awards" | "subs" (substitute points only)
 
 
 @dataclass
@@ -147,8 +147,8 @@ def compute(rule, competitions, awards, previous_positions=None, subs=None):
     """Totals and positions from awards. Positions are distinct: points desc,
     then the previous position (as the old code did), then player id.
 
-    `subs` ({player_id: (points, [ExplainLine])}) is the art. 12 fallback for
-    players without a counted award."""
+    `subs` ({player_id: (points, [ExplainLine])}): substitute points in the
+    counted competitions, added to the player's total."""
     counted = counted_competitions(rule, competitions, awards)
     previous_positions = previous_positions or {}
     totals = defaultdict(float)
@@ -169,11 +169,12 @@ def compute(rule, competitions, awards, previous_positions=None, subs=None):
                 reason=counted[a.competition_id] if counts else "fora da janela do ranking",
             )
         )
-    lines = [RankingLine(pid, pts) for pid, pts in totals.items()]
+    awarded = set(totals)
     for pid, (pts, why) in (subs or {}).items():
-        if pid not in totals and pts > 0:
-            lines.append(RankingLine(pid, pts, source="subs"))
+        if pts > 0:
+            totals[pid] += pts
             explain[pid].extend(why)
+    lines = [RankingLine(pid, pts, source="awards" if pid in awarded else "subs") for pid, pts in totals.items()]
     lines.sort(key=lambda l: (-l.points, previous_positions.get(l.player_id) or 10**9, l.player_id))
     for position, line in enumerate(lines, start=1):
         line.position = position

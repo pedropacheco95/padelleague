@@ -383,7 +383,7 @@ def ranking_json(snapshot):
         .first()
     )
     before = ranking_by_player(previous) if previous else {}
-    # Art. 12: a member with no counted award ranks on their substitute points.
+    # A member whose only points are substitute points.
     from_subs = {
         pid
         for pid, in RankingEntry.query.filter_by(snapshot_id=snapshot.id, source="subs").with_entities(

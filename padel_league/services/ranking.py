@@ -6,8 +6,7 @@ which v1 and the Teams pairing still read. Points stay unrounded in v2; the
 bigint mirror rounds half up, as the old column effectively did.
 
 subs_ranking(): substitute points over the rule's subs window (default the
-main ranking's window; domain.subs); compute() gives them, flagged source "subs", to players
-without a counted award (art. 12).
+main ranking's window; domain.subs); compute() adds them to each member's total.
 """
 
 from dataclasses import dataclass
@@ -125,8 +124,8 @@ def compute(league_id, rule=None):
     comps, awards = league_facts(league_id)
     previous = latest_snapshot(league_id)
     prev_positions = {e.player_id: e.position for e in previous.entries} if previous else {}
-    fallback = _subs_fallback(rule, comps, awards)
-    result = engine.compute(_engine_rule(rule), comps, awards, prev_positions, subs=fallback)
+    subs = _member_subs(rule, comps, awards)
+    result = engine.compute(_engine_rule(rule), comps, awards, prev_positions, subs=subs)
     awarded = {a.competition_id for a in awards}
     ended = {c.id for c in comps if c.status == "ended"}
     missing = [cid for cid in result.counted_competition_ids if cid in ended and cid not in awarded]
@@ -203,7 +202,7 @@ def _subs_explain(line, group_competition):
             place_points=raw * (mult or 0),
             bonus_points=0.0,
             counted=True,
-            reason=f"pontos de substituto (art. 12): {raw} × {mult or 0} em {n} jogo(s)",
+            reason=f"pontos de substituto: {raw} × {mult or 0} em {n} jogo(s)",
         )
         for group_id, (raw, mult, n) in sorted(line.by_group.items())
     ]
@@ -217,8 +216,8 @@ def _member_ids(player_ids):
     return {pid for (pid,) in rows}
 
 
-def _subs_fallback(rule, comps, awards):
-    """Art. 12: {player_id: (points, explain)} for members; compute() keeps those without a counted award."""
+def _member_subs(rule, comps, awards):
+    """{player_id: (points, explain)} for members; compute() adds them to the player's total."""
     lines, group_competition = _subs_lines(_subs_competitions(rule, comps, awards))
     members = _member_ids([l.player_id for l in lines])
     return {l.player_id: (l.points, _subs_explain(l, group_competition)) for l in lines if l.player_id in members}
