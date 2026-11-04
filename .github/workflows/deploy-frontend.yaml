@@ -51,3 +51,4 @@ jobs:
             docker run -d --name ppl_frontend \
               -p 3000:80 \
               pedropachecocontas/ppl_frontend:latest
+            sudo docker image prune -f || true
