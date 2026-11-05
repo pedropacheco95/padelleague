@@ -83,13 +83,24 @@ jobs:
         strip_components: 1
         overwrite: true
 
-    - name: Setup cron job for backup script
+    - name: Copy Teams tick script to VM
+      uses: appleboy/scp-action@v0.1.4
+      with:
+        host: ${{ secrets.GCE_HOST }}
+        username: ${{ secrets.GCE_USER }}
+        key: ${{ secrets.GCE_SSH_PRIVATE_KEY }}
+        source: "scripts/teams_tick.sh"
+        target: "/home/${{ secrets.GCE_USER }}/"
+        strip_components: 1
+        overwrite: true
+
+    - name: Setup cron jobs
       uses: appleboy/ssh-action@v1.0.0
       with:
         host: ${{ secrets.GCE_HOST }}
         username: ${{ secrets.GCE_USER }}
         key: ${{ secrets.GCE_SSH_PRIVATE_KEY }}
         script: |
-          chmod +x /home/${{ secrets.GCE_USER }}/backup.sh
+          chmod +x /home/${{ secrets.GCE_USER }}/backup.sh /home/${{ secrets.GCE_USER }}/teams_tick.sh
 
-          (crontab -l 2>/dev/null | grep -v backup.sh; echo "0 3 * * * /home/${{ secrets.GCE_USER }}/backup.sh") | crontab -
+          (crontab -l 2>/dev/null | grep -v -e backup.sh -e teams_tick.sh; echo "0 3 * * * /home/${{ secrets.GCE_USER }}/backup.sh"; echo "1 * * * * /home/${{ secrets.GCE_USER }}/teams_tick.sh") | crontab -

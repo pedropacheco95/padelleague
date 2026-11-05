@@ -103,6 +103,10 @@ def _roll_up(group, now):
     if all(g.has_ended for g in stage.groups):
         stage.status = "ended"
         competition = stage.competition
+        if competition.format == "teams":
+            from padel_league.services import teams_schedule
+
+            teams_schedule.open_next(stage, now)
         if all(s.status == "ended" for s in competition.stages):
             competition.status = "ended"
             competition.ends_on = competition.ends_on or now.date()

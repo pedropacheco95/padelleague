@@ -19,6 +19,14 @@ def register_cli(app):
             click.echo(line)
         db.session.commit()
 
+    @v2.command("teams-tick")
+    def teams_tick():
+        """Open, close and form what is due in the current Teams (idempotent, hourly cron)."""
+        from padel_league.services import teams_schedule
+
+        for line in teams_schedule.run_due():
+            click.echo(line)
+
     @app.cli.command("generate-fixtures")
     @click.option("--division-id", type=int, required=True)
     @click.option(
