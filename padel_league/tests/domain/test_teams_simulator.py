@@ -112,6 +112,47 @@ def test_extra_pair_replaces_a_pending_choice(pg):
     assert all(c not in pair or how == "ranking" for pair, how in players.items())
 
 
+def _partners(projection):
+    return {x: y for d in projection.divisions for p in d.pairs for x, y in (p.players, p.players[::-1])}
+
+
+def _how(projection, player):
+    return next(p.formed_by for d in projection.divisions for p in d.pairs if player in p.players)
+
+
+def test_one_sided_choices_are_projected_but_close_ignores_them(pg):
+    stage = _stage()
+    order = _by_position(stage)
+    a, b = order[4], order[30]
+    teams_pairing.declare(stage, a, b, now=NOW)
+    projection = teams_divisions.project(stage)
+    assert _partners(projection)[a] == b and _how(projection, a) == "declared"
+
+    teams_pairing.close(stage)
+    formed = {x: y for p in teams_pairing.stage_pairs(stage) for x, y in [teams_pairing.pair_players(stage, p)]}
+    assert formed.get(a) != b and formed.get(b) != a
+
+
+def test_the_oldest_of_two_choices_of_the_same_player_is_projected(pg):
+    stage = _stage()
+    order = _by_position(stage)
+    first, second, wanted = order[9], order[3], order[30]
+    teams_pairing.declare(stage, first, wanted, now=NOW)
+    teams_pairing.declare(stage, second, wanted, now=NOW)
+    projection = teams_divisions.project(stage)
+    assert _partners(projection)[wanted] == first
+    assert _how(projection, second) == "ranking"
+
+
+def test_a_player_goes_with_their_own_choice_before_someone_who_chose_them(pg):
+    stage = _stage()
+    order = _by_position(stage)
+    a, b, c = order[3], order[9], order[30]
+    teams_pairing.declare(stage, a, b, now=NOW)  # older, but b chose c
+    teams_pairing.declare(stage, b, c, now=NOW)
+    assert _partners(teams_divisions.project(stage))[b] == c
+
+
 def test_extra_pair_is_validated_like_a_choice(pg):
     stage = _stage()
     order = _by_position(stage)
@@ -180,9 +221,10 @@ def test_partners_match_single_projections_and_seed_once(pg, monkeypatch):
     by_b = {o.player_id: o for o in sim.options}
     assert not by_b[x].allowed and by_b[x].tier is None
 
-    base = teams_divisions.project(stage)
+    base = teams_divisions.project(stage, without=a)  # "sem declaração": neither d1's nor d2's choice counts
     base_place = teams_divisions._placement(base, a)
     assert sim.baseline == base_place
+    assert base_place.partner_id not in (d1, d2)
     for b in (order[5], order[25], order[47]):
         single = teams_divisions.project(stage, extra_pair=(a, b), now=NOW)
         o = by_b[b]

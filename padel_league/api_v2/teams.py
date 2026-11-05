@@ -137,6 +137,7 @@ def state(mt, user=None, read_only=False):
                 "source": ser.PAIR_SOURCE.get(pair.formed_by, "auto"),
                 "players": [ser.player_ref(by_id[pid]) for pid in pair_players[pair.id]],
                 "rankingPoints": pair_points[pair.id],
+                "startPoints": [{"playerId": pid, "points": rank(pid)[1]} for pid in pair_players[pair.id]],
                 # Once the points are in there is nothing left to project.
                 "movement": None if pair_gains(pair) else ser.pair_movement(movements.get(pair.id)),
                 "gains": pair_gains(pair),
