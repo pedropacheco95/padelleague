@@ -1523,12 +1523,21 @@ components:
           type: array
           items:
             type: object
-            required: [id, source, players, rankingPoints, gains]
+            required: [id, source, players, rankingPoints, startPoints, gains]
             properties:
               id: { type: integer }
               source: { type: string, enum: [mutual, auto, admin], description: "formed_by mutual→mutual; ranking/draw/rotation→auto; manual→admin" }
               players: { type: array, items: { $ref: "#/components/schemas/PlayerRef" } }
               rankingPoints: { type: number, description: "The two players' points as the mini-tournament started" }
+              startPoints:
+                type: array
+                description: Each player's points as the mini-tournament started.
+                items:
+                  type: object
+                  required: [playerId, points]
+                  properties:
+                    playerId: { type: integer }
+                    points: { type: number }
               gains:
                 type: [array, "null"]
                 description: Ranking points each player earned in this mini-tournament; null until the pair's division has closed.
@@ -1600,7 +1609,7 @@ components:
         pairId: { type: [integer, "null"] }
         players: { type: array, items: { $ref: "#/components/schemas/RankedPlayerRef" } }
         sum: { type: number }
-        formedBy: { type: string, enum: [mutual, manual, ranking, extra] }
+        formedBy: { type: string, enum: [mutual, manual, ranking, extra, declared], description: "declared: one player chose the other and is waiting for an answer; provisional" }
         provisional: { type: boolean }
         unpairedSlots: { type: [array, "null"], items: { type: integer } }
         pending: { type: array, items: { $ref: "#/components/schemas/TeamsDeclaration" } }

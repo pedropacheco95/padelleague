@@ -211,9 +211,10 @@ class Projection:
     extra_pair_seed: int | None = None
 
 
-def project(stage, extra_pair=None, now=None):
+def project(stage, extra_pair=None, now=None, without=None):
     """What close() + build_divisions() would give now, with `extra_pair` (a, b)
-    as if they had just chosen each other. Same code paths, no writes.
+    as if they had just chosen each other. Same code paths, no writes. One-sided
+    declarations count as pairs, formed_by "declared", except those of `without`.
 
     Raises teams_pairing.PairingError for a pair the rules refuse (pairs
     closed or the deadline passed, as declare(); not on the roster, already
@@ -223,7 +224,7 @@ def project(stage, extra_pair=None, now=None):
     extra = tuple(int(x) for x in extra_pair) if extra_pair is not None else None
     if extra is not None:
         teams_pairing.check_open(stage, now or datetime.utcnow())
-    return _project(stage, extra, _Context.load(stage))
+    return _project(stage, extra, _Context.load(stage), without)
 
 
 @dataclass
@@ -242,12 +243,12 @@ class _Context:
         return cls(points, positions, teams_pairing.pairing_state(stage), existing)
 
 
-def _project(stage, extra, ctx):
+def _project(stage, extra, ctx, without=None):
     listed = [(pid, players) for pid, players, _ in ctx.existing]
     formed_by = {pid: how for pid, _, how in ctx.existing}
     planned = []
     if not stage.pairing_closed:
-        planned = teams_pairing.plan_close(stage, ctx.positions, extra, ctx.state)
+        planned = teams_pairing.plan_close(stage, ctx.positions, extra, ctx.state, declared=True, without=without)
     # Not-yet-formed pairs get ids after the existing ones, in creation order:
     # the order the real ids would have (seed_pairs breaks the last tie by id).
     next_id = max(formed_by, default=0)
@@ -384,7 +385,7 @@ def project_partners(stage, player_id, selected=None, now=None):
     except teams_pairing.PairingError as exc:
         closed_reason = str(exc)
 
-    baseline_projection = _project(stage, None, ctx)
+    baseline_projection = _project(stage, None, ctx, without=a)
     baseline = _placement(baseline_projection, a)
     together = _together_stages(stage, a)
     options, chosen = [], None

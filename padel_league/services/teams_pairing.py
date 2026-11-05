@@ -245,7 +245,7 @@ class PairingState:
     roster: set
     paired_with: dict  # player_id -> partner in a formed pair of this stage
     pair_ids: dict  # player_id -> formed pair id
-    choice: dict  # player_id -> declared partner (both on the roster)
+    choice: dict  # player_id -> declared partner (both on the roster), oldest declaration first
     history: Counter  # times together in the other stages
     players: dict  # player_id -> Player (roster)
 
@@ -260,7 +260,7 @@ def pairing_state(stage):
         pair_ids[a] = pair_ids[b] = pair.id
     choice = {
         by_entry[r.from_entry_id]: by_entry[r.to_entry_id]
-        for r in PartnerRequest.query.filter_by(stage_id=stage.id)
+        for r in PartnerRequest.query.filter_by(stage_id=stage.id).order_by(PartnerRequest.submitted_at, PartnerRequest.id)
         if r.from_entry_id in by_entry and r.to_entry_id in by_entry
     }
     return PairingState(
@@ -304,11 +304,36 @@ def check_new_pair(stage, a, b, state=None):
         raise PairingError("Já jogaram juntos 3 mini-torneios; não podem fazer o 4.º juntos.")
 
 
-def plan_close(stage, positions, extra_pair=None, state=None):
+def _declared_pairs(state, paired, without=None):
+    """One-sided choices taken as pairs, for the projections only (Pedro, 5 Nov: if one
+    declared, that is probably right). Oldest declaration first; whoever chose a third
+    player goes with that choice before anyone who chose them. `without`: a player whose
+    declarations, made or received, do not count."""
+    paired = set(paired)
+    out = []
+
+    def take(a, b):
+        out.append((a, b))
+        paired.update((a, b))
+
+    def free(a, b):
+        return not {a, b} & paired and without not in (a, b) and allowed(a, b, state.history)
+
+    for a, b in state.choice.items():
+        if b not in state.choice and free(a, b):
+            take(a, b)
+    for a, b in state.choice.items():
+        if free(a, b):
+            take(a, b)
+    return out
+
+
+def plan_close(stage, positions, extra_pair=None, state=None, declared=False, without=None):
     """The pairs close() would add, [(a, b, formed_by)] in creation order. No writes.
 
     `extra_pair` (a, b) is treated as if it had just been declared mutually
-    (it is formed first, and replaces any other choice of a or b).
+    (it is formed first, and replaces any other choice of a or b). `declared`
+    also pairs the one-sided choices (see _declared_pairs); close() never does.
     """
     state = state or pairing_state(stage)
     paired = set(state.paired_with)
@@ -321,6 +346,10 @@ def plan_close(stage, positions, extra_pair=None, state=None):
     for a, b in _mutual_pairs(state, paired):
         planned.append((a, b, "mutual"))
         paired |= {a, b}
+    if declared:
+        for a, b in _declared_pairs(state, paired, without):
+            planned.append((a, b, "declared"))
+            paired |= {a, b}
     left = [state.players[pid] for pid in state.roster - paired]
     if not positions:
         order = [p.id for p in sorted(left, key=ranking_key)]

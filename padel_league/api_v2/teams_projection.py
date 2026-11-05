@@ -157,9 +157,9 @@ def layout(board, projection, mine=None):
     }
 
 
-def _project(mt, extra_pair=None):
+def _project(mt, extra_pair=None, without=None):
     try:
-        return teams_divisions.project(mt, extra_pair)
+        return teams_divisions.project(mt, extra_pair, without=without)
     except PairingError as exc:
         raise ApiError(400, str(exc), "pairing_rule")
 
@@ -202,7 +202,8 @@ def simulate(competition_id):
 
     sim = teams_divisions.project_partners(mt, me, selected=partner_id)
     locked = me in board.formed or not sim.choice_open
-    scenario = _project(mt, (me, partner_id) if partner_id is not None else None)
+    # No partner picked: "sem declaração", so none of the player's declarations count.
+    scenario = _project(mt, (me, partner_id)) if partner_id is not None else _project(mt, without=me)
     division, pair, partner = _position(scenario, me)
 
     tiers = {d.tier: [p.points for p in d.pairs] for d in scenario.divisions}

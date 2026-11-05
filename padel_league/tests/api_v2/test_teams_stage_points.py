@@ -55,6 +55,9 @@ def test_points_stay_those_at_the_start_and_gains_appear_when_the_division_close
     after = _state(client)
     closed = after["pairs"][0]
     assert closed["rankingPoints"] == pair["rankingPoints"]  # not the 2000 points higher of the new snapshot
+    assert closed["startPoints"] == pair["startPoints"]
+    assert sum(s["points"] for s in closed["startPoints"]) == closed["rankingPoints"]
+    assert {s["playerId"] for s in closed["startPoints"]} == {a.id, b.id}
     assert {g["playerId"]: g["points"] for g in closed["gains"]} == {a.id: 509.0, b.id: 379.5}
     assert closed["movement"] is None
 

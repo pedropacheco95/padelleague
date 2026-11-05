@@ -57,13 +57,26 @@ def test_projection_shows_pending_and_mutual(client, make_user):
     assert b in {pl["id"] for d in body["divisions"] for p in d["pairs"] for pl in p["players"]}
 
 
+def test_a_one_sided_choice_sits_where_the_pair_would_be_but_stays_unconfirmed(client):
+    stage = _open_pairing()
+    ids = _ranked(_projection(client))
+    teams_pairing.declare(stage, ids[5], ids[30])
+    persist()
+    board = _projection(client)
+    pair = next(p for d in board["divisions"] for p in d["pairs"] if ids[5] in [pl["id"] for pl in p["players"]])
+    assert {pl["id"] for pl in pair["players"]} == {ids[5], ids[30]}
+    assert pair["formedBy"] == "declared" and pair["provisional"] and pair["pairId"] is None
+    assert pair["unpairedSlots"] is None
+    assert [(d["from"]["id"], d["to"]["id"]) for d in pair["pending"]] == [(ids[5], ids[30])]
+    assert board["counts"]["pairsConfirmed"] == 0 and board["counts"]["pendingDeclarations"] == 1
+
+
 def test_projection_equals_close_and_build_divisions(client):
     """The board is what close() + build_divisions() would write, pair for pair and seed for seed."""
     stage = _open_pairing()
     ids = _ranked(_projection(client))
     teams_pairing.declare(stage, ids[0], ids[10])
     teams_pairing.declare(stage, ids[10], ids[0])
-    teams_pairing.declare(stage, ids[5], ids[30])  # one-sided: ignored at close
     persist()
     projected = [
         (d["tier"], p["seed"], frozenset(pl["id"] for pl in p["players"]), p["sum"])
