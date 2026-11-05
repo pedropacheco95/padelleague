@@ -19,6 +19,7 @@ from datetime import datetime
 
 from padel_league.domain.awards import TEAMS_PLAYERS_PER_DIVISION, TEAMS_RATINGS, place_points, teams_points_range
 from padel_league.domain.errors import Conflict
+from padel_league.domain.teams_calendar import round_date
 from padel_league.models.v2 import CompetitionGroup, CompetitionMatch, Entry, GroupMember, MatchParticipant, Round
 from padel_league.services import ranking as ranking_svc
 from padel_league.services import teams_pairing
@@ -61,9 +62,11 @@ def slice_divisions(seeded):
 
 def _rounds(stage):
     existing = {r.number: r for r in Round.query.filter_by(stage_id=stage.id)}
+    starts_on = stage.competition.starts_on
     for n in range(1, len(ROUND_ROBIN) + 1):
         if n not in existing:
-            existing[n] = Round(stage_id=stage.id, number=n)
+            date = round_date(starts_on, stage.number, n, len(ROUND_ROBIN)) if starts_on else None
+            existing[n] = Round(stage_id=stage.id, number=n, date=date)
             db.session.add(existing[n])
     db.session.flush()
     return existing
