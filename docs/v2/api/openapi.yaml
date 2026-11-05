@@ -1526,7 +1526,7 @@ components:
             required: [id, source, players, rankingPoints, startPoints, gains]
             properties:
               id: { type: integer }
-              source: { type: string, enum: [mutual, auto, admin], description: "formed_by mutual→mutual; ranking/draw/rotation→auto; manual→admin" }
+              source: { type: string, enum: [mutual, previous, auto, admin], description: "formed_by mutual→mutual; previous→previous; ranking/draw/rotation→auto; manual→admin" }
               players: { type: array, items: { $ref: "#/components/schemas/PlayerRef" } }
               rankingPoints: { type: number, description: "The two players' points as the mini-tournament started" }
               startPoints:
@@ -1609,7 +1609,7 @@ components:
         pairId: { type: [integer, "null"] }
         players: { type: array, items: { $ref: "#/components/schemas/RankedPlayerRef" } }
         sum: { type: number }
-        formedBy: { type: string, enum: [mutual, manual, ranking, extra, declared], description: "declared: one player chose the other and is waiting for an answer; provisional" }
+        formedBy: { type: string, enum: [mutual, manual, ranking, extra, declared, previous], description: "declared: one player chose the other and is waiting for an answer; previous: kept from the previous mini-tournament by default; both provisional" }
         provisional: { type: boolean }
         unpairedSlots: { type: [array, "null"], items: { type: integer } }
         pending: { type: array, items: { $ref: "#/components/schemas/TeamsDeclaration" } }
@@ -1659,7 +1659,7 @@ components:
             locked: { type: boolean }
             result:
               type: object
-              required: [tier, seed, rating, maxPlacePoints, maxBonusPoints, partner, sum, sumBreakdown, gapUp, marginDown, playedTogether]
+              required: [tier, seed, rating, maxPlacePoints, maxBonusPoints, partner, formedBy, sum, sumBreakdown, gapUp, marginDown, playedTogether]
               properties:
                 tier: { type: integer }
                 seed: { type: integer }
@@ -1667,6 +1667,7 @@ components:
                 maxPlacePoints: { type: number }
                 maxBonusPoints: { type: number }
                 partner: { $ref: "#/components/schemas/RankedPlayerRef" }
+                formedBy: { type: string, enum: [mutual, manual, ranking, extra, declared, previous] }
                 sum: { type: number }
                 sumBreakdown: { type: array, items: { type: object, required: [player, points], properties: { player: { $ref: "#/components/schemas/PlayerRef" }, points: { type: number } } } }
                 gapUp: { type: [number, "null"] }

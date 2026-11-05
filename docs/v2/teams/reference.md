@@ -82,7 +82,11 @@ Antes de cada mini-torneio:
 
 1. Cada jogador declara um parceiro. **A escolha só vale se for mútua.**
 2. Prazo: domingo à noite anterior à primeira jornada.
-3. Quem não tiver parelha mútua ao fim do prazo é emparelhado **por proximidade no
+3. A partir do 2.º mini-torneio, quem não declarar parceiro **mantém a parelha do
+   mini-torneio anterior**, se os dois estiverem disponíveis e ainda puderem jogar juntos
+   (decisão do Pedro, 5 nov 2026). Quem declarou outro jogador sem resposta não mantém
+   a parelha anterior, e o antigo parceiro também não.
+   Os restantes são emparelhados **por proximidade no
    ranking**: ordena os jogadores sem parelha pela posição no ranking e forma parelhas
    consecutivas — 1.º com 2.º, 3.º com 4.º, e assim por diante. É determinístico, sem
    aleatoriedade. O número de jogadores sem parelha é sempre par, porque as declarações

@@ -6,9 +6,11 @@
 - A declared partner counts only when the choice is mutual.
 - Nobody may play all 4 mini-tournaments with the same partner, so a pair that
   already played together 3 times is refused.
-- At the deadline, everyone without a mutual pair is paired by ranking: take the
-  best-ranked unpaired player and give them the nearest-ranked unpaired player
-  they are allowed to play with, and so on down the list.
+- At the deadline, players who declared nobody stay with their partner of the
+  previous mini-tournament when both are free and still allowed to play together.
+- Everyone left is paired by ranking: take the best-ranked unpaired player and
+  give them the nearest-ranked unpaired player they are allowed to play with, and
+  so on down the list.
 
 Callers speak in player ids; entries are an internal detail.
 """
@@ -248,6 +250,7 @@ class PairingState:
     choice: dict  # player_id -> declared partner (both on the roster), oldest declaration first
     history: Counter  # times together in the other stages
     players: dict  # player_id -> Player (roster)
+    previous: list  # [(a, b)] pairs of the previous stage, both on the roster
 
 
 def pairing_state(stage):
@@ -263,6 +266,8 @@ def pairing_state(stage):
         for r in PartnerRequest.query.filter_by(stage_id=stage.id).order_by(PartnerRequest.submitted_at, PartnerRequest.id)
         if r.from_entry_id in by_entry and r.to_entry_id in by_entry
     }
+    previous_stage = Stage.query.filter_by(competition_id=stage.competition_id, number=stage.number - 1).first()
+    previous = [pair_players(previous_stage, p) for p in stage_pairs(previous_stage)] if previous_stage else []
     return PairingState(
         roster=set(entries),
         paired_with=paired_with,
@@ -270,6 +275,7 @@ def pairing_state(stage):
         choice=choice,
         history=times_together(stage),
         players={e.player_id: e.player for e in entries.values()},
+        previous=[(a, b) for a, b in previous if a in entries and b in entries],
     )
 
 
@@ -328,6 +334,21 @@ def _declared_pairs(state, paired, without=None):
     return out
 
 
+def _previous_pairs(state, paired, without=None):
+    """Last mini-tournament's pairs that stay together by default (Pedro, 5 Nov): both
+    free, still allowed, and neither declared someone else (`without`'s choice does not
+    count). Declaring the previous partner is no reason to lose them."""
+
+    def stays(player, partner):
+        return player == without or state.choice.get(player, partner) == partner
+
+    return [
+        (a, b)
+        for a, b in state.previous
+        if not {a, b} & paired and allowed(a, b, state.history) and stays(a, b) and stays(b, a)
+    ]
+
+
 def plan_close(stage, positions, extra_pair=None, state=None, declared=False, without=None):
     """The pairs close() would add, [(a, b, formed_by)] in creation order. No writes.
 
@@ -350,17 +371,31 @@ def plan_close(stage, positions, extra_pair=None, state=None, declared=False, wi
         for a, b in _declared_pairs(state, paired, without):
             planned.append((a, b, "declared"))
             paired |= {a, b}
-    left = [state.players[pid] for pid in state.roster - paired]
-    if not positions:
-        order = [p.id for p in sorted(left, key=ranking_key)]
-    else:
-        order = [p.id for p in sorted(left, key=lambda p: (positions.get(p.id) or 10**9, p.id))]
-    planned += [(a, b, "ranking") for a, b in auto_pairs(order, state.history)]
+
+    def by_ranking(ids):
+        left = [state.players[pid] for pid in ids]
+        if not positions:
+            order = [p.id for p in sorted(left, key=ranking_key)]
+        else:
+            order = [p.id for p in sorted(left, key=lambda p: (positions.get(p.id) or 10**9, p.id))]
+        return auto_pairs(order, state.history)
+
+    kept = _previous_pairs(state, paired, without)
+    while True:
+        try:
+            ranked = by_ranking(state.roster - paired - {pid for pair in kept for pid in pair})
+            break
+        except PairingError:  # keeping them all would strand someone: release one pair
+            if not kept:
+                raise
+            kept.pop()
+    planned += [(a, b, "previous") for a, b in kept]
+    planned += [(a, b, "ranking") for a, b in ranked]
     return planned
 
 
 def close(stage, positions=None):
-    """Pair everyone left by ranking and close the mini-tournament's pairs.
+    """Pair everyone left (previous partner, else ranking) and close the mini-tournament's pairs.
 
     `positions` ({player_id: ranking position}) seeds the pairing; by default
     the live v2 ranking (services.ranking.seeding), the same source as the
@@ -371,7 +406,7 @@ def close(stage, positions=None):
     if positions is None:
         positions = live_positions(stage)[1]
     made = [(_make_pair(stage, a, b, formed_by), formed_by) for a, b, formed_by in plan_close(stage, positions)]
-    created = [pair for pair, formed_by in made if formed_by == "ranking"]
+    created = [pair for pair, formed_by in made if formed_by in ("previous", "ranking")]
     stage.pairing_closed = True
     db.session.commit()
     return created

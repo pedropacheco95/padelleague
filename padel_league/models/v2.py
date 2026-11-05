@@ -198,7 +198,7 @@ class Pair(db.Model):
     stage_id = Column(Integer, ForeignKey("stages.id", ondelete="CASCADE"), nullable=False)
     entry_a_id = Column(Integer, ForeignKey("entries.id"), nullable=False)
     entry_b_id = Column(Integer, ForeignKey("entries.id"), nullable=False)
-    # mutual | ranking | draw | rotation | manual
+    # mutual | previous | ranking | draw | rotation | manual
     formed_by = Column(Text, nullable=False)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
