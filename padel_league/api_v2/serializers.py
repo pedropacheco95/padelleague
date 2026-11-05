@@ -11,7 +11,14 @@ from padel_league.domain.awards import teams_points_range
 FORMAT_LABELS = {"classica": "Classic", "teams": "Teams", "shuffle": "Shuffle", "super_cup": "Super Cup"}
 COMPETITION_STATUS = {"planned": "upcoming", "running": "live", "ended": "ended"}
 # Pair.formed_by → TeamsState pair source
-PAIR_SOURCE = {"mutual": "mutual", "ranking": "auto", "draw": "auto", "rotation": "auto", "manual": "admin"}
+PAIR_SOURCE = {
+    "mutual": "mutual",
+    "previous": "previous",
+    "ranking": "auto",
+    "draw": "auto",
+    "rotation": "auto",
+    "manual": "admin",
+}
 DEFAULT_PICTURE = "/static/images/Player/default_player.jpg"
 
 

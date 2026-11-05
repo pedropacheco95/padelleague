@@ -214,6 +214,7 @@ def simulate(competition_id):
         "maxPlacePoints": division.rating,
         "maxBonusPoints": (division.rating or 0) / 100 * MAX_SETS,
         "partner": board.ref(partner),
+        "formedBy": pair.formed_by,
         "sum": pair.points,
         "sumBreakdown": [{"player": board.ref(pid), "points": board.points.get(pid, 0.0) or 0.0} for pid in pair.players],
         "gapUp": min(tiers[division.tier - 1]) - pair.points if division.tier - 1 in tiers else None,

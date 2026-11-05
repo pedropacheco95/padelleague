@@ -1,6 +1,7 @@
 """Teams partner simulator: project() equals what close() + build_divisions()
 then produce, on the real 2026/27 roster (template clone, rolled back)."""
 
+from collections import Counter
 from datetime import datetime
 
 import pytest
@@ -262,3 +263,83 @@ def test_partners_after_the_deadline_show_the_baseline_only(pg):
     assert not sim.choice_open and sim.baseline.tier is not None
     assert all(not o.allowed and o.reason for o in sim.options)
     assert sim.thresholds.tier == sim.baseline.tier
+
+
+def _second_stage():
+    """Mini-tournament 2 with every pair of mini-tournament 1 formed by close()."""
+    first = _stage()
+    second = Stage.query.filter_by(competition_id=first.competition_id, number=2).one()
+    second.pairing_deadline = datetime(2026, 10, 25, 23, 0)
+    second.pairing_closed = False
+    teams_pairing.close(first)
+    first.pairing_closed = True
+    return second, [teams_pairing.pair_players(first, p) for p in teams_pairing.stage_pairs(first)]
+
+
+def test_players_who_declare_nobody_keep_the_previous_pair(pg):
+    stage, previous = _second_stage()
+    projection = teams_divisions.project(stage)
+    assert {_how(projection, a) for a, _ in previous} == {"previous"}
+    assert all(_partners(projection)[a] == b for a, b in previous)
+
+    created = teams_pairing.close(stage)
+    assert len(created) == len(previous)
+    assert {p.formed_by for p in created} == {"previous"}
+    assert {teams_pairing.pair_players(stage, p) for p in created} == set(previous)
+
+
+def test_first_mini_tournament_has_no_previous_pair(pg):
+    stage = _stage()
+    projection = teams_divisions.project(stage)
+    assert all(p.formed_by == "ranking" for d in projection.divisions for p in d.pairs)
+
+
+def test_an_unanswered_declaration_breaks_the_previous_pair_at_close(pg):
+    stage, previous = _second_stage()
+    (a, b), (c, d) = previous[3], previous[9]
+    teams_pairing.declare(stage, a, c, now=NOW)
+
+    projection = teams_divisions.project(stage)
+    assert _partners(projection)[a] == c and _how(projection, a) == "declared"
+    assert _how(projection, b) == "ranking" and _how(projection, d) == "ranking"
+
+    plan = {frozenset(pair): how for *pair, how in teams_pairing.plan_close(stage, teams_pairing.live_positions(stage)[1])}
+    assert plan.get(frozenset((a, b))) != "previous"  # a chose someone else and got no answer
+    assert plan[frozenset((c, d))] == "previous"  # c did not answer: c keeps d
+
+
+def test_declaring_the_previous_partner_keeps_them(pg):
+    stage, previous = _second_stage()
+    a, b = previous[3]
+    teams_pairing.declare(stage, a, b, now=NOW)
+    plan = {frozenset(pair): how for *pair, how in teams_pairing.plan_close(stage, teams_pairing.live_positions(stage)[1])}
+    assert plan[frozenset((a, b))] == "previous"
+
+
+def test_no_declaration_in_the_simulator_falls_back_to_the_previous_pair(pg):
+    stage, previous = _second_stage()
+    (a, b), (c, _) = previous[3], previous[9]
+    teams_pairing.declare(stage, a, c, now=NOW)
+    simulated = teams_divisions.project_partners(stage, a)
+    assert simulated.baseline.partner_id == b
+
+
+def test_a_capped_previous_pair_splits_and_nobody_is_stranded(pg):
+    stage, previous = _second_stage()
+    a, b = previous[0]
+    ea, eb = sorted((_entry(stage, a).id, _entry(stage, b).id))
+    others = (
+        Stage.query.filter(Stage.competition_id == stage.competition_id, Stage.number > stage.number)
+        .order_by(Stage.number)
+        .all()
+    )
+    if len(others) < 2:
+        pytest.skip("needs 4 mini-tournaments")
+    db.session.add_all([Pair(stage_id=s.id, entry_a_id=ea, entry_b_id=eb, formed_by="manual") for s in others[:2]])
+    db.session.flush()
+
+    # a and b would be the only two left, and they may not play a 4th time: one other pair is released.
+    projection = teams_divisions.project(stage)
+    assert _partners(projection)[a] != b
+    how = Counter(p.formed_by for d in projection.divisions for p in d.pairs)
+    assert how == {"previous": len(previous) - 2, "ranking": 2}

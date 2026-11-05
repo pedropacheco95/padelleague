@@ -188,7 +188,7 @@ class ProjectedPair:
     players: tuple
     points: float  # the two players' ranking points summed
     best_position: int | None
-    formed_by: str  # mutual | manual | ranking | extra (the simulated pair)
+    formed_by: str  # mutual | manual | declared | previous | ranking | extra (the simulated pair)
     seed: int
 
 

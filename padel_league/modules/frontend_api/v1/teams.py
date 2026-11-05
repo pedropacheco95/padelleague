@@ -37,7 +37,7 @@ def _state(mt, viewer=None):
         chose_me = [pid for pid in teams_pairing.chose(mt, my_id) if pid not in paired]
 
     history = teams_pairing.times_together(mt)
-    source = {"mutual": "mutual", "ranking": "auto", "manual": "admin"}
+    source = {"mutual": "mutual", "previous": "previous", "ranking": "auto", "manual": "admin"}
     return {
         "miniTournament": {
             "id": mt.id,
