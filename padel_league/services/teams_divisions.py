@@ -5,7 +5,8 @@
 - Slice into groups of 4 pairs: 1–4 → 1.ª divisão, 5–8 → 2.ª, …; ratings
   500/250/125/63/31/16. No promotion: rebuilt from scratch every stage.
 - Each group plays a 3-round round robin between its 4 pairs, one match per
-  pair per round: (1–2, 3–4), (1–3, 2–4), (1–4, 2–3).
+  pair per round: (1–2, 3–4), (1–3, 2–4), (1–4, 2–3), in a random order per
+  group (Pedro, 8 Nov: the same four pairs must not replay in the same order).
 
 The ranking is a parameter: by default the live ranking under the season rule
 (2026/27: last 3 completed + current, so earlier mini-tournaments count).
@@ -14,6 +15,7 @@ project() is the partner simulator: the divisions close() + build_divisions()
 would produce right now, optionally with one more pair, without writing.
 """
 
+import random
 from dataclasses import dataclass, field
 from datetime import datetime
 
@@ -72,7 +74,7 @@ def _rounds(stage):
     return existing
 
 
-def build_divisions(stage, points=None, positions=None, with_fixtures=True):
+def build_divisions(stage, points=None, positions=None, with_fixtures=True, rng=random):
     """Create the stage's groups, members (with pair) and round-robin matches.
 
     Returns [(group, [SeededPair, ...])]. The caller commits.
@@ -105,7 +107,7 @@ def build_divisions(stage, points=None, positions=None, with_fixtures=True):
             for entry_id in entry_of[sp.pair_id]:
                 db.session.add(GroupMember(group_id=group.id, entry_id=entry_id, seed=seed, pair_id=sp.pair_id))
         if with_fixtures:
-            for number, fixtures in enumerate(ROUND_ROBIN, start=1):
+            for number, fixtures in enumerate(rng.sample(ROUND_ROBIN, len(ROUND_ROBIN)), start=1):
                 for home, away in fixtures:
                     _add_match(group, rounds[number], division[home], division[away], entry_of)
         built.append((group, division))

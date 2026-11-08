@@ -1,5 +1,6 @@
 """Teams divisions builder: pure seeding + the real 2026/27 roster on Postgres."""
 
+import random
 from datetime import datetime
 
 import pytest
@@ -93,6 +94,26 @@ def test_real_roster_pairs_divisions_and_first_group_close(pg):
     assert max(a.place_points for a in event.awards) == 500
     # the closed mini-tournament group now counts in the live ranking (Teams = current)
     assert comp.id in ranking.compute(comp.season.league_id).counted_competition_ids
+
+
+def test_each_division_plays_the_round_robin_in_a_random_order(pg):
+    comp, stage = _teams_stage1()
+    ranking.bootstrap()
+    teams_pairing.close(stage)
+    built = teams_divisions.build_divisions(stage, rng=random.Random(1))
+
+    orders = []
+    for group, division in built:
+        seed = {sp.pair_id: i for i, sp in enumerate(division)}
+        rounds = {}
+        for m in CompetitionMatch.query.filter_by(group_id=group.id):
+            home, away = seed[m.home_pair_id], seed[m.away_pair_id]
+            assert home < away  # the better seed stays at home
+            rounds.setdefault(m.round.number, set()).add((home, away))
+        assert sorted(rounds) == [1, 2, 3]
+        assert sorted(tuple(sorted(r)) for r in rounds.values()) == sorted(tuple(sorted(r)) for r in teams_divisions.ROUND_ROBIN)
+        orders.append(tuple(tuple(sorted(rounds[n])) for n in (1, 2, 3)))
+    assert len(set(orders)) > 1  # not one fixed order for every division
 
 
 def test_walkover_on_a_built_match_only_the_absent_player_loses_the_presence(pg):
