@@ -1,12 +1,9 @@
 -- Read-only database role for the chatbot (finding: the chatbot ran LLM-generated SQL
--- as the application user). Apply by hand on production as a superuser / the DB owner;
--- nothing in the app or CI runs this file.
---
---   psql -h <prod> -U postgres -d padel_league -v chatbot_password='<strong password>' -f chatbot_readonly_role.sql
---
--- Then set CHATBOT_DATABASE_URI=postgresql://ppl_chatbot:<password>@<host>:5432/padel_league
--- in the container's environment (.env.prod). The app falls back to its own connection
--- while the variable is unset, so the switch can be made whenever convenient.
+-- as the application user). The deploy runs this file as postgres once the
+-- CHATBOT_DB_PASSWORD secret exists, and passes the container
+-- CHATBOT_DATABASE_URI=postgresql://ppl_chatbot:<password>@172.17.0.1:5432/padel_league.
+-- By hand: sudo -u postgres psql -d padel_league -v chatbot_password='<password>' < chatbot_readonly_role.sql
+-- The app uses its own connection while the variable is unset.
 --
 -- What the role can do: SELECT on every current and future table in schema `public`
 -- except `users` (credentials) and `chatbot_logs` (other visitors' questions).
@@ -17,14 +14,11 @@
 
 BEGIN;
 
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'ppl_chatbot') THEN
-        EXECUTE format('CREATE ROLE ppl_chatbot LOGIN PASSWORD %L NOINHERIT NOCREATEDB NOCREATEROLE NOSUPERUSER CONNECTION LIMIT 3',
-                       :'chatbot_password');
-    END IF;
-END
-$$;
+-- psql variables are not expanded inside a DO $$ block, hence \gexec.
+SELECT format('CREATE ROLE ppl_chatbot LOGIN PASSWORD %L NOINHERIT NOCREATEDB NOCREATEROLE NOSUPERUSER CONNECTION LIMIT 3',
+              :'chatbot_password')
+WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'ppl_chatbot')
+\gexec
 
 -- Session defaults the application cannot override from inside a transaction.
 ALTER ROLE ppl_chatbot SET default_transaction_read_only = on;

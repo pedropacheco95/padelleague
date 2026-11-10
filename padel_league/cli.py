@@ -27,6 +27,19 @@ def register_cli(app):
         for line in teams_schedule.run_due():
             click.echo(line)
 
+    @v2.command("alert")
+    @click.argument("subject")
+    @click.argument("body")
+    def alert(subject, body):
+        """Email SUBJECT/BODY to ALERT_EMAIL (VM cron checks, e.g. scripts/disk_check.sh)."""
+        from padel_league.tools.email_tools import send_email
+
+        recipient = os.getenv("ALERT_EMAIL")
+        if not recipient:
+            raise click.ClickException("ALERT_EMAIL is not set.")
+        send_email(f"[Padel League] {subject}", [recipient], body=body)
+        click.echo(f"alert sent: {subject}")
+
     @app.cli.command("generate-fixtures")
     @click.option("--division-id", type=int, required=True)
     @click.option(
@@ -53,19 +66,60 @@ def register_cli(app):
             click.echo(json.dumps(summary, indent=2, ensure_ascii=False))
 
     @app.cli.command("propose-edition")
-    @click.option("--previous", "previous_id", type=int, required=True, help="Competition id of the last Clássica.")
-    @click.option("--name", "edition_name", default=None,
-                  help='Default "<N>ª Edição", N = next number across every format')
-    @click.option("--start", "beginning", required=True, help="ISO datetime of jornada 1, e.g. 2027-01-12T21:30:00")
-    @click.option("--prefix", "division_prefix", default=None, help='Division base name, e.g. "Inverno 2027"')
-    @click.option("--withdrawals", default="", help="Comma-separated player ids leaving")
-    @click.option("--new", "new_players", default="", help="Comma-separated new player ids, filling vacancies bottom-up")
-    @click.option("--placed", default=None, help='JSON {tier: [player ids]} placed straight into a division')
+    @click.option(
+        "--previous",
+        "previous_id",
+        type=int,
+        required=True,
+        help="Competition id of the last Clássica.",
+    )
+    @click.option(
+        "--name",
+        "edition_name",
+        default=None,
+        help='Default "<N>ª Edição", N = next number across every format',
+    )
+    @click.option(
+        "--start",
+        "beginning",
+        required=True,
+        help="ISO datetime of jornada 1, e.g. 2027-01-12T21:30:00",
+    )
+    @click.option(
+        "--prefix",
+        "division_prefix",
+        default=None,
+        help='Division base name, e.g. "Inverno 2027"',
+    )
+    @click.option(
+        "--withdrawals", default="", help="Comma-separated player ids leaving"
+    )
+    @click.option(
+        "--new",
+        "new_players",
+        default="",
+        help="Comma-separated new player ids, filling vacancies bottom-up",
+    )
+    @click.option(
+        "--placed",
+        default=None,
+        help="JSON {tier: [player ids]} placed straight into a division",
+    )
     @click.option("--season", default=None)
     @click.option("--event-slot", default=None)
     @click.option("--out", "out_path", type=click.Path(dir_okay=False), required=True)
-    def propose_edition(previous_id, edition_name, beginning, division_prefix, withdrawals, new_players, placed,
-                        season, event_slot, out_path):
+    def propose_edition(
+        previous_id,
+        edition_name,
+        beginning,
+        division_prefix,
+        withdrawals,
+        new_players,
+        placed,
+        season,
+        event_slot,
+        out_path,
+    ):
         """Write the next Clássica's plan (promotion from --previous) to --out. Writes nothing to the DB."""
         from padel_league.domain.errors import InvalidInput, Conflict, NotFound
         from padel_league.services.classica_builder import next_classica_plan
@@ -76,10 +130,16 @@ def register_cli(app):
             edition_name = edition_name or default_edition_name()
             try:
                 plan, notes = next_classica_plan(
-                    previous_id, edition_name, beginning,
-                    withdrawals=ids(withdrawals), new_player_ids=ids(new_players),
+                    previous_id,
+                    edition_name,
+                    beginning,
+                    withdrawals=ids(withdrawals),
+                    new_player_ids=ids(new_players),
                     placed_new_players=json.loads(placed) if placed else None,
-                    season=season, event_slot=event_slot, division_prefix=division_prefix, strict=False,
+                    season=season,
+                    event_slot=event_slot,
+                    division_prefix=division_prefix,
+                    strict=False,
                 )
             except (InvalidInput, Conflict, NotFound) as exc:
                 raise click.ClickException(str(exc))
@@ -87,7 +147,9 @@ def register_cli(app):
             json.dump(plan, handle, indent=2, ensure_ascii=False)
         for note in notes:
             click.echo(f"note: {note}")
-        click.echo(f"plan written to {out_path} ({len(plan['divisions'])} divisions); review it, then create-edition --dry-run")
+        click.echo(
+            f"plan written to {out_path} ({len(plan['divisions'])} divisions); review it, then create-edition --dry-run"
+        )
 
     @app.cli.command("create-edition")
     @click.option(
@@ -133,17 +195,30 @@ def register_cli(app):
     @app.cli.command("import-substitutes")
     @click.argument("rows_path", type=click.Path(exists=True, dir_okay=False))
     @click.argument("map_path", type=click.Path(exists=True, dir_okay=False))
-    @click.option("--decisions", "decisions_path", type=click.Path(exists=True, dir_okay=False), default=None,
-                  help="Per-row skip/override CSV (docs/v2/subs_row_decisions.csv).")
-    @click.option("--dry-run", is_flag=True, help="Do everything in a transaction, report, roll back.")
+    @click.option(
+        "--decisions",
+        "decisions_path",
+        type=click.Path(exists=True, dir_okay=False),
+        default=None,
+        help="Per-row skip/override CSV (docs/v2/subs_row_decisions.csv).",
+    )
+    @click.option(
+        "--dry-run",
+        is_flag=True,
+        help="Do everything in a transaction, report, roll back.",
+    )
     def import_substitutes(rows_path, map_path, decisions_path, dry_run):
         """Fill historic substitute slots from the SUBS_ sheet (run merge-players first)."""
         from padel_league.services.imports import substitutes as subs
 
         with app.app_context():
             try:
-                report = subs.run(subs.load_rows(rows_path), subs.load_name_map(map_path),
-                                  subs.load_decisions(decisions_path), dry_run=dry_run)
+                report = subs.run(
+                    subs.load_rows(rows_path),
+                    subs.load_name_map(map_path),
+                    subs.load_decisions(decisions_path),
+                    dry_run=dry_run,
+                )
             except subs.ImportError_ as exc:
                 raise click.ClickException(str(exc))
         skipped = report.pop("rows_skipped")
@@ -152,8 +227,16 @@ def register_cli(app):
             click.echo(f"skipped row {row}: {reason}")
 
     @app.cli.command("merge-players")
-    @click.option("--from", "from_id", type=int, required=True, help="The duplicate (deleted).")
-    @click.option("--into", "into_id", type=int, required=True, help="The player who keeps the history.")
+    @click.option(
+        "--from", "from_id", type=int, required=True, help="The duplicate (deleted)."
+    )
+    @click.option(
+        "--into",
+        "into_id",
+        type=int,
+        required=True,
+        help="The player who keeps the history.",
+    )
     @click.option("--dry-run", is_flag=True)
     def merge_players_cmd(from_id, into_id, dry_run):
         """Merge a duplicate player into another: entries, matches, awards, login. Ranking needs a recompute after."""
@@ -164,12 +247,24 @@ def register_cli(app):
                 moved = subs.merge_players(from_id, into_id, dry_run=dry_run)
             except subs.ImportError_ as exc:
                 raise click.ClickException(str(exc))
-        click.echo(json.dumps({"from": from_id, "into": into_id, "dry_run": dry_run, "moved": moved}, indent=2))
+        click.echo(
+            json.dumps(
+                {"from": from_id, "into": into_id, "dry_run": dry_run, "moved": moved},
+                indent=2,
+            )
+        )
 
     @app.cli.command("swap-roster-player")
     @click.option("--competition", "competition_id", type=int, required=True)
-    @click.option("--out", "out_id", type=int, required=True, help="Player leaving the roster.")
-    @click.option("--in-name", "in_name", required=True, help="Full name of the player joining (must exist).")
+    @click.option(
+        "--out", "out_id", type=int, required=True, help="Player leaving the roster."
+    )
+    @click.option(
+        "--in-name",
+        "in_name",
+        required=True,
+        help="Full name of the player joining (must exist).",
+    )
     @click.option("--dry-run", is_flag=True)
     def swap_roster_player_cmd(competition_id, out_id, in_name, dry_run):
         """Replace a player of a not-yet-drawn roster; the newcomer becomes a member with a login."""
@@ -179,14 +274,29 @@ def register_cli(app):
         with app.app_context():
             player = Player.query.filter_by(full_name=in_name).first()
             if player is None:
-                raise click.ClickException(f"no player with full name {in_name!r} (run import-substitutes first)")
+                raise click.ClickException(
+                    f"no player with full name {in_name!r} (run import-substitutes first)"
+                )
             in_id = player.id
             try:
-                done = swap_roster_player(competition_id, out_id, in_id, dry_run=dry_run)
+                done = swap_roster_player(
+                    competition_id, out_id, in_id, dry_run=dry_run
+                )
             except RosterError as exc:
                 raise click.ClickException(str(exc))
-        click.echo(json.dumps({"competition": competition_id, "out": out_id, "in": in_id,
-                               "dry_run": dry_run, **done}, indent=2, ensure_ascii=False))
+        click.echo(
+            json.dumps(
+                {
+                    "competition": competition_id,
+                    "out": out_id,
+                    "in": in_id,
+                    "dry_run": dry_run,
+                    **done,
+                },
+                indent=2,
+                ensure_ascii=False,
+            )
+        )
 
     @app.cli.command("seed")
     @click.option("--admin-user", default="admin")
@@ -261,13 +371,20 @@ def register_cli(app):
     )
     @click.option("--group-id", type=int, help="v2 competition group (division) id.")
     @click.option("--kind", type=click.Choice(["poster", "banner"]))
-    @click.option("--file", "file_path", type=click.Path(exists=True, dir_okay=False), help="Local image file.")
+    @click.option(
+        "--file",
+        "file_path",
+        type=click.Path(exists=True, dir_okay=False),
+        help="Local image file.",
+    )
     @click.option(
         "--manifest",
         type=click.Path(exists=True, dir_okay=False),
         help='JSON list of {"group_id", "kind", "file"}; relative files resolve beside the manifest.',
     )
-    @click.option("--force", is_flag=True, help="Replace artwork the group already has.")
+    @click.option(
+        "--force", is_flag=True, help="Replace artwork the group already has."
+    )
     def attach_artwork(competition_id, group_id, kind, file_path, manifest, force):
         """Attach local poster/banner files to v2 competition groups (Teams divisions too).
 
@@ -279,9 +396,13 @@ def register_cli(app):
 
         single = (group_id, kind, file_path)
         if manifest and any(v is not None for v in single):
-            raise click.UsageError("use either --manifest or --group-id/--kind/--file, not both")
+            raise click.UsageError(
+                "use either --manifest or --group-id/--kind/--file, not both"
+            )
         if not manifest and any(v is None for v in single):
-            raise click.UsageError("--group-id, --kind and --file are all required without --manifest")
+            raise click.UsageError(
+                "--group-id, --kind and --file are all required without --manifest"
+            )
 
         with app.app_context():
             if manifest:
@@ -291,9 +412,15 @@ def register_cli(app):
                     raise click.ClickException("the manifest must be a JSON list")
                 base = os.path.dirname(os.path.abspath(manifest))
                 for entry in entries:
-                    if isinstance(entry, dict) and isinstance(entry.get("file"), str) and not os.path.isabs(entry["file"]):
+                    if (
+                        isinstance(entry, dict)
+                        and isinstance(entry.get("file"), str)
+                        and not os.path.isabs(entry["file"])
+                    ):
                         entry["file"] = os.path.join(base, entry["file"])
-                results = artwork.attach_manifest(entries, force=force, competition_id=competition_id)
+                results = artwork.attach_manifest(
+                    entries, force=force, competition_id=competition_id
+                )
             else:
                 try:
                     group = artwork.load_group(group_id, competition_id=competition_id)

@@ -1,20 +1,22 @@
 #!/bin/bash
+set -euo pipefail
 
 TIMESTAMP=$(date +"%Y-%m-%d_%H-%M")
 BACKUP_NAME="padel_league_$TIMESTAMP.sql.gz"
 BACKUP_PATH="/tmp/$BACKUP_NAME"
 BUCKET="gs://portopadelleague-storage/db_backups"
 
-# Credentials: PGPASSWORD from the environment or from ~/.backup.env on the VM
-# (a file with `PGPASSWORD=...`, mode 600). The literal below is the legacy value
-# and only applies when neither is set; delete it once the password is rotated.
+# Credentials: PGPASSWORD from ~/.backup.env (mode 600), written by the deploy
+# from the POSTGRES_PW secret.
 if [ -f "$HOME/.backup.env" ]; then
     # shellcheck disable=SC1091
     . "$HOME/.backup.env"
 fi
-export PGPASSWORD="${PGPASSWORD:-portopadelleague}"
+: "${PGPASSWORD:?PGPASSWORD not set: ~/.backup.env missing}"
+export PGPASSWORD
 
-# Dump and compress
+# Dump and compress (pipefail: a failed pg_dump fails the backup instead of
+# uploading an empty file)
 pg_dump -U padel_user -h localhost -d padel_league | gzip > "$BACKUP_PATH"
 
 # Upload to GCS
