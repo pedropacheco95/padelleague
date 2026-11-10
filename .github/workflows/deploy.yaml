@@ -69,8 +69,12 @@ jobs:
             -e MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }} \
             -e LLM_API_KEY=${{ secrets.LLM_API_KEY }} \
             -e GCS_UPLOADS_BUCKET=${{ secrets.GCS_UPLOADS_BUCKET }} \
+            -e ALERT_EMAIL=${{ secrets.ALERT_EMAIL }} \
+            -e CHATBOT_DATABASE_URI=${{ secrets.CHATBOT_DB_PASSWORD && format('postgresql://ppl_chatbot:{0}@172.17.0.1:5432/padel_league', secrets.CHATBOT_DB_PASSWORD) || '' }} \
             ${{ secrets.DOCKERHUB_USERNAME }}/porto-padel-league:latest
           sudo docker image prune -f || true
+          # backup.sh reads the DB password from here (no literal in the repo)
+          (umask 077; printf 'PGPASSWORD=%s\n' '${{ secrets.POSTGRES_PW }}' > /home/${{ secrets.GCE_USER }}/.backup.env)
 
     - name: Copy backup script to VM
       uses: appleboy/scp-action@v0.1.4
@@ -83,15 +87,26 @@ jobs:
         strip_components: 1
         overwrite: true
 
-    - name: Copy Teams tick script to VM
+    - name: Copy cron scripts to VM
       uses: appleboy/scp-action@v0.1.4
       with:
         host: ${{ secrets.GCE_HOST }}
         username: ${{ secrets.GCE_USER }}
         key: ${{ secrets.GCE_SSH_PRIVATE_KEY }}
-        source: "scripts/teams_tick.sh"
+        source: "scripts/teams_tick.sh,scripts/disk_check.sh,scripts/weekly_cleanup.sh"
         target: "/home/${{ secrets.GCE_USER }}/"
         strip_components: 1
+        overwrite: true
+
+    - name: Copy the chatbot role SQL to VM
+      uses: appleboy/scp-action@v0.1.4
+      with:
+        host: ${{ secrets.GCE_HOST }}
+        username: ${{ secrets.GCE_USER }}
+        key: ${{ secrets.GCE_SSH_PRIVATE_KEY }}
+        source: "docs/security/chatbot_readonly_role.sql"
+        target: "/home/${{ secrets.GCE_USER }}/"
+        strip_components: 2
         overwrite: true
 
     - name: Setup cron jobs
@@ -101,6 +116,16 @@ jobs:
         username: ${{ secrets.GCE_USER }}
         key: ${{ secrets.GCE_SSH_PRIVATE_KEY }}
         script: |
-          chmod +x /home/${{ secrets.GCE_USER }}/backup.sh /home/${{ secrets.GCE_USER }}/teams_tick.sh
+          H=/home/${{ secrets.GCE_USER }}
+          chmod +x $H/backup.sh $H/teams_tick.sh $H/disk_check.sh $H/weekly_cleanup.sh
 
-          (crontab -l 2>/dev/null | grep -v -e backup.sh -e teams_tick.sh; echo "0 3 * * * /home/${{ secrets.GCE_USER }}/backup.sh"; echo "1 * * * * /home/${{ secrets.GCE_USER }}/teams_tick.sh") | crontab -
+          (crontab -l 2>/dev/null | grep -v -e backup.sh -e teams_tick.sh -e disk_check.sh -e weekly_cleanup.sh
+           echo "0 3 * * * $H/backup.sh"
+           echo "1 * * * * $H/teams_tick.sh"
+           echo "30 7 * * * $H/disk_check.sh"
+           echo "30 4 * * 0 $H/weekly_cleanup.sh") | crontab -
+
+          # Read-only chatbot role (idempotent; skipped until the secret exists)
+          if [ -n '${{ secrets.CHATBOT_DB_PASSWORD }}' ]; then
+            sudo -u postgres psql -q -d padel_league -v chatbot_password='${{ secrets.CHATBOT_DB_PASSWORD }}' < $H/chatbot_readonly_role.sql
+          fi
