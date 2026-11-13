@@ -56,7 +56,7 @@ psql -U padel_user -h 35.205.246.86 -p 5432 -d padel_league -Atc "select 1;"
 ```
 
 Credentials are read from `~/.pgpass` (standard Postgres mechanism; the password
-is the one used in `padelleague/scripts/backup.sh`). Daily backups land in
+is the one used in `padelleague/scripts/db_backup.sh`). Daily backups land in
 `gs://portopadelleague-storage/db_backups`.
 
 Workflow:
