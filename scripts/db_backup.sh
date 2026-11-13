@@ -2,7 +2,9 @@
 set -euo pipefail
 
 TIMESTAMP=$(date +"%Y-%m-%d_%H-%M")
-BACKUP_NAME="padel_league_$TIMESTAMP.sql.gz"
+# Own suffix, so this dump never shares a name with (or is overwritten by) the
+# legacy ~/scripts/backup.sh, which uploads padel_league_<date>_03-00.sql.gz
+BACKUP_NAME="padel_league_${TIMESTAMP}_db_backup.sql.gz"
 BACKUP_PATH="/tmp/$BACKUP_NAME"
 BUCKET="gs://portopadelleague-storage/db_backups"
 
