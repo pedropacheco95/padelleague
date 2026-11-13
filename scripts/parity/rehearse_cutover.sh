@@ -6,7 +6,7 @@
 # Steps (mirrors docs/v2/qa/cutover.md):
 #   1 restore   backup → ${P}_reh (stands in for the production database)
 #   2 snapshot  row counts + alembic_version ("pre")
-#   3 backup    pg_dump | gzip, as scripts/backup.sh does in production
+#   3 backup    pg_dump | gzip, as scripts/db_backup.sh does in production
 #   4 upgrade   flask db upgrade (this checkout's migrations, to head)
 #   5 verify    verify_migration.sh, read by rule R3 (docs/v2/qa/gates.md)
 #   6 smoke     this checkout's app on :$PORT against the migrated db, smoke URLs must be 200

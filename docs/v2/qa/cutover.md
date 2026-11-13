@@ -24,7 +24,7 @@ production is an e2-micro, so allow 5–10× that.
 |---|---|---|---|---|
 | 0 | Preconditions | quiet day between jornadas; no result entry in progress; `alembic_version` on prod = `9c2f1a7d4e21` (or `a1d5c0e7b3f2` if the Teams fallback shipped) | value printed | – |
 | 1 | Maintenance on | stop the backend container (or switch nginx to the maintenance page) | site shows maintenance | – |
-| 2 | Fresh backup | on the box: `scripts/backup.sh` (pg_dump → gzip → GCS); also keep a local copy | file in `gs://portopadelleague-storage/db_backups/`, size close to yesterday's (~147 KB gz) | 1 s |
+| 2 | Fresh backup | on the box: `scripts/db_backup.sh` (pg_dump → gzip → GCS); also keep a local copy | file in `gs://portopadelleague-storage/db_backups/`, size close to yesterday's (~147 KB gz) | 1 s |
 | 3 | Migrate | from the v2 checkout: `flask db upgrade` against prod (see the prod-env line in `.wolf/cerebrum.md`) | ends at head (`d5a2b8c6e1f4` today) | 8 s |
 | 4 | Verify | `scripts/v2/verify_migration.sh padel_league -h <host> -U padel_user` | rule R3: only `matches` 2/2 (D1); `players_in_division` 0/0 or 3/3 (D7) | 3 s |
 | 5 | Deploy v2 code | merge/deploy the release commit; container restarts | container up, logs clean | – |

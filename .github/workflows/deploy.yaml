@@ -73,19 +73,8 @@ jobs:
             -e CHATBOT_DATABASE_URI=${{ secrets.CHATBOT_DB_PASSWORD && format('postgresql://ppl_chatbot:{0}@172.17.0.1:5432/padel_league', secrets.CHATBOT_DB_PASSWORD) || '' }} \
             ${{ secrets.DOCKERHUB_USERNAME }}/porto-padel-league:latest
           sudo docker image prune -f || true
-          # backup.sh reads the DB password from here (no literal in the repo)
+          # db_backup.sh reads the DB password from here (no literal in the repo)
           (umask 077; printf 'PGPASSWORD=%s\n' '${{ secrets.POSTGRES_PW }}' > /home/${{ secrets.GCE_USER }}/.backup.env)
-
-    - name: Copy backup script to VM
-      uses: appleboy/scp-action@v0.1.4
-      with:
-        host: ${{ secrets.GCE_HOST }}
-        username: ${{ secrets.GCE_USER }}
-        key: ${{ secrets.GCE_SSH_PRIVATE_KEY }}
-        source: "scripts/backup.sh"
-        target: "/home/${{ secrets.GCE_USER }}//backup.sh"
-        strip_components: 1
-        overwrite: true
 
     - name: Copy cron scripts to VM
       uses: appleboy/scp-action@v0.1.4
@@ -93,7 +82,7 @@ jobs:
         host: ${{ secrets.GCE_HOST }}
         username: ${{ secrets.GCE_USER }}
         key: ${{ secrets.GCE_SSH_PRIVATE_KEY }}
-        source: "scripts/teams_tick.sh,scripts/disk_check.sh,scripts/weekly_cleanup.sh"
+        source: "scripts/db_backup.sh,scripts/teams_tick.sh,scripts/disk_check.sh,scripts/weekly_cleanup.sh"
         target: "/home/${{ secrets.GCE_USER }}/"
         strip_components: 1
         overwrite: true
@@ -117,10 +106,13 @@ jobs:
         key: ${{ secrets.GCE_SSH_PRIVATE_KEY }}
         script: |
           H=/home/${{ secrets.GCE_USER }}
-          chmod +x $H/backup.sh $H/teams_tick.sh $H/disk_check.sh $H/weekly_cleanup.sh
+          chmod +x $H/db_backup.sh $H/teams_tick.sh $H/disk_check.sh $H/weekly_cleanup.sh
 
+          # db_backup.sh, not backup.sh: scp-action treats target as a directory, so the old
+          # "Copy backup script" step left ~/backup.sh as a directory and its cron line ran nothing.
+          # The grep also drops any older backup.sh line in this crontab.
           (crontab -l 2>/dev/null | grep -v -e backup.sh -e teams_tick.sh -e disk_check.sh -e weekly_cleanup.sh
-           echo "0 3 * * * $H/backup.sh"
+           echo "0 3 * * * $H/db_backup.sh >> $H/db_backup.log 2>&1"
            echo "1 * * * * $H/teams_tick.sh"
            echo "30 7 * * * $H/disk_check.sh"
            echo "30 4 * * 0 $H/weekly_cleanup.sh") | crontab -
